@@ -45,7 +45,8 @@ export const HistoryProvider: React.FC<{ children: React.ReactNode }> = ({ child
             .where('store_id')
             .equals(activeProfile.id)
             .reverse()
-            .sortBy('created_at');
+            .sortBy('created_at')
+            .then(data => data.slice(0, 500)); // Protection RAM: 500 mx
 
         if (localData.length > 0) {
             const mapped: Transaction[] = localData.map(t => ({
@@ -68,7 +69,8 @@ export const HistoryProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 .from('transactions')
                 .select('*')
                 .eq('store_id', activeProfile.id)
-                .order('created_at', { ascending: false });
+                .order('created_at', { ascending: false })
+                .limit(500);
 
             if (data && data.length > 0) {
                 // Mettre à jour la base locale avec les données du cloud
@@ -93,7 +95,8 @@ export const HistoryProvider: React.FC<{ children: React.ReactNode }> = ({ child
                     .where('store_id')
                     .equals(activeProfile.id)
                     .reverse()
-                    .sortBy('created_at');
+                    .sortBy('created_at')
+                    .then(data => data.slice(0, 500));
 
                 const mapped: Transaction[] = updatedLocal.map(t => ({
                     id: t.id,
@@ -199,10 +202,9 @@ export const HistoryProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
 
     const clearHistory = async () => {
-        if (activeProfile && confirm("Supprimer tout l'historique local ?")) {
-            await db.transactions.where('store_id').equals(activeProfile.id).delete();
-            await fetchHistory();
-        }
+        if (!activeProfile) return;
+        await db.transactions.where('store_id').equals(activeProfile.id).delete();
+        await fetchHistory();
     };
 
     const getProductHistory = (productId: string) => {

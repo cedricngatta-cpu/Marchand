@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
 
 interface VoiceContextType {
     isSpeaking: boolean;
@@ -18,6 +18,7 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const [isSpeaking, setIsSpeaking] = useState(false);
     const [isListening, setIsListening] = useState(false);
     const [transcript, setTranscript] = useState('');
+    const recognitionRef = useRef<any>(null);
 
     const speak = useCallback((text: string) => {
         if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
@@ -40,8 +41,15 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const listen = useCallback(() => {
         if (typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+            if (recognitionRef.current) {
+                try {
+                    recognitionRef.current.abort();
+                } catch (e) { }
+            }
+
             const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
             const recognition = new SpeechRecognition();
+            recognitionRef.current = recognition;
 
             recognition.lang = 'fr-FR';
             recognition.continuous = false;
@@ -49,6 +57,17 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
             recognition.onstart = () => setIsListening(true);
             recognition.onend = () => setIsListening(false);
+
+            recognition.onerror = (event: any) => {
+                setIsListening(false);
+                if (event.error === 'not-allowed') {
+                    speak("Je ne peux pas t'entendre, tu dois autoriser le microphone.");
+                } else if (event.error === 'network') {
+                    speak("Problème de connexion, vérifie ton internet.");
+                } else {
+                    speak("Désolé, je n'ai pas bien entendu.");
+                }
+            };
 
             recognition.onresult = (event: any) => {
                 const text = event.results[0][0].transcript;

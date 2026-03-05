@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { db } from '@/lib/db';
 import { supabase } from '@/lib/supabase';
 
@@ -15,6 +15,7 @@ const SyncContext = createContext<SyncContextType | undefined>(undefined);
 
 export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
+    const isSyncingRef = useRef(false);
     const [isSyncing, setIsSyncing] = useState(false);
     const [syncPendingCount, setSyncPendingCount] = useState(0);
 
@@ -24,11 +25,12 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, []);
 
     const processQueue = useCallback(async () => {
-        if (!navigator.onLine || isSyncing) return;
+        if (!navigator.onLine || isSyncingRef.current) return;
 
         const pending = await db.syncQueue.where('status').equals('PENDING').toArray();
         if (pending.length === 0) return;
 
+        isSyncingRef.current = true;
         setIsSyncing(true);
         console.log(`[Sync] Processing ${pending.length} pending actions...`);
 
@@ -101,9 +103,10 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
         }
 
+        isSyncingRef.current = false;
         setIsSyncing(false);
         updatePendingCount();
-    }, [isSyncing, updatePendingCount]);
+    }, [updatePendingCount]);
 
     useEffect(() => {
         const handleOnline = () => {

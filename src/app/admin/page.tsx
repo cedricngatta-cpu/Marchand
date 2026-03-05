@@ -35,6 +35,7 @@ import { useStock } from '@/hooks/useStock';
 import { useProfileContext } from '@/context/ProfileContext';
 import { useAuth } from '@/context/AuthContext';
 import { useNotifications } from '@/context/NotificationContext';
+import { useConfirm } from '@/context/ConfirmContext';
 import { supabase } from '@/lib/supabase';
 import { AddProductModal } from '@/components/AddProductModal';
 
@@ -48,6 +49,7 @@ export default function ProfessionalAdminPage() {
     const { stock } = useStock();
     const { profiles, activeProfile, addProfile, deleteProfile, setActiveProfile } = useProfileContext();
     const { notifications, sendNotification, deleteNotification } = useNotifications();
+    const confirm = useConfirm();
 
     const [activeTab, setActiveTab] = useState<AdminTab>('OVERVIEW');
     const [searchQuery, setSearchQuery] = useState('');
@@ -72,7 +74,13 @@ export default function ProfessionalAdminPage() {
     };
 
     const deleteUser = async (userId: string) => {
-        if (!confirm("Supprimer cet utilisateur ? Cette action est irréversible.")) return;
+        const ok = await confirm({
+            title: 'Supprimer cet utilisateur ?',
+            message: 'Cette action est irréversible. Le compte sera définitivement supprimé.',
+            confirmLabel: 'Supprimer',
+            dangerMode: true
+        });
+        if (!ok) return;
         const { error } = await supabase.from('profiles').delete().eq('id', userId);
         if (!error) {
             triggerSuccess();
@@ -672,8 +680,14 @@ export default function ProfessionalAdminPage() {
                                         title="Réinitialisation Totale"
                                         desc="Supprime tout : Boutiques, Produits, Caisse."
                                         icon={RotateCcw}
-                                        onClick={() => {
-                                            if (confirm("🚨 TOUT SUPPRIMER ?")) {
+                                        onClick={async () => {
+                                            const ok = await confirm({
+                                                title: '🚨 TOUT SUPPRIMER ?',
+                                                message: 'Cette action supprime toutes les données locales. Elle est irréversible.',
+                                                confirmLabel: 'Tout effacer',
+                                                dangerMode: true
+                                            });
+                                            if (ok) {
                                                 localStorage.clear();
                                                 window.location.href = '/';
                                             }
@@ -683,8 +697,14 @@ export default function ProfessionalAdminPage() {
                                         title="Nettoyer l'Historique"
                                         desc="Efface toutes les ventes de tous les profils."
                                         icon={HistoryIcon}
-                                        onClick={() => {
-                                            if (confirm("Vider l'historique global ?")) {
+                                        onClick={async () => {
+                                            const ok = await confirm({
+                                                title: "Vider l'Historique ?",
+                                                message: "Toutes les transactions seront effacées définitivement. Cette action est irréversible.",
+                                                confirmLabel: 'Effacer',
+                                                dangerMode: true
+                                            });
+                                            if (ok) {
                                                 clearHistory();
                                                 triggerSuccess();
                                             }

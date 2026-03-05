@@ -22,11 +22,13 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useProfileContext } from '@/context/ProfileContext';
 import { SupportCenter } from '@/components/SupportCenter';
+import { useConfirm } from '@/context/ConfirmContext';
 
 export default function ProfilePage() {
     const router = useRouter();
     const { user, logout, updatePin, updateLanguage } = useAuth();
     const { activeProfile } = useProfileContext();
+    const confirm = useConfirm();
 
     // UI States
     const [isSupportOpen, setIsSupportOpen] = useState(false);
@@ -107,8 +109,13 @@ export default function ProfilePage() {
         }
     };
 
-    const handleLogout = () => {
-        if (confirm("Voulez-vous vous déconnecter ?")) {
+    const handleLogout = async () => {
+        const ok = await confirm({
+            title: 'Se déconnecter ?',
+            message: 'Vous allez être déconnecté de votre profil.',
+            confirmLabel: 'Me déconnecter'
+        });
+        if (ok) {
             logout();
             router.push('/login');
         }

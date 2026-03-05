@@ -10,6 +10,7 @@ import { useStock } from '@/hooks/useStock';
 import { useHistory } from '@/hooks/useHistory';
 import { useProductContext } from '@/context/ProductContext';
 import { useAuth } from '@/context/AuthContext';
+import { useConfirm } from '@/context/ConfirmContext';
 import { useVoice } from '@/hooks/useVoice';
 
 export default function BilanPage() {
@@ -20,6 +21,7 @@ export default function BilanPage() {
     const { history, balance, clearHistory } = useHistory();
     const { products } = useProductContext();
     const { user } = useAuth();
+    const confirm = useConfirm();
     const name = user?.name?.split(' ')[0] || 'Marchand';
 
     // Calcul du capital stock
@@ -37,7 +39,13 @@ export default function BilanPage() {
     };
 
     const handleReset = async () => {
-        if (confirm("Voulez-vous vraiment remettre la caisse à zéro ? (Cela supprimera tout ton historique)")) {
+        const ok = await confirm({
+            title: 'Remettre la caisse à zéro ?',
+            message: 'Cela supprimera tout ton historique. Cette action est irréversible.',
+            confirmLabel: 'Réinitialiser',
+            dangerMode: true
+        });
+        if (ok) {
             await clearHistory();
             speak("C'est fait, la caisse et l'historique sont vides pour demain.");
         }

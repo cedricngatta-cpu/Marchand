@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { products as initialProducts } from '../data/products';
-import { Package } from 'lucide-react';
+import { Package, LucideIcon } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useProfileContext } from './ProfileContext';
 import { db, LocalProduct } from '@/lib/db';
@@ -10,7 +10,7 @@ import { db, LocalProduct } from '@/lib/db';
 export interface Product {
     id: string;
     name: string;
-    icon: any;
+    icon: LucideIcon;
     imageUrl?: string;
     barcode?: string;
     price: number;
@@ -269,10 +269,9 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
 
     const resetProducts = async () => {
-        if (activeProfile && confirm("Supprimer tout le catalogue local ?")) {
-            await db.products.where('store_id').equals(activeProfile.id).delete();
-            await fetchProducts();
-        }
+        if (!activeProfile) return;
+        await db.products.where('store_id').equals(activeProfile.id).delete();
+        await fetchProducts();
     };
 
     return (

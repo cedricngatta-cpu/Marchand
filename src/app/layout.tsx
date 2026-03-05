@@ -20,17 +20,8 @@ export const viewport: Viewport = {
 };
 
 import { ConditionalAssistant } from "@/components/ConditionalAssistant";
-import { StockProvider } from "@/context/StockContext";
-import { CartProvider } from "@/context/CartContext";
-import { HistoryProvider } from "@/context/HistoryContext";
-import { VoiceProvider } from "@/context/VoiceContext";
-import { ProductProvider } from "@/context/ProductContext";
-import { ProfileProvider } from '@/context/ProfileContext';
-import { AuthProvider } from '@/context/AuthContext';
-import { ProtectedRoute } from '@/components/ProtectedRoute';
-import { NotificationProvider } from "@/context/NotificationContext";
-import { SyncProvider } from "@/context/SyncContext";
-import { ConnectivityIndicator } from "@/components/ConnectivityIndicator";
+import { AppProviders } from '@/components/AppProviders';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 export default function RootLayout({
   children,
@@ -40,29 +31,12 @@ export default function RootLayout({
   return (
     <html lang="fr" suppressHydrationWarning>
       <body className={`${inter.className} antialiased selection:bg-emerald-100 italic-none`}>
-        <AuthProvider>
-          <ProtectedRoute>
-            <ProfileProvider>
-              <ProductProvider>
-                <VoiceProvider>
-                  <NotificationProvider>
-                    <SyncProvider>
-                      <ConnectivityIndicator />
-                      <StockProvider>
-                        <HistoryProvider>
-                          <CartProvider>
-                            {children}
-                            <ConditionalAssistant />
-                          </CartProvider>
-                        </HistoryProvider>
-                      </StockProvider>
-                    </SyncProvider>
-                  </NotificationProvider>
-                </VoiceProvider>
-              </ProductProvider>
-            </ProfileProvider>
-          </ProtectedRoute>
-        </AuthProvider>
+        <AppProviders>
+          <ErrorBoundary>
+            {children}
+            <ConditionalAssistant />
+          </ErrorBoundary>
+        </AppProviders>
       </body>
     </html>
   );
