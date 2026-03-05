@@ -7,11 +7,14 @@ import { useRouter } from 'next/navigation';
 import { useAssistant } from '@/hooks/useAssistant';
 import { useHistory } from '@/hooks/useHistory';
 import { Transaction } from '@/context/HistoryContext';
+import { useAuth } from '@/context/AuthContext';
 
 export default function CarnetPage() {
     const router = useRouter();
     const { speak, handleAction, isSpeaking, isListening } = useAssistant();
     const { history, markAsPaid, markAllAsPaid } = useHistory();
+    const { user } = useAuth();
+    const name = user?.name?.split(' ')[0] || 'Marchand';
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedClient, setSelectedClient] = useState<string | null>(null);
 
@@ -33,7 +36,7 @@ export default function CarnetPage() {
 
     const handleSettle = (transactionId: string, clientName: string, amount: number) => {
         markAsPaid(transactionId);
-        speak(`C'est noté Kouamé. ${clientName} a payé ${amount} francs. C'est ajouté à ta caisse.`);
+        speak(`C'est noté ${name}. ${clientName} a payé ${amount} francs. C'est ajouté à ta caisse.`);
     };
 
     const totalGlobalDette = Object.values(debtsByClient).reduce((acc, c) => acc + c.total, 0);
@@ -110,7 +113,7 @@ export default function CarnetPage() {
                                         <button
                                             onClick={() => {
                                                 markAllAsPaid(client.name);
-                                                speak(`Parfait Kouamé. ${client.name} a tout réglé, soit ${client.total} francs.`);
+                                                speak(`Parfait ${name}. ${client.name} a tout réglé, soit ${client.total} francs.`);
                                             }}
                                             className="flex-1 bg-emerald-600 text-white px-3 md:px-4 py-3 md:py-4 rounded-xl md:rounded-2xl font-black text-[10px] md:text-xs uppercase shadow-lg shadow-emerald-100 dark:shadow-none active:scale-95 transition-all text-center"
                                         >

@@ -8,10 +8,13 @@ import { useAssistant } from '@/hooks/useAssistant';
 import { useStock } from '@/hooks/useStock';
 import { useHistory } from '@/hooks/useHistory';
 import { useProductContext } from '@/context/ProductContext';
+import { useAuth } from '@/context/AuthContext';
 
 export default function AcheterPage() {
     const router = useRouter();
     const { products } = useProductContext();
+    const { user } = useAuth();
+    const name = user?.name?.split(' ')[0] || 'Marchand';
     const { speak, handleAction, isSpeaking, isListening } = useAssistant();
     const { updateStock } = useStock();
     const { addTransaction } = useHistory();
@@ -52,7 +55,7 @@ export default function AcheterPage() {
             price: product.price
         });
         setLastOrdered(product.name);
-        speak(`Bravo Kouamé, tu as reçu ${formattedName}. C'est ajouté à ton stock.`);
+        speak(`Bravo ${name}, tu as reçu ${formattedName}. C'est ajouté à ton stock.`);
         setTimeout(() => setLastOrdered(null), 3000);
     };
 
@@ -75,7 +78,7 @@ export default function AcheterPage() {
                         <span className="font-black uppercase tracking-widest text-blue-100 text-[9px] md:text-base">Nouvel Arrivage</span>
                     </div>
                     <p className="text-sm md:text-2xl font-bold max-w-2xl leading-tight">
-                        Kouamé, quand tu reçois des produits, appuie sur le bouton <PlusCircle className="inline w-4 h-4 md:w-6 md:h-6" /> ou parle-moi simplement.
+                        {name}, quand tu reçois des produits, appuie sur le bouton <PlusCircle className="inline w-4 h-4 md:w-6 md:h-6" /> ou parle-moi simplement.
                     </p>
                 </div>
                 <Truck size={180} className="absolute -right-8 -bottom-8 text-white/10 rotate-12 hidden md:block" />

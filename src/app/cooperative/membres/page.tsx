@@ -22,7 +22,7 @@ export default function CooperativeMembers() {
     });
 
     const members = [
-        { id: 1, name: 'Kouamé Koffi', phone: '07 08 09 10 11', location: 'Bouaké', status: 'ACTIVE', sales: 125000, trend: '+12%', role: 'Champion', joins: 12 },
+        { id: 1, name: 'Koffi Yao', phone: '07 08 09 10 11', location: 'Bouaké', status: 'ACTIVE', sales: 125000, trend: '+12%', role: 'Champion', joins: 12 },
         { id: 2, name: 'Fatou Traoré', phone: '05 06 07 08 09', location: 'Yamoussoukro', status: 'ACTIVE', sales: 85000, trend: '+5%', role: 'Membre', joins: 8 },
         { id: 3, name: 'Adama Diallo', phone: '01 02 03 04 05', location: 'Bouaké', status: 'WARNING', sales: 12000, trend: '-20%', role: 'Nouveau', joins: 1 },
         { id: 4, name: 'Marie Koné', phone: '04 05 06 07 08', location: 'Abidjan', status: 'ACTIVE', sales: 310000, trend: '+25%', role: 'Expert', joins: 24 },

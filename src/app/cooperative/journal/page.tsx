@@ -13,7 +13,7 @@ export default function CooperativeJournal() {
         { id: 1, user: 'Adama Diallo', type: 'Vente', action: 'Record de vente battu', info: '+450,000 F', time: 'Il y a 12min', icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-50' },
         { id: 2, user: 'Coop Admin', type: 'Achat', action: 'Commande groupée validée', info: 'Engrais NPK (200 sacs)', time: 'Il y a 1h', icon: CheckCircle2, color: 'text-blue-500', bg: 'bg-blue-50' },
         { id: 3, user: 'Marie Koné', type: 'Membre', action: 'Nouvelle inscription', info: 'Secteur Yamoussoukro', time: 'Il y a 2h', icon: Users, color: 'text-purple-500', bg: 'bg-purple-50' },
-        { id: 4, user: 'Kouamé Koffi', type: 'Vente', action: 'Vente enregistrée', info: '150 kg de Maïs', time: 'Il y a 4h', icon: ShoppingBag, color: 'text-emerald-500', bg: 'bg-emerald-50' },
+        { id: 4, user: 'Koffi Yao', type: 'Vente', action: 'Vente enregistrée', info: '150 kg de Maïs', time: 'Il y a 4h', icon: ShoppingBag, color: 'text-emerald-500', bg: 'bg-emerald-50' },
         { id: 5, user: 'Système', type: 'Alerte', action: 'Alerte de baisse d\'activité', info: 'Secteur Bouaké', time: 'Il y a 6h', icon: AlertCircle, color: 'text-rose-500', bg: 'bg-rose-50' },
         { id: 6, user: 'Fatou Traoré', type: 'Achat', action: 'Participation achat groupé', info: 'Semences Riz', time: 'Ce matin', icon: ShoppingBag, color: 'text-blue-500', bg: 'bg-blue-50' },
         { id: 7, user: 'Bamba I.', type: 'Vente', action: 'Vente enregistrée', info: '500 kg d\'Ignames', time: 'Hier', icon: ShoppingBag, color: 'text-emerald-500', bg: 'bg-emerald-50' },

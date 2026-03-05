@@ -69,7 +69,7 @@ export default function CommercantDashboard() {
                         <Store size={20} className="sm:w-7 sm:h-7" />
                     </button>
                     <div className="min-w-0">
-                        <h1 className="text-lg sm:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none truncate">{user?.name || 'KOUAMÉ'}</h1>
+                        <h1 className="text-lg sm:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none truncate">{user?.name || 'MARCHAND'}</h1>
                         <p className="text-[8px] sm:text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-0.5 sm:mt-1 italic">Boutique Ouverte</p>
                     </div>
                 </div>

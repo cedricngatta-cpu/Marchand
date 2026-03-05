@@ -9,6 +9,7 @@ import { Mic } from 'lucide-react';
 import { useStock } from '@/hooks/useStock';
 import { useHistory } from '@/hooks/useHistory';
 import { useProductContext } from '@/context/ProductContext';
+import { useAuth } from '@/context/AuthContext';
 import { useVoice } from '@/hooks/useVoice';
 
 export default function BilanPage() {
@@ -18,6 +19,8 @@ export default function BilanPage() {
     const { stock } = useStock();
     const { history, balance, clearHistory } = useHistory();
     const { products } = useProductContext();
+    const { user } = useAuth();
+    const name = user?.name?.split(' ')[0] || 'Marchand';
 
     // Calcul du capital stock
     const stockValue = products.reduce((acc, product) => {
@@ -30,7 +33,7 @@ export default function BilanPage() {
     });
 
     const announceBilan = () => {
-        speak(`Kouamé, voici ton bilan. Tu as ${balance} francs dans la caisse, et ta marchandise vaut ${stockValue} francs.`);
+        speak(`${name}, voici ton bilan. Tu as ${balance} francs dans la caisse, et ta marchandise vaut ${stockValue} francs.`);
     };
 
     const handleReset = async () => {
@@ -74,7 +77,7 @@ export default function BilanPage() {
                         <span className="text-lg md:text-4xl font-bold ml-1 md:ml-2 text-emerald-100">F</span>
                     </div>
                     <p className="font-bold text-emerald-100 bg-emerald-700/30 p-2 md:p-6 rounded-lg md:rounded-2xl relative z-10 max-w-md text-[9px] md:text-base">
-                        C'est l'argent que tu as gagné aujourd'hui, Kouamé. Beau travail !
+                        C'est l'argent que tu as gagné aujourd'hui, {name}. Beau travail !
                     </p>
                 </motion.section>
 
@@ -247,22 +250,22 @@ export default function BilanPage() {
                                     // Low stock analysis
                                     const lowStockProducts = products.filter(p => (stock[p.id] || 0) < 10);
 
-                                    let adviceText = "Bravo Kouamé ! Ton commerce est très bien géré. On continue ensemble !";
-                                    let voiceText = "Bravo Kouamé ! Ton commerce est très bien géré. On continue ensemble !";
+                                    let adviceText = `Bravo ${name} ! Ton commerce est très bien géré. On continue ensemble !`;
+                                    let voiceText = `Bravo ${name} ! Ton commerce est très bien géré. On continue ensemble !`;
                                     let adviceColor = "text-emerald-300";
 
                                     if (totalPriceDette > totalAssets * 0.3) {
-                                        adviceText = `"Kouamé, attention ! Trop de clients te doivent de l'argent (${totalPriceDette} F). C'est risqué. Dis stop aux crédits pour un moment."`;
-                                        voiceText = `Kouamé, fais attention ! Trop de clients te doivent de l'argent. Tu as ${totalPriceDette} francs dehors. C'est plus de trente pour cent de ton capital. Tu devrais arrêter les crédits pour sécuriser ta caisse.`;
+                                        adviceText = `"${name}, attention ! Trop de clients te doivent de l'argent (${totalPriceDette} F). C'est risqué. Dis stop aux crédits pour un moment."`;
+                                        voiceText = `${name}, fais attention ! Trop de clients te doivent de l'argent. Tu as ${totalPriceDette} francs dehors. C'est plus de trente pour cent de ton capital. Tu devrais arrêter les crédits pour sécuriser ta caisse.`;
                                         adviceColor = "text-rose-300";
                                     } else if (lowStockProducts.length > 0) {
                                         const names = lowStockProducts.slice(0, 2).map(p => p.audioName).join(' et ');
-                                        adviceText = `"Kouamé, commande du stock ! Tu n'as presque plus de ${names}. Tu vends bien en ce moment, ne manque pas de marchandise."`;
-                                        voiceText = `Kouamé, ton stock baisse sur tes meilleurs produits ! Il te reste très peu de ${names}. Pense à commander dès aujourd'hui pour ne perdre aucune vente.`;
+                                        adviceText = `"${name}, commande du stock ! Tu n'as presque plus de ${names}. Tu vends bien en ce moment, ne manque pas de marchandise."`;
+                                        voiceText = `${name}, ton stock baisse sur tes meilleurs produits ! Il te reste très peu de ${names}. Pense à commander dès aujourd'hui pour ne perdre aucune vente.`;
                                         adviceColor = "text-amber-200";
                                     } else if (topProduct) {
-                                        adviceText = `"Kouamé, ${topProduct.audioName} cartonne ! Les clients en redemandent. C'est ton produit numéro 1."`;
-                                        voiceText = `Kouamé, ${topProduct.audioName} est ton produit champion ! Les clients l'adorent. Assure-toi d'en avoir toujours un gros stock car c'est lui qui fait tourner ta boutique.`;
+                                        adviceText = `"${name}, ${topProduct.audioName} cartonne ! Les clients en redemandent. C'est ton produit numéro 1."`;
+                                        voiceText = `${name}, ${topProduct.audioName} est ton produit champion ! Les clients l'adorent. Assure-toi d'en avoir toujours un gros stock car c'est lui qui fait tourner ta boutique.`;
                                         adviceColor = "text-emerald-300";
                                     }
 

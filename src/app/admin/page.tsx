@@ -294,7 +294,7 @@ export default function ProfessionalAdminPage() {
                                         <h3 className="text-emerald-100 font-black text-xs uppercase tracking-widest mb-6 border-b border-white/20 pb-4">Analyse de Succès</h3>
                                         <div className="text-7xl font-black tracking-tighter mb-4">{stats.totalSales} <span className="text-2xl opacity-50">F</span></div>
                                         <p className="text-emerald-50 bg-white/20 p-6 rounded-3xl font-bold text-sm leading-relaxed backdrop-blur-sm">
-                                            Kouamé, ton business est solide. Le ratio de recouvrement est excellent ce mois-ci.
+                                            {user?.name?.split(' ')[0] || 'Superviseur'}, ton business est solide. Le ratio de recouvrement est excellent ce mois-ci.
                                         </p>
                                     </div>
                                     <div className="mt-12 space-y-5 relative z-10">

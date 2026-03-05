@@ -45,8 +45,8 @@ export default function AdviceModal({ isOpen, onClose }: AdviceModalProps) {
         if (debtRatio > 0.3) {
             setAdvice({
                 title: "Attention aux Crédits",
-                text: `Kouamé, ${totalPriceDette} F sont dehors. C'est beaucoup ! Tu devrais essayer de récupérer cet argent avant de faire d'autres crédits.`,
-                voice: `Kouamé, fais attention. Trop de clients te doivent de l'argent. Tu as ${totalPriceDette} francs dehors. C'est plus de trente pour cent de ton capital. Tu devrais arrêter les crédits pour un moment.`,
+                text: `${name}, ${totalPriceDette} F sont dehors. C'est beaucoup ! Tu devrais essayer de récupérer cet argent avant de faire d'autres crédits.`,
+                voice: `${name}, fais attention. Trop de clients te doivent de l'argent. Tu as ${totalPriceDette} francs dehors. C'est plus de trente pour cent de ton capital. Tu devrais arrêter les crédits pour un moment.`,
                 type: 'WARNING'
             });
         } else if (lowStock.length > 0) {
@@ -54,7 +54,7 @@ export default function AdviceModal({ isOpen, onClose }: AdviceModalProps) {
             setAdvice({
                 title: "Stock à Renouveler",
                 text: `Ton stock de ${productNames} est presque fini. Commande vite pour ne pas rater des ventes !`,
-                voice: `Kouamé, ton stock baisse. Tu n'as presque plus de ${productNames}. Pense à commander chez ton livreur aujourd'hui.`,
+                voice: `${name}, ton stock baisse. Tu n'as presque plus de ${productNames}. Pense à commander chez ton livreur aujourd'hui.`,
                 type: 'INFO'
             });
         } else if (balance > 5000) {
@@ -114,7 +114,7 @@ export default function AdviceModal({ isOpen, onClose }: AdviceModalProps) {
                                         <TrendingUp size={32} />}
                             </div>
                             <div>
-                                <h2 className="text-sm font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Kouamé Assistant</h2>
+                                <h2 className="text-sm font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Ton Assistant</h2>
                                 <h3 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">{advice?.title}</h3>
                             </div>
                         </div>

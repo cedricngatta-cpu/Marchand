@@ -9,7 +9,7 @@ export default function AgentSector() {
     const router = useRouter();
 
     const boutiques = [
-        { id: 1, name: "Boutique chez Kouamé", owner: "Kouamé M.", sector: "Quartier 1", health: "HEALTHY", lastActivity: "Il y a 10 min", sales: "24.5k F" },
+        { id: 1, name: "Boutique chez Koffi", owner: "Koffi M.", sector: "Quartier 1", health: "HEALTHY", lastActivity: "Il y a 10 min", sales: "24.5k F" },
         { id: 2, name: "Ma Campagne", owner: "Fatou T.", sector: "Centreville", health: "WARNING", lastActivity: "Il y a 2 jours", sales: "3.2k F" },
         { id: 3, name: "Petit Marché", owner: "Moussa S.", sector: "Quartier 1", health: "HEALTHY", lastActivity: "Il y a 1h", sales: "12.8k F" },
         { id: 4, name: "Épicerie du Coin", owner: "Marie K.", sector: "Zone Ouest", health: "CRITICAL", lastActivity: "Semaine dernière", sales: "0 F" },
@@ -50,7 +50,7 @@ export default function AgentSector() {
                     >
                         <div className="flex items-center gap-6">
                             <div className={`p-5 rounded-[25px] ${b.health === 'HEALTHY' ? 'bg-emerald-50 text-emerald-500' :
-                                    b.health === 'WARNING' ? 'bg-amber-50 text-amber-500' : 'bg-rose-50 text-rose-500'
+                                b.health === 'WARNING' ? 'bg-amber-50 text-amber-500' : 'bg-rose-50 text-rose-500'
                                 }`}>
                                 <Store size={32} />
                             </div>
@@ -66,7 +66,7 @@ export default function AgentSector() {
                         <div className="text-right">
                             <div className="text-xl font-black text-slate-900 dark:text-white mb-1 group-hover:text-cyan-600 transition-colors">{b.sales}</div>
                             <div className={`flex items-center gap-1 justify-end font-black uppercase text-[8px] tracking-[0.2em] ${b.health === 'HEALTHY' ? 'text-emerald-500' :
-                                    b.health === 'WARNING' ? 'text-amber-500' : 'text-rose-500'
+                                b.health === 'WARNING' ? 'text-amber-500' : 'text-rose-500'
                                 }`}>
                                 {b.health === 'HEALTHY' ? <TrendingUp size={10} /> : <AlertCircle size={10} />}
                                 {b.health}

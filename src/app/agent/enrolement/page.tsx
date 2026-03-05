@@ -78,7 +78,7 @@ export default function AgentEnrollment() {
                                     <input
                                         autoFocus
                                         type="text"
-                                        placeholder="Ex: Kouamé Moussa"
+                                        placeholder="Ex: Jean Moussa"
                                         value={name}
                                         onChange={e => setName(e.target.value)}
                                         className="w-full bg-slate-50 dark:bg-slate-900 border-4 border-slate-100 dark:border-slate-800 rounded-[32px] p-6 pl-16 font-black text-2xl text-slate-900 dark:text-white outline-none focus:border-cyan-500 transition-all uppercase"

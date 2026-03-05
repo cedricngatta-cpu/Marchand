@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Package, TrendingUp, Info, Volume2, Clock, ShoppingBag, PlusCircle, MinusCircle } from 'lucide-react';
 import { useVoice } from '@/hooks/useVoice';
 import { useHistory } from '@/hooks/useHistory';
+import { useAuth } from '@/context/AuthContext';
 
 interface StockDetailModalProps {
     product: any;
@@ -19,12 +20,14 @@ export const StockDetailModal: React.FC<StockDetailModalProps> = ({
 }) => {
     const { speak } = useVoice();
     const { getProductHistory } = useHistory();
+    const { user } = useAuth();
+    const name = user?.name?.split(' ')[0] || 'Marchand';
     const capitalValue = (currentStock * product.price);
 
     const productHistory = getProductHistory(product.id).slice(0, 3);
 
     const announceCapital = () => {
-        speak(`Ce produit représente ${capitalValue} francs de ton capital marchand actuel, Kouamé.`);
+        speak(`Ce produit représente ${capitalValue} francs de ton capital marchand actuel, ${name}.`);
     };
 
     useEffect(() => {
