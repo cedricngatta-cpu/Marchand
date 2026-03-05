@@ -53,7 +53,7 @@ export default function CommercantDashboard() {
     const toggleNotifications = () => {
         setIsNotificationOpen(!isNotificationOpen);
         if (!isNotificationOpen) {
-            speak(`Kouamé, tu as ${unreadCount} nouveaux messages.`);
+            speak(`${user?.name?.split(' ')[0] || 'Marchand'}, tu as ${unreadCount} nouveaux messages.`);
         }
     };
 
@@ -94,7 +94,6 @@ export default function CommercantDashboard() {
                 </div>
             </header>
 
-            {/* Carte Caisse */}
             <motion.section
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -167,7 +166,7 @@ export default function CommercantDashboard() {
                         <h2 className="font-black uppercase text-slate-400 tracking-widest text-[9px] sm:text-xs">Conseil du Coach</h2>
                     </div>
                     <p className={`text-base sm:text-3xl font-bold leading-tight mb-4 sm:mb-8 ${!isOnline ? 'text-slate-400' : 'text-slate-800 dark:text-white'}`}>
-                        {isOnline ? '"Kouamé, j\'ai analysé tes ventes. Tu as un conseil pour booster ton commerce !"' : '"Kouamé, reconnecte-toi à internet pour recevoir ton analyse quotidienne."'}
+                        {isOnline ? `"${user?.name?.split(' ')[0] || 'Marchand'}, j'ai analysé tes ventes. Tu as un conseil pour booster ton commerce !"` : `"${user?.name?.split(' ')[0] || 'Marchand'}, reconnecte-toi à internet pour recevoir ton analyse quotidienne."`}
                     </p>
                     <button
                         onClick={() => {

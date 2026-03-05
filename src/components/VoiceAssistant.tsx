@@ -17,18 +17,18 @@ export const VoiceAssistant = () => {
     };
 
     return (
-        <div className="fixed bottom-8 left-0 right-0 flex justify-center px-4 pointer-events-none z-[300]">
+        <div className="fixed bottom-6 left-0 right-0 flex justify-center px-4 pointer-events-none z-[300]">
             <motion.button
                 onClick={handleAction}
                 whileTap={{ scale: 0.9 }}
-                className={`h-28 md:h-32 px-10 md:px-16 rounded-[40px] md:rounded-[50px] shadow-2xl text-white flex items-center gap-6 pointer-events-auto border-4 border-white dark:border-slate-900 transition-all ${isListening ? 'bg-red-500 animate-pulse' : 'bg-emerald-600 active:bg-emerald-700'}`}
+                className={`h-16 md:h-20 px-6 md:px-10 rounded-full shadow-2xl text-white flex items-center gap-4 pointer-events-auto border-[3px] border-white dark:border-slate-900 transition-all ${isListening ? 'bg-red-500 animate-pulse' : 'bg-emerald-600 active:bg-emerald-700'}`}
             >
-                <div className={`p-4 md:p-6 rounded-3xl ${isSpeaking || isListening ? 'bg-white text-emerald-600' : 'bg-white/20 text-white'} transition-all duration-300`}>
-                    <Mic size={48} fill={isSpeaking || isListening ? "currentColor" : "none"} strokeWidth={3} className="md:scale-110" />
+                <div className={`p-2.5 md:p-4 rounded-full ${isSpeaking || isListening ? 'bg-white text-emerald-600' : 'bg-white/20 text-white'} transition-all duration-300`}>
+                    <Mic size={24} fill={isSpeaking || isListening ? "currentColor" : "none"} strokeWidth={3} />
                 </div>
-                <div className="flex flex-col items-start pr-4 text-left">
-                    <span className="text-2xl md:text-3xl font-black leading-none uppercase">{isListening ? "J'ÉCOUTE..." : isSpeaking ? "JE PARLE..." : "PARLER"}</span>
-                    <span className="text-xs md:text-sm font-bold opacity-80 italic tracking-tighter">{getExampleText()}</span>
+                <div className="flex flex-col items-start pr-2 text-left">
+                    <span className="text-sm md:text-xl font-black leading-none uppercase">{isListening ? "J'ÉCOUTE..." : isSpeaking ? "JE PARLE..." : "PARLER"}</span>
+                    <span className="text-[9px] md:text-xs font-bold opacity-80 italic tracking-tighter truncate max-w-[120px] md:max-w-none">{getExampleText()}</span>
                 </div>
 
                 {/* Status Indicator */}

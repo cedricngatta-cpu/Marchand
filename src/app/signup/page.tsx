@@ -132,7 +132,7 @@ export default function SignupPage() {
                                     <input
                                         autoFocus
                                         type="text"
-                                        placeholder="Kouamé"
+                                        placeholder="Ton nom"
                                         value={name}
                                         onChange={e => setName(e.target.value)}
                                         className="w-full bg-slate-50 dark:bg-slate-900 border-[3px] border-slate-100 dark:border-slate-800 rounded-[24px] sm:rounded-[32px] p-3.5 sm:p-5 pl-11 sm:pl-14 font-black text-lg sm:text-xl text-slate-900 dark:text-white outline-none focus:border-blue-500 transition-all uppercase tracking-tight"

@@ -16,7 +16,7 @@ export default function CooperativePerformances() {
 
     const topMembers = [
         { name: 'Marie Koné', impact: 'High', points: 1250, badge: 'Or' },
-        { name: 'Kouamé Koffi', impact: 'Medium', points: 980, badge: 'Argent' },
+        { name: 'Koffi Yao', impact: 'Medium', points: 980, badge: 'Argent' },
         { name: 'Fatou Traoré', impact: 'High', points: 840, badge: 'Bronze' },
     ];
 

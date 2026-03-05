@@ -11,6 +11,7 @@ import { useCart } from '@/hooks/useCart';
 import { useStock } from '@/hooks/useStock';
 import { useHistory } from '@/hooks/useHistory';
 import { useProductContext } from '@/context/ProductContext';
+import { useAuth } from '@/context/AuthContext';
 import { Barcode } from 'lucide-react';
 
 export default function VendrePage() {
@@ -20,6 +21,7 @@ export default function VendrePage() {
     const { items, addItem, removeItem, clearCart, total } = useCart();
     const { updateStock } = useStock();
     const { addTransaction } = useHistory();
+    const { user } = useAuth();
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [isScanning, setIsScanning] = useState(false);
     const [clientName, setClientName] = useState('');
@@ -40,7 +42,7 @@ export default function VendrePage() {
 
     const handleFinish = async () => {
         if (items.length === 0) {
-            speak("Ton panier est vide, Kouamé.");
+            speak(`Ton panier est vide, ${user?.name?.split(' ')[0] || 'Marchand'}.`);
             return;
         }
 
@@ -78,7 +80,7 @@ export default function VendrePage() {
             }, 6000); // 6 seconds to let user view the receipt
         } catch (err) {
             console.error("Erreur lors de la validation :", err);
-            speak("Désolé Kouamé, il y a eu un petit problème technique.");
+            speak(`Désolé ${user?.name?.split(' ')[0] || 'Marchand'}, il y a eu un petit problème technique.`);
         }
     };
 
@@ -213,22 +215,22 @@ export default function VendrePage() {
 
             {/* Actions Fixes adaptatifs */}
             <div className="fixed bottom-6 left-0 right-0 px-4 md:px-6 flex items-center justify-center z-50 pointer-events-none">
-                <div className="flex items-center gap-3 md:gap-4 w-full max-w-2xl pointer-events-auto">
+                <div className="flex items-center gap-2 md:gap-4 w-full max-w-xl pointer-events-auto">
                     {/* Micro */}
                     <button
                         onClick={handleAction}
-                        className={`h-20 w-20 md:h-28 md:w-28 shrink-0 rounded-full flex items-center justify-center shadow-2xl border-4 border-white dark:border-slate-900 transition-all ${isListening ? 'bg-red-500 scale-105 md:scale-110 animate-pulse' : isSpeaking ? 'bg-blue-500' : 'bg-amber-500 active:bg-amber-600'}`}
+                        className={`h-14 w-14 md:h-20 md:w-20 shrink-0 rounded-full flex items-center justify-center shadow-2xl border-[3px] border-white dark:border-slate-900 transition-all ${isListening ? 'bg-red-500 scale-105 animate-pulse' : isSpeaking ? 'bg-blue-500' : 'bg-amber-500 active:bg-amber-600'}`}
                     >
-                        <Mic size={28} className="md:w-8 md:h-8 md:scale-110" color="white" fill={isListening || isSpeaking ? "white" : "none"} />
+                        <Mic size={20} className="md:w-7 md:h-7" color="white" fill={isListening || isSpeaking ? "white" : "none"} />
                     </button>
 
                     {/* Bouton Valider */}
                     <button
                         onClick={handleFinish}
-                        className="flex-1 h-20 md:h-28 bg-emerald-600 rounded-[24px] md:rounded-[45px] shadow-2xl text-white flex items-center justify-center gap-2 md:gap-3 border-4 border-white dark:border-slate-900 active:bg-emerald-700 transition-all overflow-hidden"
+                        className="flex-1 h-14 md:h-20 bg-emerald-600 rounded-[20px] md:rounded-[32px] shadow-2xl text-white flex items-center justify-center gap-2 border-[3px] border-white dark:border-slate-900 active:bg-emerald-700 transition-all overflow-hidden"
                     >
-                        <CheckCircle2 size={24} className="md:w-7 md:h-7 md:scale-110" />
-                        <span className="text-lg md:text-3xl font-black uppercase tracking-tighter">C'EST FINI</span>
+                        <CheckCircle2 size={18} className="md:w-6 md:h-6" />
+                        <span className="text-sm md:text-xl font-black uppercase tracking-tighter">C'EST FINI</span>
                     </button>
                 </div>
             </div>

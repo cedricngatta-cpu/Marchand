@@ -16,7 +16,7 @@ export const useAssistant = () => {
     const { history, addTransaction, markAsPaid, markAllAsPaid } = useHistory();
     const { addItem, removeItem } = useCart();
 
-    const userName = user?.name || 'Kouamé';
+    const userName = user?.name?.split(' ')[0] || 'Marchand';
     const userRole = user?.role || 'MERCHANT';
 
     const formatSpeech = (audioName: string, quantity: number) => {
@@ -36,7 +36,6 @@ export const useAssistant = () => {
     const processCommand = useCallback((text: string) => {
         const lowerText = text.toLowerCase();
 
-        // 1. Actions Globales (Sans produit nécessaire)
         if (lowerText.includes('payé') || lowerText.includes('payer') || lowerText.includes('paye') || lowerText.includes('réglé') || lowerText.includes('donne')) {
             // "Fatou a payé" ou "Fatou a tout payé" ou "Fatou a réglé"
             let clientMatch = lowerText.match(/([a-zA-Záàâäãåçéèêëíìîïñóòôöõúùûüýÿ]+)\s+(?:a|me)\s+(?:tout\s+|enfin\s+)?(?:payé|payer|paye|réglé)/i);
@@ -53,10 +52,10 @@ export const useAssistant = () => {
                 if (clientDebts.length > 0) {
                     const totalPaid = clientDebts.reduce((acc, t) => acc + t.price, 0);
                     markAllAsPaid(clientName);
-                    speak(`C'est fait Kouamé. J'ai marqué que ${clientName} a tout payé, soit ${totalPaid} francs.`);
+                    speak(`C'est fait ${userName}. J'ai marqué que ${clientName} a tout payé, soit ${totalPaid} francs.`);
                     return;
                 } else {
-                    speak(`Kouamé, je ne trouve pas de dette pour ${clientName}.`);
+                    speak(`${userName}, je ne trouve pas de dette pour ${clientName}.`);
                     return;
                 }
             } else if (lowerText.includes('payé') || lowerText.includes('paye')) {
@@ -73,7 +72,7 @@ export const useAssistant = () => {
         });
 
         if (!product) {
-            speak("Désolé Kouamé, je n'ai pas compris de quel produit tu parles.");
+            speak(`Désolé ${userName}, je n'ai pas compris de quel produit tu parles.`);
             return;
         }
 
@@ -163,7 +162,7 @@ export const useAssistant = () => {
             } else {
                 const currentStock = getStockLevel(finalProduct.id);
                 if (currentStock < quantity) {
-                    speak(`Attention Kouamé, tu n'as pas assez de ${finalProduct.audioName} en stock pour en vendre autant.`);
+                    speak(`Attention ${userName}, tu n'as pas assez de ${finalProduct.audioName} en stock pour en vendre autant.`);
                     return;
                 }
                 updateStock(finalProduct.id, -quantity);
@@ -215,9 +214,9 @@ export const useAssistant = () => {
             '/cooperative': `Bonjour ${userName}. Prêt pour piloter ta coopérative ?`,
             '/vendre': `Enregistre tes ventes ici, ${userName}. Choisis tes produits.`,
             '/stock': `C'est ton stock, ${userName}. Regarde ce qu'il te reste en boutique.`,
-            '/bilan': `Voici ton bilan, ${userName}. Regarde ton argent et tes ventes.`,
-            '/acheter': `Ici ${userName}, tu peux noter ce que les livreurs t'apportent.`,
-            '/carnet': `C'est ton carnet de dettes, ${userName}. Voici ceux qui ne t'ont pas encore payé.`
+            '/bilan': `Voici ton bilan, ${user?.name?.split(' ')[0] || 'Marchand'}. Regarde ton argent et tes ventes.`,
+            '/acheter': `Ici ${user?.name?.split(' ')[0] || 'Marchand'}, tu peux noter ce que les livreurs t'apportent.`,
+            '/carnet': `C'est ton carnet de dettes, ${user?.name?.split(' ')[0] || 'Marchand'}. Voici ceux qui ne t'ont pas encore payé.`
         };
 
         const timer = setTimeout(() => {

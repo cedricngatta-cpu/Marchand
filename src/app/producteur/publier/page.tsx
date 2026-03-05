@@ -15,7 +15,7 @@ export default function PublierProduit() {
     const [category, setCategory] = useState('RECOLTE');
 
     const handlePublish = () => {
-        speak(`Bravo Kouamé, ton stock de ${name} est maintenant visible par tous les marchands.`);
+        speak(`Bravo, ton stock de ${name} est maintenant visible par tous les marchands.`);
         router.push('/producteur');
     };
 
@@ -106,7 +106,7 @@ export default function PublierProduit() {
             {/* Hint */}
             <div className="mt-8 md:mt-12 p-6 md:p-8 bg-amber-50 dark:bg-amber-900/10 rounded-[32px] md:rounded-[40px] border-2 border-amber-100 dark:border-amber-900/20 text-center">
                 <p className="text-amber-800 dark:text-amber-200 font-bold italic leading-relaxed text-sm md:text-base">
-                    "Kouamé, une fois publié, tout le secteur verra que ton maïs est disponible !"
+                    "Une fois publié, tout le secteur verra que ton produit est disponible !"
                 </p>
             </div>
         </main>

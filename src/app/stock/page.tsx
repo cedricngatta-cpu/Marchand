@@ -11,9 +11,11 @@ import { useAssistant } from '@/hooks/useAssistant';
 import { useStock } from '@/hooks/useStock';
 import { useHistory } from '@/hooks/useHistory';
 import { useProductContext } from '@/context/ProductContext';
+import { useAuth } from '@/context/AuthContext';
 
 export default function StockPage() {
     const router = useRouter();
+    const { user } = useAuth();
     const { products, addProduct } = useProductContext();
     const { speak, handleAction, isSpeaking, isListening } = useAssistant();
     const { stock, updateStock } = useStock();
@@ -48,7 +50,7 @@ export default function StockPage() {
             return `${qty} ${simpleName}`;
         }).join(', ');
 
-        speak(`Kouamé, tu as : ${stockItems} en stock.`);
+        speak(`${user?.name?.split(' ')[0] || 'Marchand'}, tu as : ${stockItems} en stock.`);
     };
 
 
@@ -104,7 +106,7 @@ export default function StockPage() {
                 <motion.div
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    onClick={() => speak(`Kouamé, il y a ${lowStockCount} produits presque finis.`)}
+                    onClick={() => speak(`${user?.name?.split(' ')[0] || 'Marchand'}, il y a ${lowStockCount} produits presque finis.`)}
                     className="bg-red-50 dark:bg-red-900/10 border-2 md:border-4 border-red-500 p-3 md:p-6 rounded-[20px] md:rounded-[32px] mb-4 flex items-center gap-2 md:gap-4 text-red-700 dark:text-red-400 shadow-lg shadow-red-200 dark:shadow-none cursor-pointer"
                 >
                     <div className="bg-red-500 p-1.5 md:p-3 rounded-full text-white shrink-0">

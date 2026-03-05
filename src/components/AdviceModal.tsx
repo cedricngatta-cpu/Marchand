@@ -7,6 +7,7 @@ import { useVoice } from '@/hooks/useVoice';
 import { useHistory } from '@/hooks/useHistory';
 import { useStock } from '@/hooks/useStock';
 import { useProductContext } from '@/context/ProductContext';
+import { useAuth } from '@/context/AuthContext';
 
 interface AdviceModalProps {
     isOpen: boolean;
@@ -14,19 +15,22 @@ interface AdviceModalProps {
 }
 
 export default function AdviceModal({ isOpen, onClose }: AdviceModalProps) {
+    const { user } = useAuth();
     const { speak } = useVoice();
     const { history, balance } = useHistory();
     const { stock } = useStock();
     const { products } = useProductContext();
     const [advice, setAdvice] = useState<{ text: string; voice: string; type: 'SUCCESS' | 'WARNING' | 'INFO'; title: string } | null>(null);
 
-    useEffect(() => {
-        if (isOpen) {
-            generateAdvice();
-        }
-    }, [isOpen]);
-
     const generateAdvice = () => {
+        const name = user?.name?.split(' ')[0] || 'Marchand';
+        const advicesLine = [
+            { title: "Gérer le Stock", text: "Tes ventes de riz augmentent. Pense à commander plus de stock pour ne pas en manquer.", voice: `"${name}, tes ventes de riz augmentent. Pense à commander plus de stock pour ne pas en manquer."`, type: 'INFO' as const },
+            { title: "Nouveaux Produits", text: "Beaucoup de clients demandent du savon. C'est le moment d'en proposer plus.", voice: `"${name}, beaucoup de clients demandent du savon. C'est le moment d'en proposer plus."`, type: 'INFO' as const },
+            { title: "Bonne Gestion", text: "Tu as réduit tes dettes de 15% cette semaine. Excellent travail !", voice: `"${name}, tu as réduit tes dettes de 15% cette semaine. Excellent travail !"`, type: 'SUCCESS' as const },
+            { title: "Opportunité", text: "Le marché central baisse ses prix sur l'huile. Profites-en pour ton stock.", voice: `"${name}, le marché central baisse ses prix sur l'huile. Profites-en pour ton stock."`, type: 'INFO' as const }
+        ];
+
         // Logic for financial advice
         const stockValue = products.reduce((acc, p) => acc + (p.price * (stock[p.id] || 0)), 0);
         const totalPriceDette = history.filter(t => t.status === 'DETTE').reduce((acc, t) => acc + t.price, 0);
@@ -57,18 +61,21 @@ export default function AdviceModal({ isOpen, onClose }: AdviceModalProps) {
             setAdvice({
                 title: "Bonne Gestion",
                 text: "Tu as bien vendu aujourd'hui ! Tu as assez d'argent en caisse pour tes futures commandes.",
-                voice: "Bravo Kouamé ! Ta caisse est bien remplie aujourd'hui. Tu gères très bien ton commerce.",
+                voice: `Bravo ${name} ! Ta caisse est bien remplie aujourd'hui. Tu gères très bien ton commerce.`,
                 type: 'SUCCESS'
             });
         } else {
-            setAdvice({
-                title: "Conseil du Jour",
-                text: "Continue de bien noter chaque vente pour voir ton bénéfice grimper !",
-                voice: "Kouamé, continue comme ça. Note bien chaque vente et chaque dépense pour devenir un grand commerçant.",
-                type: 'INFO'
-            });
+            // Fallback to a random advice if no specific condition is met
+            const randomIndex = Math.floor(Math.random() * advicesLine.length);
+            setAdvice(advicesLine[randomIndex]);
         }
     };
+
+    useEffect(() => {
+        if (isOpen) {
+            generateAdvice();
+        }
+    }, [isOpen, user, history, balance, stock, products]); // Added dependencies
 
     if (!isOpen) return null;
 
@@ -99,8 +106,8 @@ export default function AdviceModal({ isOpen, onClose }: AdviceModalProps) {
                     <div className="p-8 md:p-12">
                         <div className="flex items-center gap-4 mb-8">
                             <div className={`p-4 rounded-2xl ${advice?.type === 'WARNING' ? 'bg-rose-100 text-rose-600' :
-                                    advice?.type === 'SUCCESS' ? 'bg-emerald-100 text-emerald-600' :
-                                        'bg-blue-100 text-blue-600'
+                                advice?.type === 'SUCCESS' ? 'bg-emerald-100 text-emerald-600' :
+                                    'bg-blue-100 text-blue-600'
                                 }`}>
                                 {advice?.type === 'WARNING' ? <AlertCircle size={32} /> :
                                     advice?.type === 'SUCCESS' ? <CheckCircle2 size={32} /> :

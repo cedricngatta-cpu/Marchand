@@ -161,7 +161,7 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="py-12 px-6 border-t border-slate-100 dark:border-slate-800 text-center">
-        <p className="text-slate-400 font-bold text-sm uppercase tracking-widest">© 2026 Inclusion Marchand • Fait avec ❤️ pour Kouamé</p>
+        <p className="text-slate-400 font-bold text-sm uppercase tracking-widest">© 2026 Inclusion Marchand • Fait avec ❤️ pour les Marchands</p>
       </footer>
     </main>
   );
