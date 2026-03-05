@@ -100,8 +100,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 .single();
 
             if (error || !data) {
-                // Mode démo si Supabase n'est pas encore configuré ou pour le test
-                if (phoneNumber === '0000' && pin === '0000') {
+                // Mode démo UNIQUEMENT en développement
+                if (process.env.NODE_ENV === 'development' && phoneNumber === '0000' && pin === '0000') {
                     const demoUser: User = { id: 'admin-001', phoneNumber: '0000', role: 'SUPERVISOR', name: 'Superviseur' };
                     handleAuthSuccess(demoUser);
                     return true;

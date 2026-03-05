@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useProfileContext } from '@/context/ProfileContext';
 import { db, LocalTransaction } from '@/lib/db';
@@ -214,7 +214,7 @@ export const HistoryProvider: React.FC<{ children: React.ReactNode }> = ({ child
         return history.filter(t => t.timestamp >= today);
     };
 
-    const balance = history.reduce((acc, t) => {
+    const balance = useMemo(() => history.reduce((acc, t) => {
         if (t.type === 'VENTE' && t.status !== 'DETTE') {
             return acc + t.price;
         }
@@ -222,7 +222,7 @@ export const HistoryProvider: React.FC<{ children: React.ReactNode }> = ({ child
             return acc - t.price;
         }
         return acc;
-    }, 0);
+    }, 0), [history]);
 
     return (
         <HistoryContext.Provider value={{

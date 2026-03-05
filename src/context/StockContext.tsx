@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useProductContext } from './ProductContext';
 import { useProfileContext } from './ProfileContext';
@@ -36,8 +36,9 @@ export const StockProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         // 2. Refresh depuis Supabase si online
         if (navigator.onLine) {
             const { data, error } = await supabase
-                .from('stock') // Nom de la table Supabase
-                .select('*');
+                .from('stock')
+                .select('*')
+                .eq('store_id', activeProfile.id); // ✅ Filtre par boutique
 
             if (data) {
                 for (const s of data) {
