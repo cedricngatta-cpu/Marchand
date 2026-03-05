@@ -16,62 +16,60 @@ export default function ProducteurDashboard() {
     };
 
     return (
-        <main className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-6 max-w-5xl mx-auto pb-32 md:pb-48">
-            <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 pt-4">
-                <div>
-                    <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none">Espace Producteur</h1>
-                    <p className="text-amber-600 font-bold mt-2 sm:mt-1 uppercase tracking-widest text-[10px] sm:text-xs">Bienvenue, {user?.name}</p>
+        <main className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 sm:p-6 max-w-5xl mx-auto pb-24 sm:pb-48">
+            <header className="flex flex-row justify-between items-center gap-4 mb-6 sm:mb-8 pt-2 sm:pt-4">
+                <div className="min-w-0">
+                    <h1 className="text-xl sm:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none truncate">Espace Producteur</h1>
+                    <p className="text-amber-600 font-bold mt-1 uppercase tracking-widest text-[9px] sm:text-xs truncate">Salut, {user?.name}</p>
                 </div>
-                <div className="flex items-center gap-3 w-full sm:w-auto">
+                <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                     <button
                         onClick={() => router.push('/profil')}
-                        className="flex-1 sm:flex-none p-3 h-12 md:h-14 bg-white dark:bg-slate-900 rounded-2xl md:rounded-full shadow-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 transition-colors border-2 border-slate-100 dark:border-slate-800 flex items-center justify-center"
+                        className="p-2.5 sm:p-3 h-10 sm:h-14 bg-white dark:bg-slate-900 rounded-xl sm:rounded-full shadow-sm text-slate-600 dark:text-slate-300 active:scale-95 transition-all border-2 border-slate-100 dark:border-slate-800 flex items-center justify-center shrink-0"
                     >
-                        <User size={24} />
-                        <span className="sm:hidden ml-2 font-black uppercase text-xs">Profil</span>
+                        <User size={20} className="sm:w-6 sm:h-6" />
                     </button>
                     <button
                         onClick={handleLogout}
-                        className="flex-1 sm:flex-none p-3 h-12 md:h-14 bg-white dark:bg-slate-900 rounded-2xl md:rounded-full shadow-sm text-rose-500 hover:bg-rose-50 transition-colors border-2 border-slate-100 dark:border-slate-800 flex items-center justify-center"
+                        className="p-2.5 sm:p-3 h-10 sm:h-14 bg-white dark:bg-slate-900 rounded-xl sm:rounded-full shadow-sm text-rose-500 active:scale-95 transition-all border-2 border-slate-100 dark:border-slate-800 flex items-center justify-center shrink-0"
                     >
-                        <LogOut size={24} />
-                        <span className="sm:hidden ml-2 font-black uppercase text-xs">Quitter</span>
+                        <LogOut size={20} className="sm:w-6 sm:h-6" />
                     </button>
                 </div>
             </header>
 
-            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6">
                 <motion.button
                     whileTap={{ scale: 0.98 }}
                     onClick={() => router.push('/producteur/stock')}
-                    className="bg-amber-500 p-6 md:p-8 rounded-[24px] md:rounded-[32px] text-white flex flex-col items-center justify-center gap-3 md:gap-4 shadow-xl shadow-amber-200 dark:shadow-none relative overflow-hidden min-h-[140px] md:min-h-[180px]"
+                    className="bg-amber-500 p-5 sm:p-8 rounded-[20px] sm:rounded-[32px] text-white flex flex-col items-center justify-center gap-3 sm:gap-4 shadow-xl active:scale-95 transition-all min-h-[110px] sm:min-h-[180px]"
                 >
-                    <Package className="w-8 h-8 md:w-12 md:h-12" />
-                    <span className="font-black uppercase tracking-widest text-xs md:text-xl text-center">Mon Stock</span>
+                    <Package size={28} className="sm:w-12 sm:h-12" />
+                    <span className="font-black uppercase tracking-widest text-[10px] sm:text-xl text-center">Stock</span>
                 </motion.button>
                 <motion.button
                     whileTap={{ scale: 0.98 }}
                     onClick={() => router.push('/producteur/commandes')}
-                    className="bg-blue-500 p-6 md:p-8 rounded-[24px] md:rounded-[32px] text-white flex flex-col items-center justify-center gap-3 md:gap-4 shadow-xl shadow-blue-200 dark:shadow-none relative overflow-hidden min-h-[140px] md:min-h-[180px]"
+                    className="bg-blue-500 p-5 sm:p-8 rounded-[20px] sm:rounded-[32px] text-white flex flex-col items-center justify-center gap-3 sm:gap-4 shadow-xl active:scale-95 transition-all min-h-[110px] sm:min-h-[180px]"
                 >
-                    <ShoppingCart className="w-8 h-8 md:w-12 md:h-12" />
-                    <span className="font-black uppercase tracking-widest text-xs md:text-xl text-center">Commandes</span>
+                    <ShoppingCart size={28} className="sm:w-12 sm:h-12" />
+                    <span className="font-black uppercase tracking-widest text-[10px] sm:text-xl text-center">Commandes</span>
                 </motion.button>
                 <motion.button
                     whileTap={{ scale: 0.98 }}
                     onClick={() => router.push('/producteur/livraisons')}
-                    className="bg-emerald-500 p-6 md:p-8 rounded-[24px] md:rounded-[32px] text-white flex flex-col items-center justify-center gap-3 md:gap-4 shadow-xl shadow-emerald-200 dark:shadow-none relative overflow-hidden min-h-[140px] md:min-h-[180px]"
+                    className="bg-emerald-500 p-5 sm:p-8 rounded-[20px] sm:rounded-[32px] text-white flex flex-col items-center justify-center gap-3 sm:gap-4 shadow-xl active:scale-95 transition-all min-h-[110px] sm:min-h-[180px]"
                 >
-                    <Truck className="w-8 h-8 md:w-12 md:h-12" />
-                    <span className="font-black uppercase tracking-widest text-xs md:text-xl text-center">Livraisons</span>
+                    <Truck size={28} className="sm:w-12 sm:h-12" />
+                    <span className="font-black uppercase tracking-widest text-[10px] sm:text-xl text-center">Livraisons</span>
                 </motion.button>
                 <motion.button
                     whileTap={{ scale: 0.98 }}
                     onClick={() => router.push('/producteur/revenus')}
-                    className="bg-purple-500 p-6 md:p-8 rounded-[24px] md:rounded-[32px] text-white flex flex-col items-center justify-center gap-3 md:gap-4 shadow-xl shadow-purple-200 dark:shadow-none relative overflow-hidden min-h-[140px] md:min-h-[180px]"
+                    className="bg-purple-500 p-5 sm:p-8 rounded-[20px] sm:rounded-[32px] text-white flex flex-col items-center justify-center gap-3 sm:gap-4 shadow-xl active:scale-95 transition-all min-h-[110px] sm:min-h-[180px]"
                 >
-                    <TrendingUp className="w-8 h-8 md:w-12 md:h-12" />
-                    <span className="font-black uppercase tracking-widest text-xs md:text-xl text-center">Revenus</span>
+                    <TrendingUp size={28} className="sm:w-12 sm:h-12" />
+                    <span className="font-black uppercase tracking-widest text-[10px] sm:text-xl text-center">Revenus</span>
                 </motion.button>
             </div>
 
@@ -79,14 +77,14 @@ export default function ProducteurDashboard() {
             <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={() => router.push('/producteur/publier')}
-                className="w-full bg-slate-900 dark:bg-emerald-600 text-white p-6 md:p-8 rounded-[24px] md:rounded-[32px] flex items-center justify-center gap-4 md:gap-6 shadow-2xl active:scale-95 transition-all"
+                className="w-full bg-slate-900 dark:bg-emerald-600 text-white p-5 sm:p-8 rounded-[20px] sm:rounded-[32px] flex items-center justify-center gap-4 sm:gap-6 shadow-xl active:scale-95 transition-all"
             >
-                <div className="bg-white/20 p-3 md:p-4 rounded-xl md:rounded-2xl shrink-0">
-                    <PlusSquare className="w-8 h-8 md:w-10 md:h-10" />
+                <div className="bg-white/20 p-2.5 sm:p-4 rounded-lg sm:rounded-2xl shrink-0">
+                    <PlusSquare className="w-7 h-7 sm:w-10 sm:h-10" />
                 </div>
                 <div className="text-left">
-                    <span className="block font-black uppercase tracking-widest text-lg md:text-2xl leading-none">Publier un Produit</span>
-                    <span className="text-[10px] md:text-xs font-bold opacity-60 uppercase tracking-widest italic mt-1 block">Vendre ma récolte</span>
+                    <span className="block font-black uppercase tracking-widest text-sm sm:text-2xl leading-none">Publier un Produit</span>
+                    <span className="text-[8px] sm:text-xs font-bold opacity-60 uppercase tracking-widest italic mt-1 block">Vendre ma récolte</span>
                 </div>
             </motion.button>
         </main>

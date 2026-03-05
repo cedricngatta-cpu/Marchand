@@ -16,31 +16,27 @@ export default function CooperativeDashboard() {
     };
 
     return (
-        <main className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-6 max-w-6xl mx-auto pb-32 md:pb-48">
-            <header className="flex justify-between items-center mb-8">
-                <div>
-                    <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none">Espace Coopérative</h1>
-                    <p className="text-purple-600 font-bold mt-1 uppercase tracking-widest text-[10px]">Tableau de Bord Stratégique</p>
+        <main className="min-h-screen bg-slate-50 dark:bg-slate-950 p-3 sm:p-6 max-w-6xl mx-auto pb-24 sm:pb-32">
+            <header className="flex justify-between items-center mb-6 sm:mb-8 pt-2 sm:pt-4">
+                <div className="min-w-0">
+                    <h1 className="text-xl sm:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none truncate">Coopérative</h1>
+                    <p className="text-purple-600 font-bold mt-0.5 sm:mt-1 uppercase tracking-widest text-[8px] sm:text-[10px]">Dashboard Stratégique</p>
                 </div>
-                <div className="flex items-center gap-4">
-                    <div className="hidden md:block text-right">
-                        <p className="text-[10px] font-black uppercase text-slate-400 leading-none mb-1">Responsable</p>
-                        <p className="font-bold text-slate-900 dark:text-white">{user?.name}</p>
-                    </div>
+                <div className="flex items-center gap-2 sm:gap-4 shrink-0">
                     <button
                         onClick={() => router.push('/profil')}
-                        className="p-3 md:p-4 bg-white dark:bg-slate-900 rounded-2xl shadow-sm text-slate-600 dark:text-slate-300 border-2 border-slate-100 dark:border-slate-800 active:scale-95 transition-all"
+                        className="p-2 sm:p-3 bg-white dark:bg-slate-900 rounded-xl sm:rounded-2xl shadow-sm text-slate-600 dark:text-slate-300 border-2 border-slate-100 dark:border-slate-800 active:scale-95 transition-all"
                     >
-                        <User size={24} className="w-5 h-5 md:w-6 md:h-6" />
+                        <User size={20} className="sm:w-6 sm:h-6" />
                     </button>
-                    <button onClick={handleLogout} className="p-3 md:p-4 bg-white dark:bg-slate-900 rounded-2xl shadow-sm text-rose-500 hover:bg-rose-50 transition-colors border-2 border-slate-100 dark:border-slate-800 active:scale-95">
-                        <LogOut size={24} className="w-5 h-5 md:w-6 md:h-6" />
+                    <button onClick={handleLogout} className="p-2 sm:p-3 bg-white dark:bg-slate-900 rounded-xl sm:rounded-2xl shadow-sm text-rose-500 hover:bg-rose-50 transition-colors border-2 border-slate-100 dark:border-slate-800 active:scale-95">
+                        <LogOut size={20} className="sm:w-6 sm:h-6" />
                     </button>
                 </div>
             </header>
 
             {/* Quick Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-10">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-10">
                 {[
                     { label: 'Membres', value: '1,240', color: 'text-purple-600', bg: 'bg-purple-100/50', trend: '+12' },
                     { label: 'Volume (T)', value: '450', color: 'text-emerald-600', bg: 'bg-emerald-100/50', trend: '+24' },
@@ -52,85 +48,73 @@ export default function CooperativeDashboard() {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.1 }}
-                        className={`${stat.bg} p-4 md:p-6 rounded-[24px] md:rounded-[32px] border-2 border-white dark:border-slate-800 shadow-sm relative overflow-hidden`}
+                        className={`${stat.bg} p-3 sm:p-6 rounded-[20px] sm:rounded-[32px] border-[1.5px] border-white dark:border-slate-800 shadow-sm relative overflow-hidden`}
                     >
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 block mb-2">{stat.label}</span>
-                        <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-1">
-                            <span className={`text-xl md:text-3xl font-black ${stat.color}`}>{stat.value}</span>
-                            <span className="text-[8px] font-black bg-white/50 dark:bg-slate-800/50 px-2 py-1 rounded-full text-slate-600 uppercase tracking-tighter">{stat.trend}</span>
+                        <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-slate-500 block mb-1 sm:mb-2">{stat.label}</span>
+                        <div className="flex items-end justify-between gap-1">
+                            <span className={`text-lg sm:text-3xl font-black ${stat.color}`}>{stat.value}</span>
+                            <span className="text-[7px] font-black bg-white/50 dark:bg-slate-800/50 px-1.5 py-0.5 rounded-full text-slate-600 uppercase tracking-tighter">{stat.trend}</span>
                         </div>
                     </motion.div>
                 ))}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 mb-6 sm:mb-10">
                 {/* Main Action Hub (Left 2 Columns) */}
-                <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="lg:col-span-2 grid grid-cols-2 gap-3 sm:gap-6">
                     <motion.button
                         whileTap={{ scale: 0.98 }}
                         onClick={() => router.push('/cooperative/membres')}
-                        className="bg-purple-600 p-6 md:p-8 rounded-[32px] md:rounded-[40px] text-white flex flex-col items-center justify-center gap-4 md:gap-6 shadow-xl shadow-purple-100 dark:shadow-none relative overflow-hidden group min-h-[200px] md:min-h-[240px] border-b-8 border-purple-800 hover:translate-y-[-4px] transition-all"
+                        className="bg-purple-600 p-4 sm:p-8 rounded-[24px] sm:rounded-[40px] text-white flex flex-col items-center justify-center gap-3 sm:gap-6 shadow-xl active:scale-95 transition-all min-h-[140px] sm:min-h-[240px] border-b-4 sm:border-b-8 border-purple-800 relative overflow-hidden group"
                     >
-                        <div className="bg-white/20 p-4 md:p-6 rounded-[24px] md:rounded-[30px] group-hover:scale-110 group-hover:bg-white/30 transition-all">
-                            <Users size={56} className="w-10 h-10 md:w-14 md:h-14" strokeWidth={2.5} />
+                        <div className="bg-white/20 p-2.5 sm:p-6 rounded-xl sm:rounded-[30px] group-hover:scale-110 transition-all">
+                            <Users size={32} className="sm:w-14 sm:h-14" strokeWidth={2.5} />
                         </div>
                         <div className="text-center">
-                            <span className="block font-black uppercase tracking-[0.2em] text-xl md:text-2xl">Membres</span>
-                            <p className="text-[10px] font-bold opacity-60 uppercase tracking-widest mt-1">Gestion & Secteurs</p>
-                        </div>
-                        <div className="absolute -right-4 -bottom-4 opacity-5 rotate-12 group-hover:rotate-0 transition-transform duration-500">
-                            <Users size={160} />
+                            <span className="block font-black uppercase tracking-[0.1em] sm:tracking-[0.2em] text-xs sm:text-2xl">Membres</span>
+                            <p className="text-[8px] font-bold opacity-60 uppercase tracking-widest mt-0.5 hidden sm:block">Gestion & Secteurs</p>
                         </div>
                     </motion.button>
 
                     <motion.button
                         whileTap={{ scale: 0.98 }}
                         onClick={() => router.push('/cooperative/achats')}
-                        className="bg-emerald-600 p-6 md:p-8 rounded-[32px] md:rounded-[40px] text-white flex flex-col items-center justify-center gap-4 md:gap-6 shadow-xl shadow-emerald-100 dark:shadow-none relative overflow-hidden group min-h-[200px] md:min-h-[240px] border-b-8 border-emerald-800 hover:translate-y-[-4px] transition-all"
+                        className="bg-emerald-600 p-4 sm:p-8 rounded-[24px] sm:rounded-[40px] text-white flex flex-col items-center justify-center gap-3 sm:gap-6 shadow-xl active:scale-95 transition-all min-h-[140px] sm:min-h-[240px] border-b-4 sm:border-b-8 border-emerald-800 relative overflow-hidden group"
                     >
-                        <div className="bg-white/20 p-4 md:p-6 rounded-[24px] md:rounded-[30px] group-hover:scale-110 group-hover:bg-white/30 transition-all">
-                            <ShoppingBag size={56} className="w-10 h-10 md:w-14 md:h-14" strokeWidth={2.5} />
+                        <div className="bg-white/20 p-2.5 sm:p-6 rounded-xl sm:rounded-[30px] group-hover:scale-110 transition-all">
+                            <ShoppingBag size={32} className="sm:w-14 sm:h-14" strokeWidth={2.5} />
                         </div>
                         <div className="text-center">
-                            <span className="block font-black uppercase tracking-[0.2em] text-xl md:text-2xl">Achats Groupés</span>
-                            <p className="text-[10px] font-bold opacity-60 uppercase tracking-widest mt-1">Logistique & Stocks</p>
-                        </div>
-                        <div className="absolute -right-4 -bottom-4 opacity-5 rotate-12 group-hover:rotate-0 transition-transform duration-500">
-                            <ShoppingBag size={160} />
+                            <span className="block font-black uppercase tracking-[0.1em] sm:tracking-[0.2em] text-xs sm:text-2xl">Achats</span>
+                            <p className="text-[8px] font-bold opacity-60 uppercase tracking-widest mt-0.5 hidden sm:block">Logistique & Stocks</p>
                         </div>
                     </motion.button>
 
                     <motion.button
                         whileTap={{ scale: 0.98 }}
                         onClick={() => router.push('/cooperative/analyses')}
-                        className="bg-blue-600 p-6 md:p-8 rounded-[32px] md:rounded-[40px] text-white flex flex-col items-center justify-center gap-4 md:gap-6 shadow-xl shadow-blue-100 dark:shadow-none relative overflow-hidden group min-h-[200px] md:min-h-[240px] border-b-8 border-blue-800 hover:translate-y-[-4px] transition-all"
+                        className="bg-blue-600 p-4 sm:p-8 rounded-[24px] sm:rounded-[40px] text-white flex flex-col items-center justify-center gap-3 sm:gap-6 shadow-xl active:scale-95 transition-all min-h-[140px] sm:min-h-[240px] border-b-4 sm:border-b-8 border-blue-800 relative overflow-hidden group"
                     >
-                        <div className="bg-white/20 p-4 md:p-6 rounded-[24px] md:rounded-[30px] group-hover:scale-110 group-hover:bg-white/30 transition-all">
-                            <BarChart3 size={56} className="w-10 h-10 md:w-14 md:h-14" strokeWidth={2.5} />
+                        <div className="bg-white/20 p-2.5 sm:p-6 rounded-xl sm:rounded-[30px] group-hover:scale-110 transition-all">
+                            <BarChart3 size={32} className="sm:w-14 sm:h-14" strokeWidth={2.5} />
                         </div>
                         <div className="text-center">
-                            <span className="block font-black uppercase tracking-[0.2em] text-xl md:text-2xl">Analyses</span>
-                            <p className="text-[10px] font-bold opacity-60 uppercase tracking-widest mt-1">Tendances & Marchés</p>
-                        </div>
-                        <div className="absolute -right-4 -bottom-4 opacity-5 rotate-12 group-hover:rotate-0 transition-transform duration-500">
-                            <BarChart3 size={160} />
+                            <span className="block font-black uppercase tracking-[0.1em] sm:tracking-[0.2em] text-xs sm:text-2xl">Analyses</span>
+                            <p className="text-[8px] font-bold opacity-60 uppercase tracking-widest mt-0.5 hidden sm:block">Tendances & Marchés</p>
                         </div>
                     </motion.button>
 
                     <motion.button
                         whileTap={{ scale: 0.98 }}
                         onClick={() => router.push('/cooperative/performances')}
-                        className="bg-amber-500 p-6 md:p-8 rounded-[32px] md:rounded-[40px] text-white flex flex-col items-center justify-center gap-4 md:gap-6 shadow-xl shadow-amber-100 dark:shadow-none relative overflow-hidden group min-h-[200px] md:min-h-[240px] border-b-8 border-amber-600 hover:translate-y-[-4px] transition-all"
+                        className="bg-amber-500 p-4 sm:p-8 rounded-[24px] sm:rounded-[40px] text-white flex flex-col items-center justify-center gap-3 sm:gap-6 shadow-xl active:scale-95 transition-all min-h-[140px] sm:min-h-[240px] border-b-4 sm:border-b-8 border-amber-600 relative overflow-hidden group"
                     >
-                        <div className="bg-white/20 p-4 md:p-6 rounded-[24px] md:rounded-[30px] group-hover:scale-110 group-hover:bg-white/30 transition-all">
-                            <TrendingUp size={56} className="w-10 h-10 md:w-14 md:h-14" strokeWidth={2.5} />
+                        <div className="bg-white/20 p-2.5 sm:p-6 rounded-xl sm:rounded-[30px] group-hover:scale-110 transition-all">
+                            <TrendingUp size={32} className="sm:w-14 sm:h-14" strokeWidth={2.5} />
                         </div>
                         <div className="text-center">
-                            <span className="block font-black uppercase tracking-[0.2em] text-xl md:text-2xl">Performances</span>
-                            <p className="text-[10px] font-bold opacity-60 uppercase tracking-widest mt-1">Impact & Objectifs</p>
-                        </div>
-                        <div className="absolute -right-4 -bottom-4 opacity-5 rotate-12 group-hover:rotate-0 transition-transform duration-500">
-                            <TrendingUp size={160} />
+                            <span className="block font-black uppercase tracking-[0.1em] sm:tracking-[0.2em] text-xs sm:text-2xl">Objectifs</span>
+                            <p className="text-[8px] font-bold opacity-60 uppercase tracking-widest mt-0.5 hidden sm:block">Impact & Suivi</p>
                         </div>
                     </motion.button>
                 </div>

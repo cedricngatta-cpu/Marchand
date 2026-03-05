@@ -58,35 +58,35 @@ export default function CommercantDashboard() {
     };
 
     return (
-        <main className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 pb-24 md:pb-32 max-w-5xl mx-auto">
+        <main className="min-h-screen bg-slate-50 dark:bg-slate-950 p-3 sm:p-4 pb-20 sm:pb-32 max-w-5xl mx-auto">
             {/* Header */}
-            <header className="flex justify-between items-center mb-6 md:mb-8 pt-4">
-                <div className="flex items-center gap-3">
+            <header className="flex justify-between items-center mb-4 sm:mb-8 pt-2 sm:pt-4">
+                <div className="flex items-center gap-2 sm:gap-3">
                     <button
                         onClick={() => router.push('/profil')}
-                        className="w-12 h-12 md:w-14 md:h-14 bg-emerald-600 rounded-xl md:rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-200 dark:shadow-none active:scale-95 transition-transform shrink-0"
+                        className="w-10 h-10 sm:w-14 sm:h-14 bg-emerald-600 rounded-lg sm:rounded-2xl flex items-center justify-center text-white shadow-lg active:scale-95 transition-transform shrink-0"
                     >
-                        <Store size={24} className="md:w-7 md:h-7" />
+                        <Store size={20} className="sm:w-7 sm:h-7" />
                     </button>
                     <div className="min-w-0">
-                        <h1 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none truncate">{user?.name || 'KOUAMÉ'}</h1>
-                        <p className="text-[9px] md:text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1 italic">Boutique Ouverte</p>
+                        <h1 className="text-lg sm:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none truncate">{user?.name || 'KOUAMÉ'}</h1>
+                        <p className="text-[8px] sm:text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-0.5 sm:mt-1 italic">Boutique Ouverte</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-2 md:gap-3 shrink-0">
+                <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                     <button
                         onClick={() => setIsAdviceOpen(true)}
-                        className="w-10 h-10 md:w-12 md:h-12 bg-amber-400 text-slate-900 rounded-full flex items-center justify-center shadow-md active:scale-95 transition-transform"
+                        className="w-9 h-9 sm:w-12 sm:h-12 bg-amber-400 text-slate-900 rounded-full flex items-center justify-center shadow-md active:scale-95 transition-transform"
                     >
-                        <TrendingUp size={20} className="md:w-6 md:h-6" />
+                        <TrendingUp size={18} className="sm:w-6 sm:h-6" />
                     </button>
                     <button
                         onClick={toggleNotifications}
-                        className="w-10 h-10 md:w-12 md:h-12 bg-white dark:bg-slate-800 rounded-full shadow-md flex items-center justify-center text-slate-600 dark:text-slate-300 relative transition-transform active:scale-95"
+                        className="w-9 h-9 sm:w-12 sm:h-12 bg-white dark:bg-slate-800 rounded-full shadow-md flex items-center justify-center text-slate-600 dark:text-slate-300 relative transition-transform active:scale-95"
                     >
-                        <Bell size={20} className="md:w-6 md:h-6" />
+                        <Bell size={18} className="sm:w-6 sm:h-6" />
                         {unreadCount > 0 && (
-                            <span className="absolute -top-1 -right-1 w-5 h-5 md:w-6 md:h-6 bg-rose-500 text-white text-[9px] md:text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white dark:border-slate-800">
+                            <span className="absolute -top-1 -right-1 w-4 h-4 sm:w-6 sm:h-6 bg-rose-500 text-white text-[8px] sm:text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white dark:border-slate-800">
                                 {unreadCount}
                             </span>
                         )}
@@ -99,17 +99,17 @@ export default function CommercantDashboard() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 onClick={() => speak(`Tu as ${balance} francs dans ta caisse.`)}
-                className="bg-emerald-600 p-6 md:p-8 rounded-[32px] md:rounded-[40px] text-white shadow-xl shadow-emerald-100 dark:shadow-none mb-8 md:mb-10 relative overflow-hidden cursor-pointer"
+                className="bg-emerald-600 p-4 sm:p-8 rounded-[24px] sm:rounded-[40px] text-white shadow-xl shadow-emerald-100 dark:shadow-none mb-6 sm:mb-10 relative overflow-hidden cursor-pointer"
             >
                 <div className="relative z-10">
-                    <span className="text-emerald-100 font-black text-xs md:text-sm uppercase tracking-widest">Ma Caisse Aujourd'hui</span>
-                    <div className="text-4xl md:text-7xl font-black tracking-tighter mt-1">{balance} <span className="text-xl md:text-2xl opacity-80">F</span></div>
+                    <span className="text-emerald-100 font-black text-[10px] sm:text-sm uppercase tracking-widest">Ma Caisse Aujourd'hui</span>
+                    <div className="text-3xl sm:text-7xl font-black tracking-tighter mt-0.5 sm:mt-1">{balance} <span className="text-base sm:text-2xl opacity-80">F</span></div>
                 </div>
-                <TrendingUp size={120} className="md:w-[160px] md:h-[160px] absolute -right-6 -bottom-6 md:-right-8 md:-bottom-8 text-white/10 rotate-12" />
+                <TrendingUp size={100} className="sm:w-[160px] sm:h-[160px] absolute -right-4 -bottom-4 sm:-right-8 sm:-bottom-8 text-white/10 rotate-12" />
             </motion.section>
 
             {/* Grille Menu */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4 md:gap-6 mb-8">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-6 mb-6">
                 {menuItems.map((item) => {
                     const requiresOnline = ['marche', 'conseils'].includes(item.id);
                     const isDisabled = requiresOnline && !isOnline;
@@ -125,17 +125,17 @@ export default function CommercantDashboard() {
                                 }
                                 router.push(item.path);
                             }}
-                            className={`${isDisabled ? 'bg-slate-200 dark:bg-slate-800 cursor-not-allowed' : item.color} p-5 md:p-8 rounded-[28px] md:rounded-[35px] text-white flex flex-col items-center justify-center gap-3 md:gap-4 shadow-xl shadow-slate-200 dark:shadow-none transition-all border-b-4 border-black/10 min-h-[140px] md:min-h-[180px] relative`}
+                            className={`${isDisabled ? 'bg-slate-200 dark:bg-slate-800 cursor-not-allowed' : item.color} p-4 sm:p-8 rounded-[22px] sm:rounded-[35px] text-white flex flex-col items-center justify-center gap-2 sm:gap-4 shadow-xl active:scale-95 transition-all border-b-4 border-black/10 min-h-[110px] sm:min-h-[180px] relative`}
                         >
                             {!isOnline && requiresOnline && (
-                                <div className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-slate-900/40 p-1.5 rounded-full text-white/80">
-                                    <WifiOff size={14} />
+                                <div className="absolute top-2 right-2 sm:top-4 sm:right-4 bg-slate-900/40 p-1 rounded-full text-white/80">
+                                    <WifiOff size={12} />
                                 </div>
                             )}
-                            <div className={`${isDisabled ? 'bg-slate-400/20 text-slate-400' : 'bg-white/20'} p-3 md:p-4 rounded-xl md:rounded-2xl`}>
-                                <item.icon size={28} className="md:w-9 md:h-9 md:scale-125" />
+                            <div className={`${isDisabled ? 'bg-slate-400/20 text-slate-400' : 'bg-white/20'} p-2.5 sm:p-4 rounded-lg sm:rounded-2xl`}>
+                                <item.icon size={24} className="sm:w-9 sm:h-9 sm:scale-125" />
                             </div>
-                            <span className={`font-black uppercase tracking-widest text-[11px] md:text-lg text-center leading-tight ${isDisabled ? 'text-slate-400' : 'text-white'}`}>{item.name}</span>
+                            <span className={`font-black uppercase tracking-widest text-[10px] sm:text-lg text-center leading-tight ${isDisabled ? 'text-slate-400' : 'text-white'}`}>{item.name}</span>
                         </motion.button>
                     );
                 })}
@@ -144,12 +144,12 @@ export default function CommercantDashboard() {
                 <motion.button
                     whileTap={{ scale: 0.95 }}
                     onClick={() => router.push('/scanner')}
-                    className="col-span-2 md:col-span-1 bg-slate-900 p-5 md:p-8 rounded-[28px] md:rounded-[35px] text-white flex sm:flex-col items-center justify-center gap-4 md:gap-6 shadow-xl min-h-[80px] sm:min-h-[140px] md:min-h-[180px]"
+                    className="col-span-2 sm:col-span-1 bg-slate-900 p-4 sm:p-8 rounded-[22px] sm:rounded-[35px] text-white flex sm:flex-col items-center justify-center gap-3 sm:gap-6 shadow-xl min-h-[60px] sm:min-h-[180px]"
                 >
-                    <div className="bg-white/10 p-3 md:p-4 rounded-xl md:rounded-2xl">
-                        <Scan size={28} className="md:w-9 md:h-9 md:scale-125" />
+                    <div className="bg-white/10 p-2.5 sm:p-4 rounded-lg sm:rounded-2xl">
+                        <Scan size={24} className="sm:w-9 sm:h-9 sm:scale-125" />
                     </div>
-                    <span className="font-black uppercase tracking-widest text-sm md:text-lg">Scanner</span>
+                    <span className="font-black uppercase tracking-widest text-xs sm:text-lg">Scanner</span>
                 </motion.button>
             </div>
 
@@ -157,16 +157,16 @@ export default function CommercantDashboard() {
             <motion.section
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                className={`rounded-[32px] md:rounded-[40px] p-8 md:p-12 border-2 shadow-sm relative overflow-hidden mb-8 transition-colors ${!isOnline ? 'bg-slate-100 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800' : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800'}`}
+                className={`rounded-[24px] sm:rounded-[40px] p-6 sm:p-12 border-2 shadow-sm relative overflow-hidden mb-6 sm:mb-8 transition-colors ${!isOnline ? 'bg-slate-100 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800' : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800'}`}
             >
                 <div className="relative z-10 max-w-2xl text-center sm:text-left">
-                    <div className={`flex items-center justify-center sm:justify-start gap-3 mb-4`}>
-                        <div className={`p-2 rounded-xl ${!isOnline ? 'bg-slate-200 dark:bg-slate-800 text-slate-400' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-600'}`}>
-                            {isOnline ? <TrendingUp size={24} /> : <WifiOff size={24} />}
+                    <div className={`flex items-center justify-center sm:justify-start gap-2.5 mb-3`}>
+                        <div className={`p-1.5 rounded-lg ${!isOnline ? 'bg-slate-200 dark:bg-slate-800 text-slate-400' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-600'}`}>
+                            {isOnline ? <TrendingUp size={20} /> : <WifiOff size={20} />}
                         </div>
-                        <h2 className="font-black uppercase text-slate-400 tracking-widest text-[10px] md:text-xs">Conseil du Coach</h2>
+                        <h2 className="font-black uppercase text-slate-400 tracking-widest text-[9px] sm:text-xs">Conseil du Coach</h2>
                     </div>
-                    <p className={`text-lg md:text-3xl font-bold leading-tight mb-6 md:mb-8 ${!isOnline ? 'text-slate-400' : 'text-slate-800 dark:text-white'}`}>
+                    <p className={`text-base sm:text-3xl font-bold leading-tight mb-4 sm:mb-8 ${!isOnline ? 'text-slate-400' : 'text-slate-800 dark:text-white'}`}>
                         {isOnline ? '"Kouamé, j\'ai analysé tes ventes. Tu as un conseil pour booster ton commerce !"' : '"Kouamé, reconnecte-toi à internet pour recevoir ton analyse quotidienne."'}
                     </p>
                     <button
@@ -178,12 +178,12 @@ export default function CommercantDashboard() {
                             setIsAdviceOpen(true);
                         }}
                         disabled={!isOnline}
-                        className={`w-full sm:w-auto px-8 py-4 md:py-5 rounded-2xl md:rounded-[25px] font-black uppercase text-xs md:text-sm tracking-widest transition-all border-b-4 ${!isOnline ? 'bg-slate-300 dark:bg-slate-800 text-slate-500 border-slate-400 dark:border-slate-700 cursor-not-allowed' : 'bg-amber-400 text-slate-900 shadow-lg shadow-amber-400/20 active:scale-95 border-amber-600'}`}
+                        className={`w-full sm:w-auto px-6 py-3.5 sm:py-5 rounded-xl sm:rounded-[25px] font-black uppercase text-[10px] sm:text-sm tracking-widest transition-all border-b-4 ${!isOnline ? 'bg-slate-300 dark:bg-slate-800 text-slate-500 border-slate-400 dark:border-slate-700 cursor-not-allowed' : 'bg-amber-400 text-slate-900 shadow-lg shadow-amber-400/20 active:scale-95 border-amber-600'}`}
                     >
                         {isOnline ? 'Voir le conseil' : 'Hors-ligne'}
                     </button>
                 </div>
-                {isOnline && <TrendingUp size={160} className="md:w-[200px] md:h-[200px] absolute -right-8 -bottom-8 md:-right-12 md:-bottom-12 text-slate-50 dark:text-slate-800/50 rotate-12 hidden sm:block" />}
+                {isOnline && <TrendingUp size={120} className="sm:w-[200px] sm:h-[200px] absolute -right-6 -bottom-6 sm:-right-12 sm:-bottom-12 text-slate-50 dark:text-slate-800/50 rotate-12 hidden sm:block" />}
             </motion.section>
 
 

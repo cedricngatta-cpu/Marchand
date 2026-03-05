@@ -179,103 +179,103 @@ export default function ProfessionalAdminPage() {
 
     return (
         <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-950 flex flex-col md:flex-row">
-            {/* Design Harmonisé : Sidebar devient un menu flottant organique */}
-            <aside className="w-full md:w-80 p-6 md:fixed md:h-screen z-40 bg-transparent">
-                <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl h-full rounded-[40px] shadow-2xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-800 flex flex-col p-8">
-                    <div className="flex items-center gap-4 mb-12">
-                        <div className="bg-emerald-600 p-3 rounded-2xl shadow-lg shadow-emerald-200">
-                            <LayoutDashboard size={28} className="text-white" />
+            {/* Sidebar devient compact sur desktop, escamotable sur mobile */}
+            <aside className="w-full md:w-72 p-4 sm:p-6 md:fixed md:h-screen z-40 bg-transparent shrink-0">
+                <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl h-full rounded-[32px] sm:rounded-[40px] shadow-2xl border border-slate-100 dark:border-slate-800 flex flex-col p-6 sm:p-8">
+                    <div className="flex items-center gap-3 sm:gap-4 mb-8 sm:mb-12">
+                        <div className="bg-emerald-600 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl shadow-lg">
+                            <LayoutDashboard size={22} className="text-white sm:w-7 sm:h-7" />
                         </div>
                         <div>
-                            <span className="font-black text-2xl uppercase tracking-tighter text-slate-900 dark:text-white block leading-none">ADMIN</span>
-                            <span className="text-emerald-600 font-bold text-xs uppercase tracking-widest">Supervision</span>
+                            <span className="font-black text-xl sm:text-2xl uppercase tracking-tighter text-slate-900 dark:text-white block leading-none">ADMIN</span>
+                            <span className="text-emerald-600 font-bold text-[9px] sm:text-xs uppercase tracking-widest">Supervision</span>
                         </div>
                     </div>
 
-                    <nav className="space-y-3 flex-1">
+                    <nav className="space-y-2 sm:space-y-3 flex-1 overflow-y-auto">
                         <SidebarLink active={activeTab === 'OVERVIEW'} onClick={() => setActiveTab('OVERVIEW')} icon={TrendingUp} label="Bilan Global" color="emerald" />
                         <SidebarLink active={activeTab === 'USERS'} onClick={() => setActiveTab('USERS')} icon={Users} label="Utilisateurs" color="blue" />
                         <SidebarLink active={activeTab === 'PROFILES'} onClick={() => setActiveTab('PROFILES')} icon={Store} label="Commerçants" color="emerald" />
                         <SidebarLink active={activeTab === 'PRODUCTS'} onClick={() => setActiveTab('PRODUCTS')} icon={Package} label="Catalogue" color="amber" />
                         <SidebarLink active={activeTab === 'HISTORY'} onClick={() => setActiveTab('HISTORY')} icon={HistoryIcon} label="Historique" color="purple" />
-                        <SidebarLink active={activeTab === 'NOTIFICATIONS'} onClick={() => setActiveTab('NOTIFICATIONS')} icon={Bell} label="Notifications" color="rose" />
+                        <SidebarLink active={activeTab === 'NOTIFICATIONS'} onClick={() => setActiveTab('NOTIFICATIONS')} icon={Bell} label="Alertes" color="rose" />
                         <SidebarLink active={activeTab === 'SYSTEM'} onClick={() => setActiveTab('SYSTEM')} icon={Settings} label="Système" color="rose" />
                     </nav>
 
                     <button
                         onClick={() => router.push('/')}
-                        className="mt-8 flex items-center justify-center gap-3 bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-100 py-5 rounded-3xl font-black uppercase text-xs tracking-widest text-rose-500 transition-all border border-rose-100 dark:border-rose-800 active:scale-95"
+                        className="mt-6 sm:mt-8 flex items-center justify-center gap-3 bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-100 py-4 sm:py-5 rounded-2xl sm:rounded-3xl font-black uppercase text-[10px] sm:text-xs tracking-widest text-rose-500 transition-all border border-rose-100 dark:border-rose-800 active:scale-95"
                     >
-                        <LogOut size={18} /> Déconnexion
+                        <LogOut size={16} className="sm:w-5 sm:h-5" /> Déconnexion
                     </button>
                 </div>
             </aside>
 
             {/* Content Area */}
-            <main className="flex-1 md:ml-80 p-6 md:p-10 pb-32">
+            <main className="flex-1 md:ml-72 p-4 sm:p-6 md:p-10 pb-32">
                 {/* Profile Header Card */}
-                <header className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 mb-12">
-                    <div className="flex items-center gap-6">
-                        <div className="w-20 h-20 bg-emerald-600 rounded-[32px] flex items-center justify-center shadow-xl shadow-emerald-100">
-                            <Store size={40} className="text-white" />
+                <header className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 sm:gap-6 mb-8 sm:mb-12">
+                    <div className="flex items-center gap-4 sm:gap-6">
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 bg-emerald-600 rounded-[24px] sm:rounded-[32px] flex items-center justify-center shadow-lg">
+                            <Store size={32} className="text-white sm:w-10 sm:h-10" />
                         </div>
                         <div>
-                            <p className="text-emerald-600 font-black text-[10px] uppercase tracking-[0.2em] mb-1">Espace Supervisor</p>
-                            <h1 className="text-4xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">
-                                {activeTab === 'OVERVIEW' && "Bilan des Ventes"}
-                                {activeTab === 'USERS' && "Comptes Utilisateurs"}
-                                {activeTab === 'PROFILES' && "Gestion Marchands"}
-                                {activeTab === 'PRODUCTS' && "Nos Produits"}
-                                {activeTab === 'HISTORY' && "Le Journal"}
-                                {activeTab === 'NOTIFICATIONS' && "Alertes & Messages"}
-                                {activeTab === 'SYSTEM' && "Configuration"}
+                            <p className="text-emerald-600 font-black text-[8px] sm:text-[10px] uppercase tracking-[0.2em] mb-1">Superviseur</p>
+                            <h1 className="text-2xl sm:text-4xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-tight">
+                                {activeTab === 'OVERVIEW' && "Bilan Global"}
+                                {activeTab === 'USERS' && "Utilisateurs"}
+                                {activeTab === 'PROFILES' && "Marchands"}
+                                {activeTab === 'PRODUCTS' && "Catalogue"}
+                                {activeTab === 'HISTORY' && "Journal"}
+                                {activeTab === 'NOTIFICATIONS' && "Alertes"}
+                                {activeTab === 'SYSTEM' && "Système"}
                             </h1>
                         </div>
                     </div>
 
-                    <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl px-8 py-5 rounded-[40px] shadow-xl shadow-slate-100 dark:shadow-none border border-slate-100 dark:border-slate-800 flex items-center gap-4 group">
-                        <div className="w-12 h-12 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-400">
-                            <UserCircle size={28} />
+                    <div className="hidden sm:flex bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl px-6 py-4 rounded-[32px] shadow-sm border border-slate-100 dark:border-slate-800 items-center gap-3">
+                        <div className="w-10 h-10 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-400">
+                            <UserCircle size={24} />
                         </div>
                         <div>
-                            <span className="text-[10px] font-black text-slate-300 dark:text-slate-600 uppercase tracking-widest block leading-none mb-1">Profil Actif</span>
-                            <span className="font-black text-slate-900 dark:text-white uppercase tracking-tight">{activeProfile?.name || '---'}</span>
+                            <span className="text-[8px] font-black text-slate-300 dark:text-slate-600 uppercase tracking-widest block leading-none mb-1">Actif</span>
+                            <span className="font-black text-slate-900 dark:text-white uppercase tracking-tight text-xs">{activeProfile?.name || '---'}</span>
                         </div>
                     </div>
                 </header>
 
                 <AnimatePresence mode="wait">
                     {activeTab === 'OVERVIEW' && (
-                        <motion.div key="overview" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-10">
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <motion.div key="overview" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-6 sm:space-y-10">
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
                                 <StatCard label="Caisse" value={`${stats.totalSales} F`} icon={DollarSign} color="emerald" />
                                 <StatCard label="Dettes" value={`${stats.outstandingDebt} F`} icon={AlertCircle} color="rose" />
                                 <StatCard label="Stock" value={`${stats.inventoryValue} F`} icon={Package} color="blue" />
                                 <StatCard label="Volume" value={`${stats.totalVolume} F`} icon={TrendingUp} color="amber" />
                             </div>
 
-                            <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
+                            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 sm:gap-10">
                                 {/* Recent Activity with Merchant-style rows */}
-                                <section className="bg-white dark:bg-slate-900 p-10 rounded-[48px] shadow-2xl shadow-slate-100 dark:shadow-none border border-slate-50 dark:border-slate-800">
-                                    <h3 className="font-black text-slate-400 text-xs uppercase tracking-widest mb-8 text-center md:text-left">Derniers Mouvements</h3>
-                                    <div className="space-y-5">
+                                <section className="bg-white dark:bg-slate-900 p-6 sm:p-10 rounded-[32px] sm:rounded-[48px] shadow-sm border border-slate-50 dark:border-slate-800">
+                                    <h3 className="font-black text-slate-400 text-[10px] sm:text-xs uppercase tracking-widest mb-6 sm:mb-8 text-center md:text-left">Derniers Mouvements</h3>
+                                    <div className="space-y-4 sm:space-y-5">
                                         {(globalHistory.length > 0 ? globalHistory : history).slice(0, 5).map(t => (
-                                            <div key={t.id} className="flex items-center justify-between p-6 bg-slate-50 dark:bg-slate-800 rounded-[32px] transition-all hover:scale-[1.02] border border-transparent hover:border-emerald-100">
-                                                <div className="flex items-center gap-5">
-                                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${t.type === 'VENTE' ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-100 text-blue-600'}`}>
-                                                        {t.type === 'VENTE' ? <Plus size={20} /> : <ArrowLeft size={20} />}
+                                            <div key={t.id} className="flex items-center justify-between p-4 sm:p-6 bg-slate-50 dark:bg-slate-800 rounded-2xl sm:rounded-[32px] transition-all hover:scale-[1.01] border border-transparent">
+                                                <div className="flex items-center gap-3 sm:gap-5">
+                                                    <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center ${t.type === 'VENTE' ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-100 text-blue-600'}`}>
+                                                        {t.type === 'VENTE' ? <Plus size={18} /> : <ArrowLeft size={18} />}
                                                     </div>
                                                     <div>
-                                                        <span className="font-black text-slate-900 dark:text-white uppercase text-base block">{t.productName}</span>
+                                                        <span className="font-black text-slate-900 dark:text-white uppercase text-sm sm:text-base block truncate max-w-[120px] sm:max-w-none">{t.productName}</span>
                                                         <div className="flex items-center gap-2">
-                                                            <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{new Date(t.timestamp).toLocaleDateString()}</span>
+                                                            <span className="text-[8px] sm:text-[10px] text-slate-400 font-black uppercase tracking-widest">{new Date(t.timestamp).toLocaleDateString()}</span>
                                                             {t.merchantName && (
-                                                                <span className="text-[10px] text-emerald-600 font-black uppercase tracking-widest">• {t.merchantName}</span>
+                                                                <span className="text-[8px] sm:text-[10px] text-emerald-600 font-black uppercase tracking-widest truncate max-w-[80px]">• {t.merchantName}</span>
                                                             )}
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <span className={`text-xl font-black ${t.type === 'VENTE' ? 'text-emerald-600' : 'text-blue-600'}`}>
+                                                <span className={`text-base sm:text-xl font-black ${t.type === 'VENTE' ? 'text-emerald-600' : 'text-blue-600'}`}>
                                                     {t.type === 'VENTE' ? '+' : ''}{t.price} F
                                                 </span>
                                             </div>

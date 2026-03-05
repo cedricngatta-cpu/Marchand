@@ -54,38 +54,38 @@ export const SecurityLock: React.FC = () => {
                 <motion.div
                     initial={{ scale: 0.8, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    className="w-16 h-16 bg-emerald-600 rounded-[22px] flex items-center justify-center shadow-2xl shadow-emerald-100 mb-6"
+                    className="w-12 h-12 sm:w-16 sm:h-16 bg-emerald-600 rounded-[18px] sm:rounded-[22px] flex items-center justify-center shadow-lg sm:shadow-2xl shadow-emerald-100 mb-4 sm:mb-6"
                 >
-                    <Lock size={28} className="text-white" />
+                    <Lock size={20} className="text-white sm:w-7 sm:h-7" />
                 </motion.div>
 
-                <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter mb-1 text-center leading-tight">
+                <h2 className="text-lg sm:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter mb-1 text-center leading-tight">
                     Application<br />Vérrouillée
                 </h2>
-                <p className="text-slate-400 font-bold text-[9px] uppercase tracking-[0.25em] mb-10 text-center">
+                <p className="text-slate-400 font-bold text-[8px] sm:text-[9px] uppercase tracking-[0.25em] mb-6 sm:mb-10 text-center">
                     Pin de <span className="text-slate-900 dark:text-white font-black">{user?.name}</span>
                 </p>
 
                 {/* PIN Dots with shake effect on error */}
                 <motion.div
                     animate={error ? { x: [-10, 10, -10, 10, 0] } : {}}
-                    className="flex gap-6 mb-12"
+                    className="flex gap-4 sm:gap-6 mb-8 sm:mb-12"
                 >
                     {[0, 1, 2, 3].map(i => (
                         <div
                             key={i}
-                            className={`w-6 h-6 rounded-full border-4 transition-all duration-100 ${pin.length > i ? 'bg-emerald-600 border-emerald-600 scale-125' : 'bg-transparent border-slate-200'}`}
+                            className={`w-4 h-4 sm:w-6 sm:h-6 rounded-full border-[3px] sm:border-4 transition-all duration-100 ${pin.length > i ? 'bg-emerald-600 border-emerald-600 scale-125' : 'bg-transparent border-slate-200'}`}
                         />
                     ))}
                 </motion.div>
 
                 {/* Wave-style Number Pad */}
-                <div className="grid grid-cols-3 gap-5 w-full max-w-[280px] mb-8">
+                <div className="grid grid-cols-3 gap-3 sm:gap-5 w-full max-w-[260px] sm:max-w-[280px] mb-6 sm:mb-8">
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
                         <button
                             key={num}
                             onClick={() => handlePinPress(num.toString())}
-                            className="aspect-square bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-[20px] flex items-center justify-center text-2xl font-black text-slate-900 dark:text-white shadow-sm active:scale-90 active:bg-emerald-50 transition-all cursor-pointer touch-none"
+                            className="aspect-square bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-[16px] sm:rounded-[20px] flex items-center justify-center text-xl sm:text-2xl font-black text-slate-900 dark:text-white shadow-sm active:scale-90 active:bg-emerald-50 transition-all cursor-pointer touch-none"
                         >
                             {num}
                         </button>
@@ -94,12 +94,12 @@ export const SecurityLock: React.FC = () => {
                         onClick={() => logout()}
                         className="aspect-square flex flex-col items-center justify-center text-rose-300 hover:text-rose-500 transition-colors gap-1 active:scale-95"
                     >
-                        <LogOut size={20} />
-                        <span className="text-[7px] font-black uppercase tracking-widest">Sortir</span>
+                        <LogOut size={18} className="sm:w-5 sm:h-5" />
+                        <span className="text-[6px] sm:text-[7px] font-black uppercase tracking-widest">Sortir</span>
                     </button>
                     <button
                         onClick={() => handlePinPress('0')}
-                        className="aspect-square bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-[20px] flex items-center justify-center text-2xl font-black text-slate-900 dark:text-white shadow-sm active:scale-90 active:bg-emerald-50 transition-all cursor-pointer touch-none"
+                        className="aspect-square bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-[16px] sm:rounded-[20px] flex items-center justify-center text-xl sm:text-2xl font-black text-slate-900 dark:text-white shadow-sm active:scale-90 active:bg-emerald-50 transition-all cursor-pointer touch-none"
                     >
                         0
                     </button>
@@ -107,7 +107,7 @@ export const SecurityLock: React.FC = () => {
                         onClick={handleDelete}
                         className="aspect-square flex items-center justify-center text-slate-300 hover:text-slate-900 transition-colors active:scale-90"
                     >
-                        <Delete size={28} />
+                        <Delete size={24} className="sm:w-7 sm:h-7" />
                     </button>
                 </div>
 

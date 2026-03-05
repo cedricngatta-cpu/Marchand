@@ -95,22 +95,22 @@ export default function VendrePage() {
     };
 
     return (
-        <main className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 pb-48 md:pb-64 lg:pb-40">
+        <main className="min-h-screen bg-slate-50 dark:bg-slate-950 p-3 pb-32 md:pb-64 lg:pb-40">
             {/* Header Retour */}
-            <header className="flex items-center gap-4 mb-6 pt-2">
+            <header className="flex items-center gap-3 mb-4 pt-1">
                 <button
                     onClick={() => router.push('/')}
-                    className="w-10 h-10 md:w-12 md:h-12 bg-white dark:bg-slate-800 rounded-full shadow-md flex items-center justify-center text-slate-600 dark:text-slate-300 active:scale-95 transition-all"
+                    className="w-9 h-9 md:w-12 md:h-12 bg-white dark:bg-slate-800 rounded-full shadow-md flex items-center justify-center text-slate-600 dark:text-slate-300 active:scale-95 transition-all"
                 >
-                    <ChevronLeft size={24} className="md:w-8 md:h-8" />
+                    <ChevronLeft size={20} className="md:w-8 md:h-8" />
                 </button>
-                <h1 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Vendre</h1>
+                <h1 className="text-lg md:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Vendre</h1>
 
                 <button
                     onClick={() => setIsScanning(true)}
-                    className="ml-auto flex items-center gap-2 bg-blue-600 text-white px-4 py-2 md:py-2.5 rounded-xl md:rounded-2xl font-black text-[10px] md:text-xs uppercase shadow-lg shadow-blue-100 dark:shadow-none active:scale-95 transition-all"
+                    className="ml-auto flex items-center gap-2 bg-blue-600 text-white px-3 py-1.5 md:py-2.5 rounded-lg md:rounded-2xl font-black text-[9px] md:text-xs uppercase shadow-lg shadow-blue-100 dark:shadow-none active:scale-95 transition-all"
                 >
-                    <Barcode size={16} className="md:w-[18px] md:h-[18px]" />
+                    <Barcode size={14} className="md:w-[18px] md:h-[18px]" />
                     <span className="hidden sm:inline">Scanner</span>
                     <span className="sm:hidden">SCAN</span>
                 </button>
@@ -128,17 +128,17 @@ export default function VendrePage() {
             {/* Conteneur principal adaptatif */}
             <div className="flex flex-col lg:flex-row gap-6 md:gap-8 items-start max-w-7xl mx-auto">
                 {/* Section Gauche : Résumé Panier (Visuel) - Fixé sur Desktop */}
-                <section className="w-full lg:w-96 lg:sticky lg:top-24 bg-white dark:bg-slate-900 rounded-[24px] md:rounded-[32px] p-5 md:p-6 shadow-sm border border-slate-100 dark:border-slate-800">
-                    <div className="flex justify-between items-center mb-4 gap-2">
-                        <span className="font-bold text-slate-400 uppercase tracking-widest text-[10px] md:text-sm whitespace-nowrap">Panier</span>
+                <section className="w-full lg:w-96 lg:sticky lg:top-24 bg-white dark:bg-slate-900 rounded-[24px] md:rounded-[32px] p-4 md:p-6 shadow-sm border border-slate-100 dark:border-slate-800">
+                    <div className="flex justify-between items-center mb-3 gap-2">
+                        <span className="font-bold text-slate-400 uppercase tracking-widest text-[9px] md:text-sm whitespace-nowrap">Panier</span>
                         {clientName && (
-                            <div className="bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-3 py-1 rounded-full text-[9px] md:text-xs font-black uppercase flex items-center gap-1 min-w-0">
+                            <div className="bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full text-[8px] md:text-xs font-black uppercase flex items-center gap-1 min-w-0">
                                 <span className="truncate">Client: {clientName}</span>
                             </div>
                         )}
                         {items.length > 0 && (
-                            <button onClick={clearCart} className="text-red-500 font-bold text-[10px] md:text-sm flex items-center gap-1 text-right whitespace-nowrap shrink-0">
-                                <Trash2 size={14} className="md:w-4 md:h-4" /> VIDER
+                            <button onClick={clearCart} className="text-red-500 font-bold text-[9px] md:text-sm flex items-center gap-1 text-right whitespace-nowrap shrink-0">
+                                <Trash2 size={12} className="md:w-4 md:h-4" /> VIDER
                             </button>
                         )}
                     </div>
@@ -176,28 +176,28 @@ export default function VendrePage() {
                         </div>
                     )}
 
-                    <div className="mt-4 md:mt-6 pt-4 md:pt-6 border-t-2 md:border-t-4 border-slate-50 dark:border-slate-800 flex flex-col gap-4">
+                    <div className="mt-3 md:mt-6 pt-3 md:pt-6 border-t-2 md:border-t-4 border-slate-50 dark:border-slate-800 flex flex-col gap-3">
                         <div className="flex justify-between items-center">
-                            <span className="text-lg md:text-xl font-black text-slate-400 uppercase tracking-tighter">TOTAL</span>
-                            <span className="text-2xl md:text-3xl font-black text-emerald-600">{total} F</span>
+                            <span className="text-base md:text-xl font-black text-slate-400 uppercase tracking-tighter">TOTAL</span>
+                            <span className="text-xl md:text-3xl font-black text-emerald-600">{total} F</span>
                         </div>
 
                         <div className="flex gap-1.5 md:gap-2">
                             <button
                                 onClick={() => setPaymentStatus('PAYÉ')}
-                                className={`flex-1 py-3 rounded-xl md:rounded-2xl font-black text-[9px] md:text-xs uppercase tracking-widest border-2 transition-all ${paymentStatus === 'PAYÉ' ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-400'}`}
+                                className={`flex-1 py-2.5 rounded-lg md:rounded-2xl font-black text-[8px] md:text-xs uppercase tracking-widest border-2 transition-all ${paymentStatus === 'PAYÉ' ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-400'}`}
                             >
                                 Cash
                             </button>
                             <button
                                 onClick={() => setPaymentStatus('MOMO')}
-                                className={`flex-1 py-3 rounded-xl md:rounded-2xl font-black text-center text-[9px] md:text-xs uppercase tracking-widest border-2 transition-all ${paymentStatus === 'MOMO' ? 'bg-blue-600 border-blue-600 text-white shadow-lg' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-400'}`}
+                                className={`flex-1 py-2.5 rounded-lg md:rounded-2xl font-black text-center text-[8px] md:text-xs uppercase tracking-widest border-2 transition-all ${paymentStatus === 'MOMO' ? 'bg-blue-600 border-blue-600 text-white shadow-lg' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-400'}`}
                             >
                                 MOMO
                             </button>
                             <button
                                 onClick={() => setPaymentStatus('DETTE')}
-                                className={`flex-1 py-3 rounded-xl md:rounded-2xl font-black text-center text-[9px] md:text-xs uppercase tracking-widest border-2 transition-all ${paymentStatus === 'DETTE' ? 'bg-red-600 border-red-600 text-white shadow-lg' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-400'}`}
+                                className={`flex-1 py-2.5 rounded-lg md:rounded-2xl font-black text-center text-[8px] md:text-xs uppercase tracking-widest border-2 transition-all ${paymentStatus === 'DETTE' ? 'bg-red-600 border-red-600 text-white shadow-lg' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-400'}`}
                             >
                                 Dette
                             </button>

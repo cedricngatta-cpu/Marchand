@@ -57,29 +57,29 @@ export default function AcheterPage() {
     };
 
     return (
-        <main className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 pb-48 md:pb-64 lg:pb-48 max-w-5xl mx-auto">
-            <header className="flex items-center gap-3 md:gap-4 mb-6 md:mb-8 pt-4">
+        <main className="min-h-screen bg-slate-50 dark:bg-slate-950 p-3 pb-32 md:pb-64 lg:pb-48 max-w-5xl mx-auto">
+            <header className="flex items-center gap-2 md:gap-4 mb-3 md:mb-8 pt-2">
                 <button
                     onClick={() => router.push('/')}
-                    className="w-10 h-10 md:w-12 md:h-12 bg-white dark:bg-slate-800 rounded-full shadow-md flex items-center justify-center text-slate-600 dark:text-slate-300 active:scale-90 transition-transform shrink-0"
+                    className="w-9 h-9 md:w-12 md:h-12 bg-white dark:bg-slate-800 rounded-full shadow-md flex items-center justify-center text-slate-600 dark:text-slate-300 active:scale-90 transition-transform shrink-0"
                 >
-                    <ChevronLeft size={24} className="md:w-8 md:h-8" />
+                    <ChevronLeft size={20} className="md:w-8 md:h-8" />
                 </button>
-                <h1 className="text-xl md:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter truncate">Acheter / Reçu</h1>
+                <h1 className="text-lg md:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter truncate">Acheter / Reçu</h1>
             </header>
 
-            <section className="bg-blue-600 rounded-[32px] md:rounded-[40px] p-6 md:p-12 text-white mb-6 md:mb-8 shadow-xl shadow-blue-100 dark:shadow-blue-900/20 overflow-hidden relative">
+            <section className="bg-blue-600 rounded-[24px] md:rounded-[40px] p-4 md:p-12 text-white mb-4 md:mb-8 shadow-xl shadow-blue-100 dark:shadow-blue-900/20 overflow-hidden relative">
                 <div className="relative z-10">
-                    <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
-                        <Truck size={28} className="md:w-10 md:h-10" />
-                        <span className="font-black uppercase tracking-widest text-blue-100 text-[10px] md:text-base">Nouvel Arrivage</span>
+                    <div className="flex items-center gap-2 md:gap-3 mb-2 md:mb-4">
+                        <Truck size={24} className="md:w-10 md:h-10" />
+                        <span className="font-black uppercase tracking-widest text-blue-100 text-[9px] md:text-base">Nouvel Arrivage</span>
                     </div>
-                    <p className="text-lg md:text-2xl font-bold max-w-2xl leading-tight">
-                        Kouamé, quand tu reçois des produits, appuie sur le bouton <PlusCircle className="inline w-5 h-5 md:w-6 md:h-6" /> ou parle-moi simplement.
+                    <p className="text-sm md:text-2xl font-bold max-w-2xl leading-tight">
+                        Kouamé, quand tu reçois des produits, appuie sur le bouton <PlusCircle className="inline w-4 h-4 md:w-6 md:h-6" /> ou parle-moi simplement.
                     </p>
                 </div>
                 <Truck size={180} className="absolute -right-8 -bottom-8 text-white/10 rotate-12 hidden md:block" />
-                <Truck size={100} className="absolute -right-4 -bottom-4 text-white/10 rotate-12 md:hidden" />
+                <Truck size={60} className="absolute -right-2 -bottom-2 text-white/10 rotate-12 md:hidden" />
             </section>
 
             {/* Filtres Catégories */}
@@ -124,7 +124,7 @@ export default function AcheterPage() {
                                 <button
                                     key={qty}
                                     onClick={() => handleOrder(product, qty)}
-                                    className="flex-1 h-14 md:h-16 bg-slate-50 dark:bg-slate-800/80 hover:bg-blue-50 dark:hover:bg-blue-900/40 rounded-xl md:rounded-2xl flex items-center justify-center font-black text-lg md:text-xl text-slate-900 dark:text-white border-2 border-slate-100 dark:border-slate-700 active:bg-blue-600 active:text-white active:border-blue-600 transition-all shadow-sm"
+                                    className="flex-1 h-10 md:h-16 bg-slate-50 dark:bg-slate-800/80 hover:bg-blue-50 dark:hover:bg-blue-900/40 rounded-lg md:rounded-2xl flex items-center justify-center font-black text-sm md:text-xl text-slate-900 dark:text-white border-2 border-slate-100 dark:border-slate-700 active:bg-blue-600 active:text-white active:border-blue-600 transition-all shadow-sm"
                                 >
                                     +{qty}
                                 </button>

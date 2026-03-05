@@ -68,33 +68,33 @@ export default function StockPage() {
     };
 
     return (
-        <main className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 pb-48 md:pb-32 lg:pb-32 max-w-6xl mx-auto">
+        <main className="min-h-screen bg-slate-50 dark:bg-slate-950 p-3 pb-32 md:pb-32 lg:pb-32 max-w-6xl mx-auto">
             {/* Header Retour */}
-            <header className="flex items-center gap-3 md:gap-4 mb-6 md:mb-8 pt-4">
+            <header className="flex items-center gap-2 md:gap-4 mb-4 md:mb-8 pt-2">
                 <button
                     onClick={() => router.push('/')}
-                    className="w-10 h-10 md:w-12 md:h-12 bg-white dark:bg-slate-800 rounded-full shadow-md flex items-center justify-center text-slate-600 dark:text-slate-300 active:scale-95 transition-all shrink-0 border border-slate-100 dark:border-slate-800"
+                    className="w-9 h-9 md:w-12 md:h-12 bg-white dark:bg-slate-800 rounded-full shadow-md flex items-center justify-center text-slate-600 dark:text-slate-300 active:scale-95 transition-all shrink-0 border border-slate-100 dark:border-slate-800"
                 >
-                    <ChevronLeft size={24} className="md:w-8 md:h-8" />
+                    <ChevronLeft size={20} className="md:w-8 md:h-8" />
                 </button>
                 <div className="min-w-0">
-                    <h1 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight leading-none truncate">Mon Stock</h1>
-                    <p className="text-amber-600 font-bold text-[9px] md:text-[10px] uppercase tracking-widest mt-1">Inventaire</p>
+                    <h1 className="text-lg md:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight leading-none truncate">Mon Stock</h1>
+                    <p className="text-amber-600 font-bold text-[8px] md:text-[10px] uppercase tracking-widest mt-0.5">Inventaire</p>
                 </div>
-                <div className="ml-auto flex items-center gap-2">
+                <div className="ml-auto flex items-center gap-1.5">
                     <button
                         onClick={() => setIsAddMode(true)}
-                        className="flex items-center gap-2 bg-emerald-600 text-white px-3 md:px-4 py-2 md:py-2.5 rounded-xl md:rounded-2xl font-black text-[10px] md:text-xs uppercase shadow-lg shadow-emerald-100 dark:shadow-none active:scale-95 transition-all"
+                        className="flex items-center gap-1.5 bg-emerald-600 text-white px-2.5 md:px-4 py-1.5 md:py-2.5 rounded-lg md:rounded-2xl font-black text-[8px] md:text-xs uppercase shadow-lg shadow-emerald-100 dark:shadow-none active:scale-95 transition-all"
                     >
-                        <PlusCircle size={16} className="md:w-[18px] md:h-[18px]" />
+                        <PlusCircle size={14} className="md:w-[18px] md:h-[18px]" />
                         <span className="hidden sm:inline">Nouveau</span>
                         <span className="sm:hidden">ADD</span>
                     </button>
                     <button
                         onClick={speakFullStock}
-                        className="w-10 h-10 md:w-12 md:h-12 bg-white dark:bg-slate-800 rounded-full shadow-md flex items-center justify-center text-blue-600 active:scale-90 transition-transform border border-slate-100 dark:border-slate-800 shrink-0"
+                        className="w-9 h-9 md:w-12 md:h-12 bg-white dark:bg-slate-800 rounded-full shadow-md flex items-center justify-center text-blue-600 active:scale-90 transition-transform border border-slate-100 dark:border-slate-800 shrink-0"
                     >
-                        <Volume2 size={20} className="md:w-6 md:h-6" />
+                        <Volume2 size={18} className="md:w-6 md:h-6" />
                     </button>
                 </div>
             </header>
@@ -105,14 +105,14 @@ export default function StockPage() {
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     onClick={() => speak(`Kouamé, il y a ${lowStockCount} produits presque finis.`)}
-                    className="bg-red-50 dark:bg-red-900/10 border-2 md:border-4 border-red-500 p-4 md:p-6 rounded-[24px] md:rounded-[32px] mb-6 flex items-center gap-3 md:gap-4 text-red-700 dark:text-red-400 shadow-lg shadow-red-200 dark:shadow-none cursor-pointer"
+                    className="bg-red-50 dark:bg-red-900/10 border-2 md:border-4 border-red-500 p-3 md:p-6 rounded-[20px] md:rounded-[32px] mb-4 flex items-center gap-2 md:gap-4 text-red-700 dark:text-red-400 shadow-lg shadow-red-200 dark:shadow-none cursor-pointer"
                 >
-                    <div className="bg-red-500 p-2 md:p-3 rounded-full text-white shrink-0">
-                        <AlertTriangle size={24} className="md:w-8 md:h-8" />
+                    <div className="bg-red-500 p-1.5 md:p-3 rounded-full text-white shrink-0">
+                        <AlertTriangle size={20} className="md:w-8 md:h-8" />
                     </div>
                     <div>
-                        <h2 className="font-black uppercase text-lg md:text-xl leading-none">Attention !</h2>
-                        <p className="font-bold text-xs md:text-sm">Des produits sont bientôt finis.</p>
+                        <h2 className="font-black uppercase text-base md:text-xl leading-none">Attention !</h2>
+                        <p className="font-bold text-[10px] md:text-sm">Des produits sont bientôt finis.</p>
                     </div>
                 </motion.div>
             )}

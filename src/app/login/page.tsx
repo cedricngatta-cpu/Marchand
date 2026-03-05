@@ -32,6 +32,26 @@ export default function LoginPage() {
         }
     }, [isAuthenticated, user, router]);
 
+    // Handle Hardware Back Button
+    useEffect(() => {
+        const handlePopState = (e: PopStateEvent) => {
+            if (step === 'PIN') {
+                e.preventDefault();
+                setStep('PHONE');
+                setPin('');
+                // Stay on the same page but change step
+                window.history.pushState(null, '', window.location.pathname);
+            }
+        };
+
+        if (step === 'PIN') {
+            window.history.pushState(null, '', window.location.pathname);
+            window.addEventListener('popstate', handlePopState);
+        }
+
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, [step]);
+
     if (isAuthenticated) return null;
 
     const handlePhoneSubmit = (e: React.FormEvent) => {
@@ -65,23 +85,23 @@ export default function LoginPage() {
     };
 
     return (
-        <main className="min-h-screen bg-white dark:bg-slate-950 flex flex-col p-6 items-center justify-center relative overflow-hidden">
+        <main className="min-h-screen bg-white dark:bg-slate-950 flex flex-col p-3 items-center justify-center relative overflow-hidden">
             {/* Background Accents (Merchant Style) */}
             <div className="absolute -top-20 -right-20 w-64 h-64 bg-emerald-50 rounded-full blur-3xl opacity-50" />
             <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-blue-50 rounded-full blur-3xl opacity-50" />
 
             <div className="w-full max-w-md relative z-10">
                 {/* Logo / Header */}
-                <header className="text-center mb-12">
+                <header className="text-center mb-4 sm:mb-10">
                     <motion.div
                         initial={{ scale: 0.5, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
-                        className="w-24 h-24 bg-emerald-600 rounded-[32px] mx-auto mb-6 flex items-center justify-center shadow-2xl shadow-emerald-100"
+                        className="w-14 h-14 sm:w-24 sm:h-24 bg-emerald-600 rounded-2xl sm:rounded-[32px] mx-auto mb-3 sm:mb-6 flex items-center justify-center shadow-xl sm:shadow-2xl shadow-emerald-100"
                     >
-                        <Lock size={48} className="text-white" />
+                        <Lock size={28} className="text-white sm:w-12 sm:h-12" />
                     </motion.div>
-                    <h1 className="text-4xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Bienvenue</h1>
-                    <p className="text-slate-500 font-bold uppercase tracking-widest text-xs mt-2">Connectez-vous pour continuer</p>
+                    <h1 className="text-xl sm:text-4xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Bienvenue</h1>
+                    <p className="text-slate-500 font-bold uppercase tracking-widest text-[9px] sm:text-xs mt-1 sm:mt-2">Connectez-vous pour continuer</p>
                 </header>
 
                 <AnimatePresence mode="wait">
@@ -95,16 +115,16 @@ export default function LoginPage() {
                             className="space-y-6"
                         >
                             <div className="relative">
-                                <label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 ml-6 mb-2 block">Numéro de Téléphone</label>
+                                <label className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-400 ml-5 mb-1 block">Numéro de Téléphone</label>
                                 <div className="relative">
-                                    <Phone className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" size={24} />
+                                    <Phone className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
                                     <input
                                         autoFocus
                                         type="tel"
                                         placeholder="0102030405"
                                         value={phoneNumber}
                                         onChange={e => setPhoneNumber(e.target.value)}
-                                        className="w-full bg-slate-50 dark:bg-slate-900 border-4 border-slate-100 dark:border-slate-800 rounded-[32px] p-6 pl-16 font-black text-2xl text-slate-900 dark:text-white outline-none focus:border-emerald-500 transition-all placeholder:text-slate-200"
+                                        className="w-full bg-slate-50 dark:bg-slate-900 border-[3px] border-slate-100 dark:border-slate-800 rounded-[24px] p-5 pl-14 font-black text-xl text-slate-900 dark:text-white outline-none focus:border-emerald-500 transition-all placeholder:text-slate-200"
                                     />
                                 </div>
                             </div>
@@ -117,15 +137,15 @@ export default function LoginPage() {
 
                             <button
                                 type="submit"
-                                className="w-full bg-slate-900 dark:bg-emerald-600 text-white p-8 rounded-[32px] font-black uppercase tracking-[0.2em] text-xl shadow-2xl shadow-slate-200 dark:shadow-emerald-900/20 active:scale-95 transition-all flex items-center justify-center gap-4"
+                                className="w-full bg-slate-900 dark:bg-emerald-600 text-white p-5 rounded-[24px] font-black uppercase tracking-[0.2em] text-lg shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3"
                             >
-                                Suivant <ChevronRight size={28} />
+                                Suivant <ChevronRight size={24} />
                             </button>
 
                             <button
                                 type="button"
                                 onClick={() => router.push('/signup')}
-                                className="w-full py-4 text-slate-400 font-black uppercase text-xs tracking-widest hover:text-emerald-600 transition-colors"
+                                className="w-full py-2 text-slate-400 font-black uppercase text-[9px] tracking-widest hover:text-emerald-600 transition-colors"
                             >
                                 Créer un nouveau compte
                             </button>
@@ -136,16 +156,16 @@ export default function LoginPage() {
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: -20 }}
-                            className="flex flex-col items-center"
+                            className="flex flex-col items-center w-full"
                         >
-                            <label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-8">Entrez votre PIN secret</label>
+                            <label className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-6 sm:mb-8">Entrez votre PIN secret</label>
 
                             {/* PIN Display Dots */}
-                            <div className="flex gap-6 mb-12">
+                            <div className="flex gap-4 sm:gap-6 mb-8 sm:mb-12">
                                 {[0, 1, 2, 3].map(i => (
                                     <div
                                         key={i}
-                                        className={`w-6 h-6 rounded-full border-4 transition-all duration-100 ${pin.length > i ? 'bg-emerald-600 border-emerald-600 scale-125' : 'bg-transparent border-slate-200'}`}
+                                        className={`w-4 h-4 sm:w-6 sm:h-6 rounded-full border-[3px] sm:border-4 transition-all duration-100 ${pin.length > i ? 'bg-emerald-600 border-emerald-600 scale-125' : 'bg-transparent border-slate-200'}`}
                                     />
                                 ))}
                             </div>
@@ -157,12 +177,12 @@ export default function LoginPage() {
                             )}
 
                             {/* Wave-style Number Pad */}
-                            <div className="grid grid-cols-3 gap-6 w-full max-w-[320px]">
+                            <div className="grid grid-cols-3 gap-3 sm:gap-6 w-full max-w-[280px] sm:max-w-[320px]">
                                 {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
                                     <button
                                         key={num}
                                         onClick={() => handlePinPress(num.toString())}
-                                        className="aspect-square bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-[24px] flex items-center justify-center text-3xl font-black text-slate-900 dark:text-white shadow-lg active:scale-90 active:bg-emerald-50 transition-all hover:border-emerald-200"
+                                        className="aspect-square bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-[18px] sm:rounded-[24px] flex items-center justify-center text-2xl sm:text-3xl font-black text-slate-900 dark:text-white shadow-sm sm:shadow-lg active:scale-90 active:bg-emerald-50 transition-all hover:border-emerald-200"
                                     >
                                         {num}
                                     </button>
@@ -175,7 +195,7 @@ export default function LoginPage() {
                                 </button>
                                 <button
                                     onClick={() => handlePinPress('0')}
-                                    className="aspect-square bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-[24px] flex items-center justify-center text-3xl font-black text-slate-900 dark:text-white shadow-lg active:scale-90 active:bg-emerald-50 transition-all hover:border-emerald-200"
+                                    className="aspect-square bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-[18px] sm:rounded-[24px] flex items-center justify-center text-2xl sm:text-3xl font-black text-slate-900 dark:text-white shadow-sm sm:shadow-lg active:scale-90 active:bg-emerald-50 transition-all hover:border-emerald-200"
                                 >
                                     0
                                 </button>
@@ -183,7 +203,7 @@ export default function LoginPage() {
                                     onClick={() => setPin(prev => prev.slice(0, -1))}
                                     className="aspect-square flex items-center justify-center text-slate-300 hover:text-slate-900 transition-colors"
                                 >
-                                    <Delete size={32} />
+                                    <Delete size={28} className="sm:w-8 sm:h-8" />
                                 </button>
                             </div>
                         </motion.div>

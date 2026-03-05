@@ -39,27 +39,27 @@ export default function CarnetPage() {
     const totalGlobalDette = Object.values(debtsByClient).reduce((acc, c) => acc + c.total, 0);
 
     return (
-        <main className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 pb-48 md:pb-64 lg:pb-48 max-w-5xl mx-auto">
+        <main className="min-h-screen bg-slate-50 dark:bg-slate-950 p-3 pb-32 md:pb-64 lg:pb-48 max-w-5xl mx-auto">
             {/* Header */}
-            <header className="flex items-center gap-3 md:gap-4 mb-6 md:mb-8 pt-4">
+            <header className="flex items-center gap-2 md:gap-4 mb-4 md:mb-8 pt-2">
                 <button
                     onClick={() => router.push('/')}
-                    className="w-10 h-10 md:w-12 md:h-12 bg-white dark:bg-slate-800 rounded-full shadow-md flex items-center justify-center text-slate-600 dark:text-slate-300 active:scale-90 transition-transform shrink-0"
+                    className="w-9 h-9 md:w-12 md:h-12 bg-white dark:bg-slate-800 rounded-full shadow-md flex items-center justify-center text-slate-600 dark:text-slate-300 active:scale-90 transition-transform shrink-0"
                 >
-                    <ChevronLeft size={24} className="md:w-8 md:h-8" />
+                    <ChevronLeft size={20} className="md:w-8 md:h-8" />
                 </button>
-                <h1 className="text-xl md:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter truncate">Mon Carnet</h1>
+                <h1 className="text-lg md:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter truncate">Mon Carnet</h1>
             </header>
 
             {/* Sommaire Dette */}
-            <section className="bg-rose-600 text-white rounded-[32px] md:rounded-[40px] p-6 md:p-12 mb-6 md:mb-8 shadow-xl shadow-rose-100 dark:shadow-rose-900/20 relative overflow-hidden">
+            <section className="bg-rose-600 text-white rounded-[24px] md:rounded-[40px] p-4 md:p-12 mb-4 md:mb-8 shadow-xl shadow-rose-100 dark:shadow-rose-900/20 relative overflow-hidden">
                 <div className="relative z-10">
-                    <span className="font-black uppercase tracking-widest text-rose-100 text-[10px] md:text-sm">Argent Dehors</span>
-                    <div className="text-4xl md:text-7xl font-black tracking-tighter mt-1">{totalGlobalDette} <span className="text-2xl md:text-4xl">F</span></div>
-                    <p className="mt-2 md:mt-4 font-bold text-rose-100 text-xs md:text-base max-w-md">C'est l'argent que tes clients te doivent encore. Pense à leur rappeler gentiment !</p>
+                    <span className="font-black uppercase tracking-widest text-rose-100 text-[9px] md:text-sm">Argent Dehors</span>
+                    <div className="text-3xl md:text-7xl font-black tracking-tighter mt-0.5">{totalGlobalDette} <span className="text-xl md:text-4xl">F</span></div>
+                    <p className="mt-1 md:mt-4 font-bold text-rose-100 text-[10px] md:text-base max-w-md">C'est l'argent que tes clients te doivent encore.</p>
                 </div>
                 <User size={180} className="absolute -right-8 -bottom-8 text-white/10 rotate-12 hidden md:block" />
-                <User size={100} className="absolute -right-4 -bottom-4 text-white/10 rotate-12 md:hidden" />
+                <User size={80} className="absolute -right-2 -bottom-2 text-white/10 rotate-12 md:hidden" />
             </section>
 
             {/* Barre de Recherche */}

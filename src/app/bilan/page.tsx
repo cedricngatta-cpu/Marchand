@@ -41,16 +41,16 @@ export default function BilanPage() {
     };
 
     return (
-        <main className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 pb-48 md:pb-64 lg:pb-48 max-w-5xl mx-auto">
+        <main className="min-h-screen bg-slate-50 dark:bg-slate-950 p-3 pb-32 md:pb-64 lg:pb-48 max-w-5xl mx-auto">
             {/* Header */}
-            <header className="flex items-center gap-3 md:gap-4 mb-6 md:mb-8 pt-4">
+            <header className="flex items-center gap-2 md:gap-4 mb-3 md:mb-8 pt-2">
                 <button
                     onClick={() => router.push('/')}
-                    className="w-10 h-10 md:w-12 md:h-12 bg-white dark:bg-slate-800 rounded-full shadow-md flex items-center justify-center text-slate-600 dark:text-slate-300 active:scale-90 transition-transform shrink-0"
+                    className="w-9 h-9 md:w-12 md:h-12 bg-white dark:bg-slate-800 rounded-full shadow-md flex items-center justify-center text-slate-600 dark:text-slate-300 active:scale-90 transition-transform shrink-0"
                 >
-                    <ChevronLeft size={24} className="md:w-8 md:h-8" />
+                    <ChevronLeft size={20} className="md:w-8 md:h-8" />
                 </button>
-                <h1 className="text-xl md:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter truncate">Mon Bilan</h1>
+                <h1 className="text-lg md:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter truncate">Mon Bilan</h1>
             </header>
 
             <div className="space-y-6 md:space-y-8">
@@ -58,22 +58,22 @@ export default function BilanPage() {
                 <motion.section
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    className="bg-emerald-600 text-white rounded-[32px] md:rounded-[40px] p-6 md:p-12 shadow-xl shadow-emerald-100 dark:shadow-emerald-900/20 flex flex-col gap-3 md:gap-4 relative overflow-hidden"
+                    className="bg-emerald-600 text-white rounded-[24px] md:rounded-[40px] p-4 md:p-12 shadow-xl shadow-emerald-100 dark:shadow-emerald-900/20 flex flex-col gap-2 md:gap-4 relative overflow-hidden"
                 >
                     <div className="absolute -right-8 -top-8 text-white/10 rotate-12 hidden md:block">
                         <Wallet size={200} />
                     </div>
-                    <div className="flex items-center gap-3 relative z-10">
-                        <div className="bg-white/20 p-2 md:p-3 rounded-xl md:rounded-2xl">
-                            <Wallet size={24} className="md:w-8 md:h-8" />
+                    <div className="flex items-center gap-2 relative z-10">
+                        <div className="bg-white/20 p-2 md:p-3 rounded-lg md:rounded-2xl">
+                            <Wallet size={18} className="md:w-8 md:h-8" />
                         </div>
-                        <span className="font-black uppercase tracking-widest text-emerald-100 italic text-[10px] md:text-base">Dans la caisse</span>
+                        <span className="font-black uppercase tracking-widest text-emerald-100 italic text-[9px] md:text-base">Dans la caisse</span>
                     </div>
                     <div className="relative z-10">
-                        <span className="text-5xl md:text-8xl font-black tracking-tighter">{balance}</span>
-                        <span className="text-xl md:text-4xl font-bold ml-1 md:ml-2 text-emerald-100">F</span>
+                        <span className="text-4xl md:text-8xl font-black tracking-tighter">{balance}</span>
+                        <span className="text-lg md:text-4xl font-bold ml-1 md:ml-2 text-emerald-100">F</span>
                     </div>
-                    <p className="font-bold text-emerald-100 bg-emerald-700/30 p-4 md:p-6 rounded-xl md:rounded-2xl relative z-10 max-w-md text-xs md:text-base">
+                    <p className="font-bold text-emerald-100 bg-emerald-700/30 p-2 md:p-6 rounded-lg md:rounded-2xl relative z-10 max-w-md text-[9px] md:text-base">
                         C'est l'argent que tu as gagné aujourd'hui, Kouamé. Beau travail !
                     </p>
                 </motion.section>
@@ -84,12 +84,12 @@ export default function BilanPage() {
                         initial={{ scale: 0.9, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         transition={{ delay: 0.1 }}
-                        className="bg-blue-600 text-white rounded-[24px] md:rounded-[32px] p-5 md:p-8 shadow-xl shadow-blue-100 dark:shadow-blue-900/20 flex flex-col gap-1 md:gap-2 relative overflow-hidden"
+                        className="bg-blue-600 text-white rounded-[20px] md:rounded-[32px] p-4 md:p-8 shadow-xl shadow-blue-100 dark:shadow-blue-900/20 flex flex-col gap-1 md:gap-2 relative overflow-hidden"
                     >
-                        <span className="font-black uppercase tracking-widest text-blue-100 text-[10px] md:text-xs">Valeur Marchandise</span>
+                        <span className="font-black uppercase tracking-widest text-blue-100 text-[9px] md:text-xs">Valeur Marchandise</span>
                         <div>
-                            <span className="text-3xl md:text-5xl font-black tracking-tighter">{stockValue}</span>
-                            <span className="text-base md:text-xl font-bold ml-1 text-blue-100">F</span>
+                            <span className="text-2xl md:text-5xl font-black tracking-tighter">{stockValue}</span>
+                            <span className="text-sm md:text-xl font-bold ml-1 text-blue-100">F</span>
                         </div>
                     </motion.section>
 
@@ -97,14 +97,14 @@ export default function BilanPage() {
                         initial={{ scale: 0.9, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         transition={{ delay: 0.2 }}
-                        className="bg-rose-600 text-white rounded-[24px] md:rounded-[32px] p-5 md:p-8 shadow-xl shadow-rose-100 dark:shadow-rose-900/20 flex flex-col gap-1 md:gap-2 relative overflow-hidden"
+                        className="bg-rose-600 text-white rounded-[20px] md:rounded-[32px] p-4 md:p-8 shadow-xl shadow-rose-100 dark:shadow-rose-900/20 flex flex-col gap-1 md:gap-2 relative overflow-hidden"
                     >
-                        <span className="font-black uppercase tracking-widest text-rose-100 text-[10px] md:text-xs">Crédit Dehors</span>
+                        <span className="font-black uppercase tracking-widest text-rose-100 text-[9px] md:text-xs">Crédit Dehors</span>
                         <div>
-                            <span className="text-3xl md:text-5xl font-black tracking-tighter">
+                            <span className="text-2xl md:text-5xl font-black tracking-tighter">
                                 {history.filter(t => t.status === 'DETTE').reduce((acc, t) => acc + t.price, 0)}
                             </span>
-                            <span className="text-base md:text-xl font-bold ml-1 text-rose-100">F</span>
+                            <span className="text-sm md:text-xl font-bold ml-1 text-rose-100">F</span>
                         </div>
                     </motion.section>
 
@@ -112,12 +112,12 @@ export default function BilanPage() {
                         initial={{ scale: 0.9, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         transition={{ delay: 0.3 }}
-                        className="bg-purple-600 text-white rounded-[24px] md:rounded-[32px] p-5 md:p-8 shadow-xl shadow-purple-100 dark:shadow-purple-900/20 flex flex-col gap-1 md:gap-2 relative overflow-hidden sm:col-span-2 lg:col-span-1"
+                        className="bg-purple-600 text-white rounded-[20px] md:rounded-[32px] p-4 md:p-8 shadow-xl shadow-purple-100 dark:shadow-purple-900/20 flex flex-col gap-1 md:gap-2 relative overflow-hidden sm:col-span-2 lg:col-span-1"
                     >
-                        <span className="font-black uppercase tracking-widest text-purple-100 text-[10px] md:text-xs">Estimation Gain Réel</span>
+                        <span className="font-black uppercase tracking-widest text-purple-100 text-[9px] md:text-xs">Estimation Gain Réel</span>
                         <div>
-                            <span className="text-3xl md:text-5xl font-black tracking-tighter">{Math.round(balance * 0.2)}</span>
-                            <span className="text-base md:text-xl font-bold ml-1 text-purple-100">F</span>
+                            <span className="text-2xl md:text-5xl font-black tracking-tighter">{Math.round(balance * 0.2)}</span>
+                            <span className="text-sm md:text-xl font-bold ml-1 text-purple-100">F</span>
                         </div>
                     </motion.section>
                 </div>
@@ -125,10 +125,10 @@ export default function BilanPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
                     {/* Top Produits & Évolution */}
                     <div className="space-y-6 md:space-y-8">
-                        <section className="bg-white dark:bg-slate-900 rounded-[32px] md:rounded-[40px] p-6 md:p-8 shadow-sm border border-slate-100 dark:border-slate-800">
-                            <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6">
-                                <TrendingUp className="text-amber-500" size={24} />
-                                <h2 className="font-black uppercase text-slate-400 tracking-widest text-[10px] md:text-sm">Tes Champions</h2>
+                        <section className="bg-white dark:bg-slate-900 rounded-[24px] md:rounded-[40px] p-4 md:p-8 shadow-sm border border-slate-100 dark:border-slate-800">
+                            <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-6">
+                                <TrendingUp className="text-amber-500" size={20} />
+                                <h2 className="font-black uppercase text-slate-400 tracking-widest text-[9px] md:text-sm">Tes Champions</h2>
                             </div>
 
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
@@ -221,13 +221,13 @@ export default function BilanPage() {
                         <motion.section
                             initial={{ scale: 0.95, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            className="bg-slate-900 text-white rounded-[32px] md:rounded-[40px] p-6 md:p-10 shadow-2xl relative overflow-hidden border-[3px] md:border-4 border-amber-400"
+                            className="bg-slate-900 text-white rounded-[24px] md:rounded-[40px] p-4 md:p-10 shadow-2xl relative overflow-hidden border-[2px] md:border-4 border-amber-400"
                         >
-                            <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6">
-                                <div className="bg-amber-400 p-1.5 md:p-2 rounded-xl text-slate-900 shadow-lg shadow-amber-400/20">
-                                    <TrendingUp size={24} className="md:w-7 md:h-7" />
+                            <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-6">
+                                <div className="bg-amber-400 p-1 md:p-2 rounded-lg text-slate-900 shadow-lg shadow-amber-400/20">
+                                    <TrendingUp size={20} className="md:w-7 md:h-7" />
                                 </div>
-                                <h2 className="font-black uppercase tracking-widest text-amber-400 text-sm md:text-lg">Conseil Intelligent</h2>
+                                <h2 className="font-black uppercase tracking-widest text-amber-400 text-xs md:text-lg">Conseil Intelligent</h2>
                             </div>
 
                             <div className="relative z-10">
@@ -267,13 +267,13 @@ export default function BilanPage() {
                                     }
 
                                     return (
-                                        <div className="space-y-6">
-                                            <p className={`text-xl md:text-2xl font-black leading-tight ${adviceColor} italic tracking-tight`}>{adviceText}</p>
+                                        <div className="space-y-4">
+                                            <p className={`text-lg md:text-2xl font-black leading-tight ${adviceColor} italic tracking-tight`}>{adviceText}</p>
                                             <button
                                                 onClick={() => speak(voiceText)}
-                                                className="bg-amber-400 hover:bg-amber-300 text-slate-900 px-6 md:px-8 py-3 md:py-4 rounded-xl md:rounded-[20px] font-black uppercase text-[10px] md:text-xs tracking-widest flex items-center justify-center md:justify-start gap-2 md:gap-3 active:scale-95 transition-all shadow-xl shadow-amber-400/20 shadow-none border-b-4 border-amber-600 w-full sm:w-auto"
+                                                className="bg-amber-400 hover:bg-amber-300 text-slate-900 px-4 md:px-8 py-2 md:py-4 rounded-lg md:rounded-[20px] font-black uppercase text-[9px] md:text-xs tracking-widest flex items-center justify-center md:justify-start gap-2 md:gap-3 active:scale-95 transition-all shadow-xl shadow-amber-400/20 shadow-none border-b-2 md:border-b-4 border-amber-600 w-full sm:w-auto"
                                             >
-                                                <Volume2 size={20} className="md:w-6 md:h-6" /> Écouter le conseil
+                                                <Volume2 size={18} className="md:w-6 md:h-6" /> Écouter le conseil
                                             </button>
                                         </div>
                                     );

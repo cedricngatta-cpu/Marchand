@@ -40,30 +40,30 @@ export default function ApprovisionnementPage() {
     };
 
     return (
-        <main className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-6 pb-32 max-w-5xl mx-auto">
+        <main className="min-h-screen bg-slate-50 dark:bg-slate-950 p-3 md:p-6 pb-32 max-w-5xl mx-auto">
             {/* Header */}
-            <header className="flex items-center gap-3 md:gap-4 mb-6 md:mb-8 pt-4">
+            <header className="flex items-center gap-2 md:gap-4 mb-4 md:mb-8 pt-2">
                 <button
                     onClick={() => router.back()}
-                    className="w-10 h-10 md:w-12 md:h-12 bg-white dark:bg-slate-800 rounded-xl md:rounded-2xl flex items-center justify-center shadow-sm text-slate-600 dark:text-slate-300 active:scale-90 transition-all border border-slate-100 dark:border-slate-800 shrink-0"
+                    className="w-9 h-9 md:w-12 md:h-12 bg-white dark:bg-slate-800 rounded-lg md:rounded-2xl flex items-center justify-center shadow-sm text-slate-600 dark:text-slate-300 active:scale-90 transition-all border border-slate-100 dark:border-slate-800 shrink-0"
                 >
-                    <ArrowLeft size={24} className="w-6 h-6 md:w-7 md:h-7" />
+                    <ArrowLeft size={20} className="w-6 h-6 md:w-7 md:h-7" />
                 </button>
                 <div className="min-w-0">
-                    <h1 className="text-xl md:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none truncate">Marché Virtuel</h1>
-                    <p className="text-blue-600 font-bold text-[9px] md:text-[11px] uppercase tracking-widest mt-0.5 md:mt-1 truncate">Trouver des fournisseurs</p>
+                    <h1 className="text-lg md:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none truncate">Marché Virtuel</h1>
+                    <p className="text-blue-600 font-bold text-[8px] md:text-[11px] uppercase tracking-widest mt-0.5 truncate">Trouver des fournisseurs</p>
                 </div>
             </header>
 
             {/* Search Bar */}
-            <div className="relative mb-6 md:mb-8">
-                <Search className="absolute left-4 md:left-6 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 md:w-6 md:h-6" />
+            <div className="relative mb-4 md:mb-8">
+                <Search className="absolute left-4 md:left-6 top-1/2 -translate-y-1/2 text-slate-300 w-4 h-4 md:w-6 md:h-6" />
                 <input
                     type="text"
                     placeholder="Chercher Tomate, Riz..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full h-14 md:h-16 bg-white dark:bg-slate-900 border-2 md:border-4 border-slate-100 dark:border-slate-800 rounded-[20px] md:rounded-[32px] pl-12 md:pl-16 pr-4 md:pr-6 font-black text-sm md:text-lg text-slate-900 dark:text-white shadow-sm outline-none focus:border-blue-500 transition-all uppercase placeholder:text-slate-300"
+                    className="w-full h-12 md:h-16 bg-white dark:bg-slate-900 border-2 md:border-4 border-slate-100 dark:border-slate-800 rounded-xl md:rounded-[32px] pl-10 md:pl-16 pr-4 md:pr-6 font-black text-xs md:text-lg text-slate-900 dark:text-white shadow-sm outline-none focus:border-blue-500 transition-all uppercase placeholder:text-slate-200"
                 />
             </div>
 
