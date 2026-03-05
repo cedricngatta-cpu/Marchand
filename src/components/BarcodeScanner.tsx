@@ -22,7 +22,8 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose 
                 Html5QrcodeSupportedFormats.CODE_128,
                 Html5QrcodeSupportedFormats.UPC_A,
                 Html5QrcodeSupportedFormats.UPC_E
-            ]
+            ],
+            verbose: false
         });
         scannerRef.current = scanner;
 
