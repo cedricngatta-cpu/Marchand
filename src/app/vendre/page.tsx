@@ -128,9 +128,9 @@ export default function VendrePage() {
             </AnimatePresence>
 
             {/* Conteneur principal adaptatif */}
-            <div className="flex flex-col lg:flex-row gap-6 md:gap-8 items-start max-w-7xl mx-auto">
+            <div className="flex flex-col lg:flex-row gap-4 md:gap-8 items-start max-w-7xl mx-auto">
                 {/* Section Gauche : Résumé Panier (Visuel) - Fixé sur Desktop */}
-                <section className="w-full lg:w-96 lg:sticky lg:top-24 bg-white dark:bg-slate-900 rounded-[24px] md:rounded-[32px] p-4 md:p-6 shadow-sm border border-slate-100 dark:border-slate-800">
+                <section className="w-full lg:w-80 lg:sticky lg:top-24 bg-white dark:bg-slate-900 rounded-[20px] md:rounded-[32px] p-3 md:p-6 shadow-sm border border-slate-100 dark:border-slate-800">
                     <div className="flex justify-between items-center mb-3 gap-2">
                         <span className="font-bold text-slate-400 uppercase tracking-widest text-[9px] md:text-sm whitespace-nowrap">Panier</span>
                         {clientName && (
@@ -146,15 +146,15 @@ export default function VendrePage() {
                     </div>
 
                     {items.length === 0 ? (
-                        <div className="py-6 md:py-8 text-center text-slate-300 font-bold uppercase italic text-xs md:text-sm">
+                        <div className="py-4 md:py-8 text-center text-slate-300 font-bold uppercase italic text-[10px] md:text-sm">
                             Appuie sur les produits
                         </div>
                     ) : (
-                        <div className="space-y-2 md:space-y-3 max-h-[30vh] lg:max-h-[50vh] overflow-y-auto pr-2 scrollbar-none">
+                        <div className="space-y-1.5 md:space-y-3 max-h-[25vh] lg:max-h-[50vh] overflow-y-auto pr-1 scrollbar-none">
                             {items.map(item => (
-                                <div key={item.id} className="flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl gap-3">
-                                    <div className="flex items-center gap-3 md:gap-4 min-w-0">
-                                        <div className="relative w-10 h-10 md:w-12 md:h-12 bg-white dark:bg-slate-800 rounded-xl overflow-hidden shadow-sm flex items-center justify-center border border-slate-100 dark:border-slate-700 shrink-0">
+                                <div key={item.id} className="flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 p-2 md:p-3 rounded-xl md:rounded-2xl gap-2 md:gap-3">
+                                    <div className="flex items-center gap-2 md:gap-4 min-w-0">
+                                        <div className="relative w-8 h-8 md:w-12 md:h-12 bg-white dark:bg-slate-800 rounded-lg md:rounded-xl overflow-hidden shadow-sm flex items-center justify-center border border-slate-100 dark:border-slate-700 shrink-0">
                                             {item.imageUrl ? (
                                                 <img src={item.imageUrl} className="w-full h-full object-contain" alt="" />
                                             ) : (
@@ -178,16 +178,16 @@ export default function VendrePage() {
                         </div>
                     )}
 
-                    <div className="mt-3 md:mt-6 pt-3 md:pt-6 border-t-2 md:border-t-4 border-slate-50 dark:border-slate-800 flex flex-col gap-3">
+                    <div className="mt-2 md:mt-6 pt-2 md:pt-6 border-t-2 md:border-t-4 border-slate-50 dark:border-slate-800 flex flex-col gap-2 md:gap-3">
                         <div className="flex justify-between items-center">
-                            <span className="text-base md:text-xl font-black text-slate-400 uppercase tracking-tighter">TOTAL</span>
-                            <span className="text-xl md:text-3xl font-black text-emerald-600">{total} F</span>
+                            <span className="text-sm md:text-xl font-black text-slate-400 uppercase tracking-tighter">TOTAL</span>
+                            <span className="text-lg md:text-3xl font-black text-emerald-600">{total} F</span>
                         </div>
 
-                        <div className="flex gap-1.5 md:gap-2">
+                        <div className="flex gap-1 md:gap-2">
                             <button
                                 onClick={() => setPaymentStatus('PAYÉ')}
-                                className={`flex-1 py-2.5 rounded-lg md:rounded-2xl font-black text-[8px] md:text-xs uppercase tracking-widest border-2 transition-all ${paymentStatus === 'PAYÉ' ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-400'}`}
+                                className={`flex-1 py-1.5 md:py-2.5 rounded-lg md:rounded-2xl font-black text-[8px] md:text-xs uppercase tracking-widest border-2 transition-all ${paymentStatus === 'PAYÉ' ? 'bg-emerald-600 border-emerald-600 text-white shadow-md' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-400'}`}
                             >
                                 Cash
                             </button>
@@ -214,23 +214,23 @@ export default function VendrePage() {
             </div>
 
             {/* Actions Fixes adaptatifs */}
-            <div className="fixed bottom-6 left-0 right-0 px-4 md:px-6 flex items-center justify-center z-50 pointer-events-none">
+            <div className="fixed bottom-4 left-0 right-0 px-3 md:px-6 flex items-center justify-center z-50 pointer-events-none">
                 <div className="flex items-center gap-2 md:gap-4 w-full max-w-xl pointer-events-auto">
                     {/* Micro */}
                     <button
                         onClick={handleAction}
-                        className={`h-14 w-14 md:h-20 md:w-20 shrink-0 rounded-full flex items-center justify-center shadow-2xl border-[3px] border-white dark:border-slate-900 transition-all ${isListening ? 'bg-red-500 scale-105 animate-pulse' : isSpeaking ? 'bg-blue-500' : 'bg-amber-500 active:bg-amber-600'}`}
+                        className={`h-12 w-12 md:h-20 md:w-20 shrink-0 rounded-full flex items-center justify-center shadow-xl border-2 md:border-[3px] border-white dark:border-slate-900 transition-all ${isListening ? 'bg-red-500 scale-105 animate-pulse' : isSpeaking ? 'bg-blue-500' : 'bg-amber-500 active:bg-amber-600'}`}
                     >
-                        <Mic size={20} className="md:w-7 md:h-7" color="white" fill={isListening || isSpeaking ? "white" : "none"} />
+                        <Mic size={18} className="md:w-7 md:h-7" color="white" fill={isListening || isSpeaking ? "white" : "none"} />
                     </button>
 
                     {/* Bouton Valider */}
                     <button
                         onClick={handleFinish}
-                        className="flex-1 h-14 md:h-20 bg-emerald-600 rounded-[20px] md:rounded-[32px] shadow-2xl text-white flex items-center justify-center gap-2 border-[3px] border-white dark:border-slate-900 active:bg-emerald-700 transition-all overflow-hidden"
+                        className="flex-1 h-12 md:h-20 bg-emerald-600 rounded-[16px] md:rounded-[32px] shadow-xl text-white flex items-center justify-center gap-2 border-2 md:border-[3px] border-white dark:border-slate-900 active:bg-emerald-700 transition-all overflow-hidden"
                     >
-                        <CheckCircle2 size={18} className="md:w-6 md:h-6" />
-                        <span className="text-sm md:text-xl font-black uppercase tracking-tighter">C'EST FINI</span>
+                        <CheckCircle2 size={16} className="md:w-6 md:h-6" />
+                        <span className="text-xs md:text-xl font-black uppercase tracking-tighter">C'EST FINI</span>
                     </button>
                 </div>
             </div>

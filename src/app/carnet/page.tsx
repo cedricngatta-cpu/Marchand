@@ -55,25 +55,25 @@ export default function CarnetPage() {
             </header>
 
             {/* Sommaire Dette */}
-            <section className="bg-rose-600 text-white rounded-[24px] md:rounded-[40px] p-4 md:p-12 mb-4 md:mb-8 shadow-xl shadow-rose-100 dark:shadow-rose-900/20 relative overflow-hidden">
+            <section className="bg-rose-600 text-white rounded-[20px] md:rounded-[28px] p-4 md:p-6 mb-3 md:mb-6 shadow-xl shadow-rose-100 dark:shadow-rose-900/20 relative overflow-hidden">
                 <div className="relative z-10">
-                    <span className="font-black uppercase tracking-widest text-rose-100 text-[9px] md:text-sm">Argent Dehors</span>
-                    <div className="text-3xl md:text-7xl font-black tracking-tighter mt-0.5">{totalGlobalDette} <span className="text-xl md:text-4xl">F</span></div>
-                    <p className="mt-1 md:mt-4 font-bold text-rose-100 text-[10px] md:text-base max-w-md">C'est l'argent que tes clients te doivent encore.</p>
+                    <span className="font-black uppercase tracking-widest text-rose-100 text-[9px] md:text-xs">Argent Dehors</span>
+                    <div className="text-4xl md:text-6xl font-black tracking-tighter leading-none mt-1">{totalGlobalDette} <span className="text-lg md:text-3xl">F</span></div>
+                    <p className="mt-1 font-bold text-rose-100 text-[9px] md:text-xs max-w-sm">C'est l'argent que tes clients te doivent encore.</p>
                 </div>
-                <User size={180} className="absolute -right-8 -bottom-8 text-white/10 rotate-12 hidden md:block" />
-                <User size={80} className="absolute -right-2 -bottom-2 text-white/10 rotate-12 md:hidden" />
+                <User size={120} className="absolute -right-8 -bottom-8 text-white/10 rotate-12 hidden md:block" />
+                <User size={64} className="absolute -right-2 -bottom-2 text-white/10 rotate-12 md:hidden" />
             </section>
 
             {/* Barre de Recherche */}
-            <div className="relative mb-6 md:mb-8 max-w-2xl">
-                <Search className="absolute left-4 md:left-6 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 md:w-6 md:h-6" />
+            <div className="relative mb-4 md:mb-6 max-w-xl">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 md:w-5 md:h-5" />
                 <input
                     type="text"
                     placeholder="CHERCHER..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full h-12 md:h-20 bg-white dark:bg-slate-900 rounded-[16px] md:rounded-[24px] pl-12 md:pl-16 pr-4 md:pr-6 font-black text-sm md:text-lg text-slate-800 dark:text-white shadow-sm border-2 border-slate-100 dark:border-slate-800 focus:outline-none focus:border-rose-500 transition-all uppercase"
+                    className="w-full h-10 md:h-12 bg-white dark:bg-slate-900 rounded-[12px] md:rounded-[16px] pl-10 md:pl-12 pr-4 font-black text-xs md:text-sm text-slate-800 dark:text-white shadow-sm border border-slate-100 dark:border-slate-800 focus:outline-none focus:border-rose-500 transition-all uppercase"
                 />
             </div>
 
@@ -95,33 +95,33 @@ export default function CarnetPage() {
                                 <motion.div
                                     key={key}
                                     layout
-                                    className="bg-white dark:bg-slate-900 rounded-[24px] md:rounded-[32px] p-5 md:p-8 shadow-sm border border-slate-100 dark:border-slate-800"
+                                    className="bg-white dark:bg-slate-900 rounded-[20px] md:rounded-[24px] p-3 md:p-5 shadow-sm border border-slate-100 dark:border-slate-800"
                                 >
-                                    <div className="flex items-center justify-between mb-4 md:mb-6">
-                                        <div className="flex items-center gap-3 md:gap-4 w-full">
-                                            <div className={`w-12 h-12 md:w-16 md:h-16 shrink-0 rounded-[14px] md:rounded-2xl flex items-center justify-center ${client.name === 'CLIENT INCONNU' ? 'bg-slate-100 dark:bg-slate-800 text-slate-400' : 'bg-rose-100 dark:bg-rose-900/30 text-rose-600'}`}>
-                                                <User size={24} className="md:w-9 md:h-9" />
+                                    <div className="flex items-center justify-between mb-3 md:mb-4">
+                                        <div className="flex items-center gap-2 md:gap-3 w-full">
+                                            <div className={`w-10 h-10 md:w-12 md:h-12 shrink-0 rounded-xl md:rounded-2xl flex items-center justify-center ${client.name === 'CLIENT INCONNU' ? 'bg-slate-100 dark:bg-slate-800 text-slate-400' : 'bg-rose-100 dark:bg-rose-900/30 text-rose-600'}`}>
+                                                <User size={20} className="md:w-6 md:h-6" />
                                             </div>
                                             <div className="min-w-0 flex-1">
-                                                <h3 className="font-black text-slate-800 dark:text-white uppercase text-base md:text-2xl leading-none truncate">{client.name}</h3>
-                                                <p className="text-rose-600 font-black text-sm md:text-lg mt-0.5 md:mt-1">Doit {client.total} F</p>
+                                                <h3 className="font-black text-slate-800 dark:text-white uppercase text-sm md:text-lg leading-none truncate">{client.name}</h3>
+                                                <p className="text-rose-600 font-black text-xs md:text-sm mt-0.5">Doit {client.total} F</p>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="flex gap-2 md:gap-3">
+                                    <div className="flex gap-2">
                                         <button
                                             onClick={() => {
                                                 markAllAsPaid(client.name);
                                                 speak(`Parfait ${name}. ${client.name} a tout réglé, soit ${client.total} francs.`);
                                             }}
-                                            className="flex-1 bg-emerald-600 text-white px-3 md:px-4 py-3 md:py-4 rounded-xl md:rounded-2xl font-black text-[10px] md:text-xs uppercase shadow-lg shadow-emerald-100 dark:shadow-none active:scale-95 transition-all text-center"
+                                            className="flex-1 bg-emerald-600 text-white px-2 py-2 md:py-3 rounded-lg md:rounded-xl font-black text-[9px] md:text-[10px] uppercase shadow-md shadow-emerald-100 dark:shadow-none active:scale-95 transition-all text-center"
                                         >
                                             Tout Régler
                                         </button>
                                         <button
                                             onClick={() => setSelectedClient(selectedClient === key ? null : key)}
-                                            className="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-4 md:px-6 py-3 md:py-4 rounded-xl md:rounded-2xl font-black text-[10px] md:text-xs uppercase active:scale-95 transition-all shrink-0"
+                                            className="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-3 md:px-5 py-2 md:py-3 rounded-lg md:rounded-xl font-black text-[9px] md:text-[10px] uppercase active:scale-95 transition-all shrink-0 border border-slate-100 dark:border-slate-700"
                                         >
                                             {selectedClient === key ? 'Fermer' : 'Détails'}
                                         </button>
@@ -167,18 +167,18 @@ export default function CarnetPage() {
             </div>
 
             {/* Assistant Vocal (Centré et Responsive) */}
-            <div className="fixed bottom-6 left-0 right-0 flex justify-center px-4 md:px-6 pointer-events-none z-50">
+            <div className="fixed bottom-4 left-0 right-0 flex justify-center px-4 md:px-6 pointer-events-none z-50">
                 <motion.button
                     onClick={handleAction}
                     whileTap={{ scale: 0.95 }}
-                    className={`h-20 w-auto px-6 md:h-32 md:px-16 rounded-[28px] md:rounded-[50px] shadow-2xl text-white flex items-center justify-center gap-4 md:gap-6 pointer-events-auto border-4 border-white dark:border-slate-900 transition-all ${isListening ? 'bg-red-500 scale-105 md:scale-110 animate-pulse' : 'bg-rose-600 active:bg-rose-700'}`}
+                    className={`h-14 w-auto px-4 md:h-20 md:px-8 rounded-[20px] md:rounded-[28px] shadow-xl text-white flex items-center justify-center gap-3 md:gap-4 pointer-events-auto border-[3px] border-white dark:border-slate-900 transition-all ${isListening ? 'bg-red-500 scale-105 animate-pulse' : 'bg-rose-600 active:bg-rose-700'}`}
                 >
-                    <div className={`p-3 md:p-6 rounded-2xl md:rounded-3xl ${isSpeaking || isListening ? 'bg-white text-rose-600' : 'bg-white/20 text-white'} transition-all duration-300 shrink-0`}>
-                        <Mic size={24} className="md:w-10 md:h-10 md:scale-110" fill={isSpeaking || isListening ? "currentColor" : "none"} strokeWidth={3} />
+                    <div className={`p-2 bg-white/20 text-white rounded-full ${isSpeaking || isListening ? 'bg-white text-rose-600' : 'bg-white/20 text-white'} transition-all duration-300 shrink-0`}>
+                        <Mic size={20} className="md:w-6 md:h-6" fill={isSpeaking || isListening ? "currentColor" : "none"} strokeWidth={3} />
                     </div>
-                    <div className="flex flex-col items-start pr-2 md:pr-4 text-left">
-                        <span className="text-xl md:text-3xl font-black leading-none uppercase">{isListening ? "J'ÉCOUTE..." : "PARLER"}</span>
-                        <span className="text-[10px] md:text-sm font-bold opacity-80 italic tracking-tighter">Dis "Fatou a payé"</span>
+                    <div className="flex flex-col items-start pr-1 md:pr-2 text-left min-w-0">
+                        <span className="text-sm md:text-lg font-black leading-none uppercase truncate">{isListening ? "J'ÉCOUTE..." : "PARLER"}</span>
+                        <span className="text-[8px] md:text-[9px] font-bold opacity-80 italic tracking-tighter truncate">Dis "Fatou a payé"</span>
                     </div>
                 </motion.button>
             </div>

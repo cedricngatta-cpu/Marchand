@@ -65,15 +65,15 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ onAdd, onSpeak }) => {
                                 onAdd(product);
                                 onSpeak(`Ajouté : ${product.audioName}`);
                             }}
-                            className={`${product.color} p-6 rounded-[32px] flex flex-col items-center justify-center gap-2 shadow-sm border border-black/5 active:shadow-inner transition-all h-44 relative`}
+                            className={`${product.color} p-3 rounded-[20px] sm:rounded-[24px] flex flex-col items-center justify-center gap-1.5 shadow-sm border border-black/5 active:shadow-inner transition-all h-32 relative`}
                         >
                             {/* Badge Stock */}
-                            <div className="absolute top-3 right-3 bg-white/90 px-2 py-0.5 rounded-xl border border-black/5 shadow-sm">
-                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter mr-1">Stock</span>
-                                <span className={`text-xs font-black ${stockLevel <= 5 ? 'text-red-500' : 'text-slate-900'}`}>{stockLevel}</span>
+                            <div className="absolute top-2 right-2 bg-white/90 px-1.5 py-0.5 rounded-lg border border-black/5 shadow-sm flex items-center">
+                                <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter mr-1 hidden sm:inline">Stock</span>
+                                <span className={`text-[10px] sm:text-xs font-black leading-none ${stockLevel <= 5 ? 'text-red-500' : 'text-slate-900'}`}>{stockLevel}</span>
                             </div>
 
-                            <div className="w-full h-24 mb-2 flex items-center justify-center relative overflow-hidden rounded-2xl">
+                            <div className="w-full h-14 sm:h-16 mb-0.5 flex items-center justify-center relative overflow-hidden rounded-xl">
                                 {product.imageUrl ? (
                                     <img
                                         src={product.imageUrl}
@@ -81,12 +81,12 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ onAdd, onSpeak }) => {
                                         className="w-full h-full object-contain hover:scale-110 transition-transform duration-500"
                                     />
                                 ) : (
-                                    <product.icon size={48} className={product.iconColor} />
+                                    <product.icon size={28} className={`${product.iconColor} sm:w-8 sm:h-8`} />
                                 )}
                             </div>
-                            <span className="font-black text-slate-900 tracking-tight text-sm uppercase leading-none text-center line-clamp-2 px-2">{product.name}</span>
+                            <span className="font-black text-slate-900 tracking-tight text-[10px] sm:text-xs uppercase leading-tight text-center line-clamp-2 px-1">{product.name}</span>
                             {product.price > 0 && (
-                                <span className="bg-white/60 px-2 py-0.5 rounded-full text-xs font-bold text-slate-600">
+                                <span className="bg-white/60 px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold text-slate-600 leading-none">
                                     {product.price} F
                                 </span>
                             )}

@@ -107,14 +107,14 @@ export default function StockPage() {
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     onClick={() => speak(`${user?.name?.split(' ')[0] || 'Marchand'}, il y a ${lowStockCount} produits presque finis.`)}
-                    className="bg-red-50 dark:bg-red-900/10 border-2 md:border-4 border-red-500 p-3 md:p-6 rounded-[20px] md:rounded-[32px] mb-4 flex items-center gap-2 md:gap-4 text-red-700 dark:text-red-400 shadow-lg shadow-red-200 dark:shadow-none cursor-pointer"
+                    className="bg-red-50 dark:bg-red-900/10 border md:border-2 border-red-500 p-2 md:p-4 rounded-xl md:rounded-2xl mb-3 flex items-center gap-2 md:gap-3 text-red-700 dark:text-red-400 shadow-md shadow-red-200 dark:shadow-none cursor-pointer"
                 >
-                    <div className="bg-red-500 p-1.5 md:p-3 rounded-full text-white shrink-0">
-                        <AlertTriangle size={20} className="md:w-8 md:h-8" />
+                    <div className="bg-red-500 p-1.5 md:p-2 rounded-lg text-white shrink-0">
+                        <AlertTriangle size={16} className="md:w-6 md:h-6" />
                     </div>
                     <div>
-                        <h2 className="font-black uppercase text-base md:text-xl leading-none">Attention !</h2>
-                        <p className="font-bold text-[10px] md:text-sm">Des produits sont bientôt finis.</p>
+                        <h2 className="font-black uppercase text-xs md:text-sm leading-none">Attention !</h2>
+                        <p className="font-bold text-[9px] md:text-xs">Des produits sont bientôt finis.</p>
                     </div>
                 </motion.div>
             )}
@@ -194,29 +194,29 @@ export default function StockPage() {
             </AnimatePresence>
 
             {/* Aide Vocale */}
-            <div className="mt-8 bg-white dark:bg-slate-900 p-5 md:p-6 rounded-[28px] md:rounded-[40px] border-2 border-slate-100 dark:border-slate-800 flex items-center gap-4 shadow-sm mb-20 md:mb-24">
-                <div className="w-10 h-10 md:w-12 md:h-12 bg-slate-900 rounded-full flex items-center justify-center text-white shrink-0">
-                    <Package size={20} className="md:w-6 md:h-6" />
+            <div className="mt-6 bg-white dark:bg-slate-900 p-3 md:p-4 rounded-[20px] md:rounded-[24px] border border-slate-100 dark:border-slate-800 flex items-center gap-2 md:gap-4 shadow-sm mb-16 md:mb-20">
+                <div className="w-8 h-8 md:w-10 md:h-10 bg-slate-900 rounded-full flex items-center justify-center text-white shrink-0">
+                    <Package size={16} className="md:w-5 md:h-5" />
                 </div>
-                <p className="font-bold text-slate-600 dark:text-slate-300 leading-tight text-xs md:text-sm">
+                <p className="font-bold text-slate-600 dark:text-slate-300 leading-tight text-[10px] md:text-xs">
                     Appuie sur le bouton noir pour me parler et gérer ton stock.
                 </p>
             </div>
 
             {/* Micro Global Fixé */}
-            <div className="fixed bottom-6 left-0 right-0 flex justify-center px-4 pointer-events-none z-50">
+            <div className="fixed bottom-4 left-0 right-0 flex justify-center px-4 pointer-events-none z-50">
                 <motion.button
                     onClick={handleAction}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className={`h-22 md:h-22 px-6 md:px-8 rounded-[28px] md:rounded-[35px] shadow-2xl text-white flex items-center gap-4 md:gap-6 pointer-events-auto border-4 border-white dark:border-slate-900 transition-all ${isListening ? 'bg-red-500' : 'bg-slate-900 active:bg-slate-800'}`}
+                    className={`h-16 md:h-20 px-4 md:px-6 rounded-[20px] md:rounded-[28px] shadow-xl text-white flex items-center gap-3 w-auto pointer-events-auto border-[3px] border-white dark:border-slate-900 transition-all ${isListening ? 'bg-red-500' : 'bg-slate-900 active:bg-slate-800'}`}
                 >
-                    <div className={`p-3 md:p-4 rounded-full ${isSpeaking || isListening ? 'bg-white text-slate-900' : 'bg-white/20 text-white'} transition-all duration-300 shrink-0`}>
-                        <Mic size={28} className="md:w-9 md:h-9" fill={isSpeaking || isListening ? "currentColor" : "none"} strokeWidth={3} />
+                    <div className={`p-2 bg-white/20 text-white rounded-full ${isSpeaking || isListening ? 'bg-white text-slate-900' : 'bg-white/20 text-white'} transition-all duration-300 shrink-0`}>
+                        <Mic size={20} className="md:w-6 md:h-6" fill={isSpeaking || isListening ? "currentColor" : "none"} strokeWidth={3} />
                     </div>
-                    <div className="flex flex-col items-start pr-2 md:pr-4 text-left">
-                        <span className="text-lg md:text-xl font-black leading-none uppercase">{isListening ? "ÉCOUTE..." : "PARLER"}</span>
-                        <span className="text-[9px] md:text-[10px] font-bold opacity-80 tracking-tighter italic">Appuie pour me parler</span>
+                    <div className="flex flex-col items-start text-left min-w-0 pr-1 md:pr-2">
+                        <span className="text-sm md:text-[16px] font-black leading-none uppercase">{isListening ? "ÉCOUTE..." : "PARLER"}</span>
+                        <span className="text-[8px] md:text-[9px] font-bold opacity-80 tracking-tighter italic">Appuie pour me parler</span>
                     </div>
                 </motion.button>
             </div>

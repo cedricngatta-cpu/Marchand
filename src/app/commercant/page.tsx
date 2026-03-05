@@ -98,17 +98,19 @@ export default function CommercantDashboard() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 onClick={() => speak(`Tu as ${balance} francs dans ta caisse.`)}
-                className="bg-emerald-600 p-4 sm:p-8 rounded-[24px] sm:rounded-[40px] text-white shadow-xl shadow-emerald-100 dark:shadow-none mb-6 sm:mb-10 relative overflow-hidden cursor-pointer"
+                className="bg-emerald-600 p-3 sm:p-6 rounded-[20px] sm:rounded-[28px] text-white shadow-xl shadow-emerald-100 dark:shadow-none mb-3 sm:mb-6 relative overflow-hidden cursor-pointer"
             >
-                <div className="relative z-10">
-                    <span className="text-emerald-100 font-black text-[10px] sm:text-sm uppercase tracking-widest">Ma Caisse Aujourd'hui</span>
-                    <div className="text-3xl sm:text-7xl font-black tracking-tighter mt-0.5 sm:mt-1">{balance} <span className="text-base sm:text-2xl opacity-80">F</span></div>
+                <div className="relative z-10 flex items-end justify-between">
+                    <div>
+                        <span className="text-emerald-100 font-black text-[10px] sm:text-xs uppercase tracking-widest block mb-0.5">Ma Caisse Aujourd'hui</span>
+                        <div className="text-3xl sm:text-5xl font-black tracking-tighter leading-none">{balance} <span className="text-base sm:text-xl opacity-80">F</span></div>
+                    </div>
                 </div>
-                <TrendingUp size={100} className="sm:w-[160px] sm:h-[160px] absolute -right-4 -bottom-4 sm:-right-8 sm:-bottom-8 text-white/10 rotate-12" />
+                <TrendingUp size={60} className="sm:w-[100px] sm:h-[100px] absolute -right-2 -bottom-2 sm:-right-4 sm:-bottom-4 text-white/10 rotate-12" />
             </motion.section>
 
             {/* Grille Menu */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-6 mb-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4 mb-3 sm:mb-6">
                 {menuItems.map((item) => {
                     const requiresOnline = ['marche', 'conseils'].includes(item.id);
                     const isDisabled = requiresOnline && !isOnline;
@@ -124,17 +126,17 @@ export default function CommercantDashboard() {
                                 }
                                 router.push(item.path);
                             }}
-                            className={`${isDisabled ? 'bg-slate-200 dark:bg-slate-800 cursor-not-allowed' : item.color} p-4 sm:p-8 rounded-[22px] sm:rounded-[35px] text-white flex flex-col items-center justify-center gap-2 sm:gap-4 shadow-xl active:scale-95 transition-all border-b-4 border-black/10 min-h-[110px] sm:min-h-[180px] relative`}
+                            className={`${isDisabled ? 'bg-slate-200 dark:bg-slate-800 cursor-not-allowed' : item.color} p-2.5 sm:p-4 rounded-[18px] sm:rounded-[24px] text-white flex flex-col items-center justify-center gap-1.5 sm:gap-2 shadow-sm active:scale-95 transition-all border-b-[3px] border-black/10 min-h-[85px] sm:min-h-[120px] relative`}
                         >
                             {!isOnline && requiresOnline && (
-                                <div className="absolute top-2 right-2 sm:top-4 sm:right-4 bg-slate-900/40 p-1 rounded-full text-white/80">
-                                    <WifiOff size={12} />
+                                <div className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 bg-slate-900/40 p-1 rounded-full text-white/80">
+                                    <WifiOff size={10} />
                                 </div>
                             )}
-                            <div className={`${isDisabled ? 'bg-slate-400/20 text-slate-400' : 'bg-white/20'} p-2.5 sm:p-4 rounded-lg sm:rounded-2xl`}>
-                                <item.icon size={24} className="sm:w-9 sm:h-9 sm:scale-125" />
+                            <div className={`${isDisabled ? 'bg-slate-400/20 text-slate-400' : 'bg-white/20'} p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl`}>
+                                <item.icon size={20} className="sm:w-6 sm:h-6" />
                             </div>
-                            <span className={`font-black uppercase tracking-widest text-[10px] sm:text-lg text-center leading-tight ${isDisabled ? 'text-slate-400' : 'text-white'}`}>{item.name}</span>
+                            <span className={`font-black uppercase tracking-widest text-[9px] sm:text-xs text-center leading-tight ${isDisabled ? 'text-slate-400' : 'text-white'}`}>{item.name}</span>
                         </motion.button>
                     );
                 })}
@@ -143,12 +145,12 @@ export default function CommercantDashboard() {
                 <motion.button
                     whileTap={{ scale: 0.95 }}
                     onClick={() => router.push('/scanner')}
-                    className="col-span-2 sm:col-span-1 bg-slate-900 p-4 sm:p-8 rounded-[22px] sm:rounded-[35px] text-white flex sm:flex-col items-center justify-center gap-3 sm:gap-6 shadow-xl min-h-[60px] sm:min-h-[180px]"
+                    className="col-span-2 sm:col-span-1 bg-slate-900 p-2.5 sm:p-4 rounded-[18px] sm:rounded-[24px] text-white flex sm:flex-col items-center justify-center gap-2 sm:gap-2 shadow-sm border-b-[3px] border-black/20 min-h-[50px] sm:min-h-[120px]"
                 >
-                    <div className="bg-white/10 p-2.5 sm:p-4 rounded-lg sm:rounded-2xl">
-                        <Scan size={24} className="sm:w-9 sm:h-9 sm:scale-125" />
+                    <div className="bg-white/10 p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl">
+                        <Scan size={18} className="sm:w-6 sm:h-6" />
                     </div>
-                    <span className="font-black uppercase tracking-widest text-xs sm:text-lg">Scanner</span>
+                    <span className="font-black uppercase tracking-widest text-[10px] sm:text-xs">Scanner</span>
                 </motion.button>
             </div>
 
@@ -156,16 +158,16 @@ export default function CommercantDashboard() {
             <motion.section
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                className={`rounded-[24px] sm:rounded-[40px] p-6 sm:p-12 border-2 shadow-sm relative overflow-hidden mb-6 sm:mb-8 transition-colors ${!isOnline ? 'bg-slate-100 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800' : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800'}`}
+                className={`rounded-[20px] sm:rounded-[28px] p-4 sm:p-6 border shadow-sm relative overflow-hidden mb-4 transition-colors ${!isOnline ? 'bg-slate-100 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800' : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800'}`}
             >
                 <div className="relative z-10 max-w-2xl text-center sm:text-left">
-                    <div className={`flex items-center justify-center sm:justify-start gap-2.5 mb-3`}>
+                    <div className={`flex items-center justify-center sm:justify-start gap-2 mb-2`}>
                         <div className={`p-1.5 rounded-lg ${!isOnline ? 'bg-slate-200 dark:bg-slate-800 text-slate-400' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-600'}`}>
-                            {isOnline ? <TrendingUp size={20} /> : <WifiOff size={20} />}
+                            {isOnline ? <TrendingUp size={16} /> : <WifiOff size={16} />}
                         </div>
-                        <h2 className="font-black uppercase text-slate-400 tracking-widest text-[9px] sm:text-xs">Conseil du Coach</h2>
+                        <h2 className="font-black uppercase text-slate-400 tracking-widest text-[8px] sm:text-[10px]">Conseil du Coach</h2>
                     </div>
-                    <p className={`text-base sm:text-3xl font-bold leading-tight mb-4 sm:mb-8 ${!isOnline ? 'text-slate-400' : 'text-slate-800 dark:text-white'}`}>
+                    <p className={`text-sm sm:text-lg font-bold leading-tight mb-3 sm:mb-4 ${!isOnline ? 'text-slate-400' : 'text-slate-800 dark:text-white'}`}>
                         {isOnline ? `"${user?.name?.split(' ')[0] || 'Marchand'}, j'ai analysé tes ventes. Tu as un conseil pour booster ton commerce !"` : `"${user?.name?.split(' ')[0] || 'Marchand'}, reconnecte-toi à internet pour recevoir ton analyse quotidienne."`}
                     </p>
                     <button

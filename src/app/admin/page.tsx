@@ -188,19 +188,27 @@ export default function ProfessionalAdminPage() {
     return (
         <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-950 flex flex-col md:flex-row">
             {/* Sidebar devient compact sur desktop, escamotable sur mobile */}
-            <aside className="w-full md:w-72 p-4 sm:p-6 md:fixed md:h-screen z-40 bg-transparent shrink-0">
-                <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl h-full rounded-[32px] sm:rounded-[40px] shadow-2xl border border-slate-100 dark:border-slate-800 flex flex-col p-6 sm:p-8">
-                    <div className="flex items-center gap-3 sm:gap-4 mb-8 sm:mb-12">
-                        <div className="bg-emerald-600 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl shadow-lg">
-                            <LayoutDashboard size={22} className="text-white sm:w-7 sm:h-7" />
+            <aside className="w-full md:w-72 p-2 sm:p-4 md:p-6 md:fixed md:h-screen z-40 bg-transparent shrink-0">
+                <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl md:h-full rounded-[24px] md:rounded-[40px] shadow-lg md:shadow-2xl border border-slate-100 dark:border-slate-800 flex flex-col p-4 md:p-8">
+                    <div className="flex items-center justify-between md:justify-start gap-3 sm:gap-4 mb-4 md:mb-12">
+                        <div className="flex items-center gap-3">
+                            <div className="bg-emerald-600 p-2 md:p-3 rounded-xl md:rounded-2xl shadow-lg shrink-0">
+                                <LayoutDashboard size={20} className="text-white md:w-7 md:h-7" />
+                            </div>
+                            <div>
+                                <span className="font-black text-lg md:text-2xl uppercase tracking-tighter text-slate-900 dark:text-white block leading-none">ADMIN</span>
+                                <span className="text-emerald-600 font-bold text-[8px] md:text-xs uppercase tracking-widest hidden sm:block">Supervision</span>
+                            </div>
                         </div>
-                        <div>
-                            <span className="font-black text-xl sm:text-2xl uppercase tracking-tighter text-slate-900 dark:text-white block leading-none">ADMIN</span>
-                            <span className="text-emerald-600 font-bold text-[9px] sm:text-xs uppercase tracking-widest">Supervision</span>
-                        </div>
+                        <button
+                            onClick={() => router.push('/')}
+                            className="md:hidden flex items-center justify-center p-2 bg-rose-50 dark:bg-rose-900/20 rounded-xl text-rose-500"
+                        >
+                            <LogOut size={18} />
+                        </button>
                     </div>
 
-                    <nav className="space-y-2 sm:space-y-3 flex-1 overflow-y-auto">
+                    <nav className="flex md:flex-col gap-2 md:gap-3 flex-1 overflow-x-auto md:overflow-y-auto pb-2 md:pb-0 scrollbar-hide -mx-2 px-2 md:mx-0 md:px-0">
                         <SidebarLink active={activeTab === 'OVERVIEW'} onClick={() => setActiveTab('OVERVIEW')} icon={TrendingUp} label="Bilan Global" color="emerald" />
                         <SidebarLink active={activeTab === 'USERS'} onClick={() => setActiveTab('USERS')} icon={Users} label="Utilisateurs" color="blue" />
                         <SidebarLink active={activeTab === 'PROFILES'} onClick={() => setActiveTab('PROFILES')} icon={Store} label="Commerçants" color="emerald" />
@@ -212,7 +220,7 @@ export default function ProfessionalAdminPage() {
 
                     <button
                         onClick={() => router.push('/')}
-                        className="mt-6 sm:mt-8 flex items-center justify-center gap-3 bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-100 py-4 sm:py-5 rounded-2xl sm:rounded-3xl font-black uppercase text-[10px] sm:text-xs tracking-widest text-rose-500 transition-all border border-rose-100 dark:border-rose-800 active:scale-95"
+                        className="hidden md:flex mt-6 sm:mt-8 items-center justify-center gap-3 bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-100 py-4 sm:py-5 rounded-2xl sm:rounded-3xl font-black uppercase text-[10px] sm:text-xs tracking-widest text-rose-500 transition-all border border-rose-100 dark:border-rose-800 active:scale-95"
                     >
                         <LogOut size={16} className="sm:w-5 sm:h-5" /> Déconnexion
                     </button>
@@ -832,9 +840,10 @@ function SidebarLink({ active, onClick, icon: Icon, label, color }: any) {
     return (
         <button
             onClick={onClick}
-            className={`w-full flex items-center gap-5 p-5 rounded-[28px] font-black text-sm transition-all uppercase tracking-tight ${colorStyles[color]} ${active ? 'shadow-xl' : 'hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+            className={`flex-none md:w-full flex items-center gap-2 md:gap-5 px-4 md:px-5 py-3 md:py-5 rounded-xl md:rounded-[28px] font-black text-[10px] md:text-sm transition-all uppercase tracking-tight whitespace-nowrap shrink-0 md:shrink border md:border-transparent ${colorStyles[color]} ${active ? 'shadow-md md:shadow-xl border-slate-100/50' : 'hover:bg-slate-50 dark:hover:bg-slate-800 border-transparent'}`}
         >
-            <Icon size={22} /> {label}
+            <Icon size={16} className="md:w-[22px] md:h-[22px]" />
+            <span>{label}</span>
         </button>
     );
 }

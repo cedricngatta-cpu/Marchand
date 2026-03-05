@@ -69,38 +69,38 @@ export default function BilanPage() {
                 <motion.section
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    className="bg-emerald-600 text-white rounded-[24px] md:rounded-[40px] p-4 md:p-12 shadow-xl shadow-emerald-100 dark:shadow-emerald-900/20 flex flex-col gap-2 md:gap-4 relative overflow-hidden"
+                    className="bg-emerald-600 text-white rounded-[20px] md:rounded-[28px] p-4 md:p-6 shadow-xl shadow-emerald-100 dark:shadow-emerald-900/20 flex flex-col gap-1 md:gap-2 relative overflow-hidden"
                 >
                     <div className="absolute -right-8 -top-8 text-white/10 rotate-12 hidden md:block">
-                        <Wallet size={200} />
+                        <Wallet size={120} />
                     </div>
                     <div className="flex items-center gap-2 relative z-10">
-                        <div className="bg-white/20 p-2 md:p-3 rounded-lg md:rounded-2xl">
-                            <Wallet size={18} className="md:w-8 md:h-8" />
+                        <div className="bg-white/20 p-1.5 md:p-2 rounded-lg md:rounded-xl">
+                            <Wallet size={14} className="md:w-6 md:h-6" />
                         </div>
-                        <span className="font-black uppercase tracking-widest text-emerald-100 italic text-[9px] md:text-base">Dans la caisse</span>
+                        <span className="font-black uppercase tracking-widest text-emerald-100 italic text-[9px] md:text-xs">Dans la caisse</span>
                     </div>
                     <div className="relative z-10">
-                        <span className="text-4xl md:text-8xl font-black tracking-tighter">{balance}</span>
-                        <span className="text-lg md:text-4xl font-bold ml-1 md:ml-2 text-emerald-100">F</span>
+                        <span className="text-4xl md:text-6xl font-black tracking-tighter leading-none">{balance}</span>
+                        <span className="text-xl md:text-3xl font-bold ml-1 md:ml-2 text-emerald-100">F</span>
                     </div>
-                    <p className="font-bold text-emerald-100 bg-emerald-700/30 p-2 md:p-6 rounded-lg md:rounded-2xl relative z-10 max-w-md text-[9px] md:text-base">
+                    <p className="font-bold text-emerald-100 bg-emerald-700/30 p-2 md:p-4 rounded-xl mt-1 relative z-10 max-w-md text-[10px] md:text-sm leading-snug">
                         C'est l'argent que tu as gagné aujourd'hui, {name}. Beau travail !
                     </p>
                 </motion.section>
 
                 {/* Le Stock & Dettes */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                     <motion.section
                         initial={{ scale: 0.9, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         transition={{ delay: 0.1 }}
-                        className="bg-blue-600 text-white rounded-[20px] md:rounded-[32px] p-4 md:p-8 shadow-xl shadow-blue-100 dark:shadow-blue-900/20 flex flex-col gap-1 md:gap-2 relative overflow-hidden"
+                        className="bg-blue-600 text-white rounded-[20px] md:rounded-[24px] p-4 shadow-md shadow-blue-100 dark:shadow-blue-900/20 flex flex-col gap-1 relative overflow-hidden"
                     >
-                        <span className="font-black uppercase tracking-widest text-blue-100 text-[9px] md:text-xs">Valeur Marchandise</span>
+                        <span className="font-black uppercase tracking-widest text-blue-100 text-[10px] md:text-xs">Valeur Marchandise</span>
                         <div>
-                            <span className="text-2xl md:text-5xl font-black tracking-tighter">{stockValue}</span>
-                            <span className="text-sm md:text-xl font-bold ml-1 text-blue-100">F</span>
+                            <span className="text-2xl md:text-4xl font-black tracking-tighter leading-none">{stockValue}</span>
+                            <span className="text-sm md:text-lg font-bold ml-1 text-blue-100">F</span>
                         </div>
                     </motion.section>
 
@@ -108,14 +108,14 @@ export default function BilanPage() {
                         initial={{ scale: 0.9, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         transition={{ delay: 0.2 }}
-                        className="bg-rose-600 text-white rounded-[20px] md:rounded-[32px] p-4 md:p-8 shadow-xl shadow-rose-100 dark:shadow-rose-900/20 flex flex-col gap-1 md:gap-2 relative overflow-hidden"
+                        className="bg-rose-600 text-white rounded-[20px] md:rounded-[24px] p-4 shadow-md shadow-rose-100 dark:shadow-rose-900/20 flex flex-col gap-1 relative overflow-hidden"
                     >
-                        <span className="font-black uppercase tracking-widest text-rose-100 text-[9px] md:text-xs">Crédit Dehors</span>
+                        <span className="font-black uppercase tracking-widest text-rose-100 text-[10px] md:text-xs">Crédit Dehors</span>
                         <div>
-                            <span className="text-2xl md:text-5xl font-black tracking-tighter">
+                            <span className="text-2xl md:text-4xl font-black tracking-tighter leading-none">
                                 {history.filter(t => t.status === 'DETTE').reduce((acc, t) => acc + t.price, 0)}
                             </span>
-                            <span className="text-sm md:text-xl font-bold ml-1 text-rose-100">F</span>
+                            <span className="text-sm md:text-lg font-bold ml-1 text-rose-100">F</span>
                         </div>
                     </motion.section>
 
@@ -123,22 +123,22 @@ export default function BilanPage() {
                         initial={{ scale: 0.9, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         transition={{ delay: 0.3 }}
-                        className="bg-purple-600 text-white rounded-[20px] md:rounded-[32px] p-4 md:p-8 shadow-xl shadow-purple-100 dark:shadow-purple-900/20 flex flex-col gap-1 md:gap-2 relative overflow-hidden sm:col-span-2 lg:col-span-1"
+                        className="bg-purple-600 text-white rounded-[20px] md:rounded-[24px] p-4 shadow-md shadow-purple-100 dark:shadow-purple-900/20 flex flex-col gap-1 relative overflow-hidden sm:col-span-2 lg:col-span-1"
                     >
-                        <span className="font-black uppercase tracking-widest text-purple-100 text-[9px] md:text-xs">Estimation Gain Réel</span>
+                        <span className="font-black uppercase tracking-widest text-purple-100 text-[10px] md:text-xs">Estimation Gain Réel</span>
                         <div>
-                            <span className="text-2xl md:text-5xl font-black tracking-tighter">{Math.round(balance * 0.2)}</span>
-                            <span className="text-sm md:text-xl font-bold ml-1 text-purple-100">F</span>
+                            <span className="text-2xl md:text-4xl font-black tracking-tighter leading-none">{Math.round(balance * 0.2)}</span>
+                            <span className="text-sm md:text-lg font-bold ml-1 text-purple-100">F</span>
                         </div>
                     </motion.section>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
                     {/* Top Produits & Évolution */}
-                    <div className="space-y-6 md:space-y-8">
-                        <section className="bg-white dark:bg-slate-900 rounded-[24px] md:rounded-[40px] p-4 md:p-8 shadow-sm border border-slate-100 dark:border-slate-800">
-                            <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-6">
-                                <TrendingUp className="text-amber-500" size={20} />
+                    <div className="space-y-4 md:space-y-6">
+                        <section className="bg-white dark:bg-slate-900 rounded-[24px] md:rounded-[32px] p-4 md:p-6 shadow-sm border border-slate-100 dark:border-slate-800">
+                            <div className="flex items-center gap-2 mb-3 md:mb-4">
+                                <TrendingUp className="text-amber-500 w-5 h-5 md:w-6 md:h-6" />
                                 <h2 className="font-black uppercase text-slate-400 tracking-widest text-[9px] md:text-sm">Tes Champions</h2>
                             </div>
 
@@ -232,13 +232,13 @@ export default function BilanPage() {
                         <motion.section
                             initial={{ scale: 0.95, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            className="bg-slate-900 text-white rounded-[24px] md:rounded-[40px] p-4 md:p-10 shadow-2xl relative overflow-hidden border-[2px] md:border-4 border-amber-400"
+                            className="bg-slate-900 text-white rounded-[20px] md:rounded-[28px] p-4 md:p-6 shadow-xl relative overflow-hidden border-2 md:border-[3px] border-amber-400"
                         >
-                            <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-6">
-                                <div className="bg-amber-400 p-1 md:p-2 rounded-lg text-slate-900 shadow-lg shadow-amber-400/20">
-                                    <TrendingUp size={20} className="md:w-7 md:h-7" />
+                            <div className="flex items-center gap-2 mb-3 md:mb-4">
+                                <div className="bg-amber-400 p-1 md:p-1.5 rounded-md text-slate-900 shadow-sm shadow-amber-400/20">
+                                    <TrendingUp size={16} className="md:w-5 md:h-5" />
                                 </div>
-                                <h2 className="font-black uppercase tracking-widest text-amber-400 text-xs md:text-lg">Conseil Intelligent</h2>
+                                <h2 className="font-black uppercase tracking-widest text-amber-400 text-[10px] md:text-sm">Conseil Intelligent</h2>
                             </div>
 
                             <div className="relative z-10">
@@ -278,13 +278,13 @@ export default function BilanPage() {
                                     }
 
                                     return (
-                                        <div className="space-y-4">
-                                            <p className={`text-lg md:text-2xl font-black leading-tight ${adviceColor} italic tracking-tight`}>{adviceText}</p>
+                                        <div className="space-y-3">
+                                            <p className={`text-sm md:text-lg font-black leading-tight ${adviceColor} italic tracking-tight`}>{adviceText}</p>
                                             <button
                                                 onClick={() => speak(voiceText)}
-                                                className="bg-amber-400 hover:bg-amber-300 text-slate-900 px-4 md:px-8 py-2 md:py-4 rounded-lg md:rounded-[20px] font-black uppercase text-[9px] md:text-xs tracking-widest flex items-center justify-center md:justify-start gap-2 md:gap-3 active:scale-95 transition-all shadow-xl shadow-amber-400/20 shadow-none border-b-2 md:border-b-4 border-amber-600 w-full sm:w-auto"
+                                                className="bg-amber-400 hover:bg-amber-300 text-slate-900 px-3 md:px-5 py-2 rounded-lg font-black uppercase text-[9px] md:text-xs tracking-widest flex items-center justify-center md:justify-start gap-2 active:scale-95 transition-all w-full sm:w-auto mt-2"
                                             >
-                                                <Volume2 size={18} className="md:w-6 md:h-6" /> Écouter le conseil
+                                                <Volume2 size={16} className="md:w-5 md:h-5" /> Écouter le conseil
                                             </button>
                                         </div>
                                     );
@@ -292,10 +292,10 @@ export default function BilanPage() {
                             </div>
                         </motion.section>
 
-                        <section className="bg-white dark:bg-slate-900 rounded-[32px] md:rounded-[40px] p-6 md:p-8 shadow-sm border border-slate-100 dark:border-slate-800">
-                            <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6">
-                                <Clock className="text-slate-400" size={24} />
-                                <h2 className="font-black uppercase text-slate-400 tracking-widest text-[10px] md:text-sm">Journal du Jour</h2>
+                        <section className="bg-white dark:bg-slate-900 rounded-[20px] md:rounded-[28px] p-4 md:p-6 shadow-sm border border-slate-100 dark:border-slate-800">
+                            <div className="flex items-center gap-2 mb-3 md:mb-4">
+                                <Clock className="text-slate-400 w-5 h-5 md:w-6 md:h-6" />
+                                <h2 className="font-black uppercase text-slate-400 tracking-widest text-[9px] md:text-sm">Journal du Jour</h2>
                             </div>
 
                             <div className="space-y-3 md:space-y-4 max-h-[300px] md:max-h-[400px] overflow-y-auto pr-2 scrollbar-hide">
@@ -358,22 +358,22 @@ export default function BilanPage() {
             </div>
 
             {/* Actions Fixes (Centrées) */}
-            <div className="fixed bottom-6 left-0 right-0 px-4 md:px-6 flex items-center justify-center pointer-events-none z-50">
-                <div className="w-full max-w-2xl flex items-center gap-3 md:gap-4">
+            <div className="fixed bottom-4 left-0 right-0 px-3 md:px-6 flex items-center justify-center pointer-events-none z-50">
+                <div className="w-full max-w-xl flex items-center gap-2 md:gap-4">
                     {/* Micro */}
                     <motion.button
                         onClick={handleAction}
                         whileTap={{ scale: 0.9 }}
-                        className={`h-20 w-20 md:h-32 md:w-32 shrink-0 rounded-[28px] md:rounded-[40px] flex items-center justify-center shadow-2xl border-4 border-white dark:border-slate-900 transition-all pointer-events-auto ${isListening ? 'bg-red-500 scale-105 md:scale-110 animate-pulse' : isSpeaking ? 'bg-blue-500' : 'bg-slate-900'}`}
+                        className={`h-14 w-14 md:h-20 md:w-20 shrink-0 rounded-2xl md:rounded-[28px] flex items-center justify-center shadow-xl border-[3px] border-white dark:border-slate-900 transition-all pointer-events-auto ${isListening ? 'bg-red-500 scale-105 animate-pulse' : isSpeaking ? 'bg-blue-500' : 'bg-slate-900'}`}
                     >
-                        <Mic size={28} color="white" fill={isListening || isSpeaking ? "white" : "none"} className="md:w-9 md:h-9 md:scale-110" />
+                        <Mic size={20} color="white" fill={isListening || isSpeaking ? "white" : "none"} className="md:w-8 md:h-8" />
                     </motion.button>
 
                     <button
                         onClick={announceBilan}
-                        className="flex-1 h-20 md:h-32 bg-purple-700 hover:bg-purple-600 text-white rounded-[28px] md:rounded-[50px] flex items-center justify-center gap-2 md:gap-4 text-base md:text-3xl font-black uppercase tracking-tight shadow-2xl active:bg-purple-800 transition-all border-4 border-white dark:border-slate-900 pointer-events-auto shadow-purple-200 dark:shadow-none"
+                        className="flex-1 h-14 md:h-20 bg-purple-700 hover:bg-purple-600 text-white rounded-[20px] md:rounded-[32px] flex items-center justify-center gap-2 md:gap-3 text-xs md:text-xl font-black uppercase tracking-tight shadow-xl active:bg-purple-800 transition-all border-[3px] border-white dark:border-slate-900 pointer-events-auto"
                     >
-                        <Volume2 size={24} className="md:w-8 md:h-8 md:scale-110" />
+                        <Volume2 size={18} className="md:w-7 md:h-7" />
                         <span>MON BILAN</span>
                     </button>
                 </div>

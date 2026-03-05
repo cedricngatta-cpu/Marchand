@@ -34,18 +34,18 @@ export const StockItem: React.FC<StockItemProps> = ({
     else if (percentage < 50) barColor = 'bg-amber-500';
 
     return (
-        <div className="bg-white dark:bg-slate-900 rounded-[28px] md:rounded-[32px] p-5 md:p-6 shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col gap-3 md:gap-4">
+        <div className="bg-white dark:bg-slate-900 rounded-[20px] md:rounded-[24px] p-3 md:p-4 shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col gap-2 md:gap-3">
             <div className="flex items-center justify-between">
                 <button
                     onClick={onViewDetails}
-                    className={`p-3 md:p-4 rounded-xl md:rounded-2xl ${color} ${iconColor} active:scale-95 transition-transform`}
+                    className={`p-2 md:p-3 rounded-lg md:rounded-xl ${color} ${iconColor} active:scale-95 transition-transform`}
                 >
-                    <Icon size={28} className="md:w-8 md:h-8" />
+                    <Icon size={20} className="md:w-6 md:h-6" />
                 </button>
                 <div className="text-right flex flex-col items-end">
-                    <span className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Reste</span>
-                    <div className={`px-3 md:px-4 py-1 rounded-xl md:rounded-2xl font-black text-xl md:text-2xl flex items-center justify-center min-w-[50px] md:min-w-[60px] ${quantity < 5
-                        ? 'bg-red-600 text-white shadow-lg shadow-red-200 dark:shadow-none animate-pulse'
+                    <span className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5">Reste</span>
+                    <div className={`px-2 md:px-3 py-0.5 md:py-1 rounded-lg md:rounded-xl font-black text-sm md:text-lg flex items-center justify-center min-w-[40px] md:min-w-[50px] ${quantity < 5
+                        ? 'bg-red-600 text-white shadow-md shadow-red-200 dark:shadow-none animate-pulse'
                         : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-white'
                         }`}>
                         {quantity}
@@ -67,18 +67,18 @@ export const StockItem: React.FC<StockItemProps> = ({
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 md:gap-4 mt-1 md:mt-2">
+            <div className="grid grid-cols-2 gap-2 md:gap-3 mt-1">
                 <button
                     onClick={onRemove}
-                    className="h-12 md:h-16 bg-slate-100 dark:bg-slate-800 rounded-xl md:rounded-2xl text-slate-500 dark:text-slate-400 flex items-center justify-center active:scale-95 transition-all border-2 border-slate-200 dark:border-slate-700"
+                    className="h-10 md:h-12 bg-slate-100 dark:bg-slate-800 rounded-lg md:rounded-xl text-slate-500 dark:text-slate-400 flex items-center justify-center active:scale-95 transition-all border border-slate-200 dark:border-slate-700"
                 >
-                    <span className="text-3xl md:text-4xl font-black leading-none">-</span>
+                    <span className="text-2xl md:text-3xl font-black leading-none">-</span>
                 </button>
                 <button
                     onClick={onAdd}
-                    className="h-12 md:h-16 bg-slate-900 dark:bg-emerald-600 rounded-xl md:rounded-2xl text-white flex items-center justify-center active:scale-95 transition-all shadow-lg dark:shadow-none"
+                    className="h-10 md:h-12 bg-slate-900 dark:bg-emerald-600 rounded-lg md:rounded-xl text-white flex items-center justify-center active:scale-95 transition-all shadow-md dark:shadow-none"
                 >
-                    <span className="text-3xl md:text-4xl font-black leading-none">+</span>
+                    <span className="text-2xl md:text-3xl font-black leading-none">+</span>
                 </button>
             </div>
         </div>
