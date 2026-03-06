@@ -127,7 +127,7 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
                                 if (!prodError || prodError.code === '23505') {
                                     // Succès ou déjà présent, on retente l'upsert du stock
-                                    const { error: retryError } = await supabase
+                                    const { error: retryStock } = await supabase
                                         .from('stock')
                                         .upsert({ product_id, quantity: newQty });
 
