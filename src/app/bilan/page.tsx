@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronLeft, Wallet, Store, TrendingUp, RotateCcw, Volume2, Clock, ShoppingBag, PlusCircle, MinusCircle } from 'lucide-react';
+import { ChevronLeft, Wallet, Store, TrendingUp, RotateCcw, Volume2, Clock, ShoppingBag, PlusCircle, MinusCircle, Eye, EyeOff } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAssistant } from '@/hooks/useAssistant';
 import { Mic } from 'lucide-react';
@@ -23,6 +23,7 @@ export default function BilanPage() {
     const { user } = useAuth();
     const confirm = useConfirm();
     const name = user?.name?.split(' ')[0] || 'Marchand';
+    const [isBalanceVisible, setIsBalanceVisible] = useState(false);
 
     // Calcul du capital stock
     const stockValue = products.reduce((acc, product) => {
@@ -35,6 +36,8 @@ export default function BilanPage() {
     });
 
     const announceBilan = () => {
+        // Révéler le solde si l'utilisateur demande à l'entendre
+        setIsBalanceVisible(true);
         speak(`${name}, voici ton bilan. Tu as ${balance} francs dans la caisse, et ta marchandise vaut ${stockValue} francs.`);
     };
 
@@ -52,97 +55,81 @@ export default function BilanPage() {
     };
 
     return (
-        <main className="min-h-screen bg-slate-50 dark:bg-slate-950 p-3 pb-32 md:pb-64 lg:pb-48 max-w-5xl mx-auto">
-            {/* Header */}
-            <header className="flex items-center gap-2 md:gap-4 mb-3 md:mb-8 pt-2">
-                <button
-                    onClick={() => router.push('/')}
-                    className="w-9 h-9 md:w-12 md:h-12 bg-white dark:bg-slate-800 rounded-full shadow-md flex items-center justify-center text-slate-600 dark:text-slate-300 active:scale-90 transition-transform shrink-0"
-                >
-                    <ChevronLeft size={20} className="md:w-8 md:h-8" />
-                </button>
-                <h1 className="text-lg md:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter truncate">Mon Bilan</h1>
-            </header>
-
-            <div className="space-y-6 md:space-y-8">
-                {/* La Caisse (Argent Liquide) */}
-                <motion.section
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    className="bg-emerald-600 text-white rounded-[20px] md:rounded-[28px] p-4 md:p-6 shadow-xl shadow-emerald-100 dark:shadow-emerald-900/20 flex flex-col gap-1 md:gap-2 relative overflow-hidden"
-                >
-                    <div className="absolute -right-8 -top-8 text-white/10 rotate-12 hidden md:block">
-                        <Wallet size={120} />
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-36">
+            {/* Header Coloré (Card Overlap Style) */}
+            <div className="bg-primary pt-8 pb-32 px-4 rounded-b-[2.5rem] relative shadow-lg">
+                <div className="flex justify-between items-center mb-6 max-w-lg mx-auto">
+                    <button onClick={() => router.push('/')} className="w-10 h-10 bg-white text-primary rounded-full flex items-center justify-center active:scale-95 transition-transform shadow-sm">
+                        <ChevronLeft size={20} />
+                    </button>
+                    <div className="text-center">
+                        <h1 className="text-white font-bold text-lg tracking-wide uppercase">Mon Bilan</h1>
+                        <p className="text-emerald-200 text-[10px] font-bold uppercase tracking-widest mt-0.5">Finances & Historique</p>
                     </div>
-                    <div className="flex items-center gap-2 relative z-10">
-                        <div className="bg-white/20 p-1.5 md:p-2 rounded-lg md:rounded-xl">
-                            <Wallet size={14} className="md:w-6 md:h-6" />
-                        </div>
-                        <span className="font-black uppercase tracking-widest text-emerald-100 italic text-[9px] md:text-xs">Dans la caisse</span>
+                    <div className="flex items-center gap-2">
+                        <button onClick={announceBilan} className="w-10 h-10 bg-white text-primary rounded-full flex items-center justify-center active:scale-95 transition-transform shadow-sm">
+                            <Volume2 size={18} />
+                        </button>
                     </div>
-                    <div className="relative z-10">
-                        <span className="text-4xl md:text-6xl font-black tracking-tighter leading-none">{balance}</span>
-                        <span className="text-xl md:text-3xl font-bold ml-1 md:ml-2 text-emerald-100">F</span>
-                    </div>
-                    <p className="font-bold text-emerald-100 bg-emerald-700/30 p-2 md:p-4 rounded-xl mt-1 relative z-10 max-w-md text-[10px] md:text-sm leading-snug">
-                        C'est l'argent que tu as gagné aujourd'hui, {name}. Beau travail !
-                    </p>
-                </motion.section>
-
-                {/* Le Stock & Dettes */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-                    <motion.section
-                        initial={{ scale: 0.9, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{ delay: 0.1 }}
-                        className="bg-blue-600 text-white rounded-[20px] md:rounded-[24px] p-4 shadow-md shadow-blue-100 dark:shadow-blue-900/20 flex flex-col gap-1 relative overflow-hidden"
-                    >
-                        <span className="font-black uppercase tracking-widest text-blue-100 text-[10px] md:text-xs">Valeur Marchandise</span>
-                        <div>
-                            <span className="text-2xl md:text-4xl font-black tracking-tighter leading-none">{stockValue}</span>
-                            <span className="text-sm md:text-lg font-bold ml-1 text-blue-100">F</span>
-                        </div>
-                    </motion.section>
-
-                    <motion.section
-                        initial={{ scale: 0.9, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{ delay: 0.2 }}
-                        className="bg-rose-600 text-white rounded-[20px] md:rounded-[24px] p-4 shadow-md shadow-rose-100 dark:shadow-rose-900/20 flex flex-col gap-1 relative overflow-hidden"
-                    >
-                        <span className="font-black uppercase tracking-widest text-rose-100 text-[10px] md:text-xs">Crédit Dehors</span>
-                        <div>
-                            <span className="text-2xl md:text-4xl font-black tracking-tighter leading-none">
-                                {history.filter(t => t.status === 'DETTE').reduce((acc, t) => acc + t.price, 0)}
-                            </span>
-                            <span className="text-sm md:text-lg font-bold ml-1 text-rose-100">F</span>
-                        </div>
-                    </motion.section>
-
-                    <motion.section
-                        initial={{ scale: 0.9, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{ delay: 0.3 }}
-                        className="bg-purple-600 text-white rounded-[20px] md:rounded-[24px] p-4 shadow-md shadow-purple-100 dark:shadow-purple-900/20 flex flex-col gap-1 relative overflow-hidden sm:col-span-2 lg:col-span-1"
-                    >
-                        <span className="font-black uppercase tracking-widest text-purple-100 text-[10px] md:text-xs">Estimation Gain Réel</span>
-                        <div>
-                            <span className="text-2xl md:text-4xl font-black tracking-tighter leading-none">{Math.round(balance * 0.2)}</span>
-                            <span className="text-sm md:text-lg font-bold ml-1 text-purple-100">F</span>
-                        </div>
-                    </motion.section>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+                {/* La Caisse (Argent Liquide) intégrée au header */}
+                <div className="max-w-lg mx-auto flex flex-col items-center mt-2">
+                    <div className="flex items-center gap-2 mb-1 bg-white/10 px-3 py-1.5 rounded-full border border-white/10 active:scale-95 transition-transform cursor-pointer" onClick={() => setIsBalanceVisible(!isBalanceVisible)}>
+                        <Wallet size={16} className="text-emerald-200" />
+                        <span className="font-bold uppercase tracking-wider text-emerald-100 text-[10px]">Dans la caisse</span>
+                        <div className="text-emerald-200 ml-1">
+                            {isBalanceVisible ? <Eye size={14} /> : <EyeOff size={14} />}
+                        </div>
+                    </div>
+                    <div className="flex items-baseline gap-2 mt-1">
+                        <span className="text-5xl font-bold tracking-tight text-white transition-all">
+                            {isBalanceVisible ? balance : '••••'}
+                        </span>
+                        <span className="text-2xl font-semibold text-emerald-100">F</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Main Content Overlap */}
+            <main className="mt-[-40px] relative z-10 px-4 max-w-lg mx-auto space-y-4">
+                {/* Le Stock & Dettes (Overlap Cards) */}
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl p-4 shadow-xl border border-slate-100 dark:border-slate-800 flex flex-col items-center text-center">
+                        <span className="font-bold uppercase tracking-wider text-slate-400 text-[9px] mb-1">Marchandise</span>
+                        <div className="flex items-baseline gap-1">
+                            <span className="text-xl font-bold tracking-tight text-slate-800 dark:text-white">{stockValue}</span>
+                            <span className="text-[10px] font-bold text-primary">F</span>
+                        </div>
+                    </div>
+
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl p-4 shadow-xl border border-slate-100 dark:border-slate-800 flex flex-col items-center text-center">
+                        <span className="font-bold uppercase tracking-wider text-slate-400 text-[9px] mb-1">Dettes</span>
+                        <div className="flex items-baseline gap-1">
+                            <span className="text-xl font-bold tracking-tight text-rose-500">{history.filter(t => t.status === 'DETTE').reduce((acc, t) => acc + t.price, 0)}</span>
+                            <span className="text-[10px] font-bold text-rose-500">F</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 shadow-xl border border-slate-100 dark:border-slate-800 flex flex-col items-center text-center">
+                    <span className="font-bold uppercase tracking-wider text-slate-400 text-[10px] mb-1">Bénéfice Net Estimé</span>
+                    <div className="flex items-baseline gap-1">
+                        <span className="text-3xl font-bold tracking-tight text-slate-800 dark:text-white">{Math.round(balance * 0.2)}</span>
+                        <span className="text-sm font-bold text-primary">FCFA</span>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mt-6">
                     {/* Top Produits & Évolution */}
                     <div className="space-y-4 md:space-y-6">
-                        <section className="bg-white dark:bg-slate-900 rounded-[24px] md:rounded-[32px] p-4 md:p-6 shadow-sm border border-slate-100 dark:border-slate-800">
-                            <div className="flex items-center gap-2 mb-3 md:mb-4">
-                                <TrendingUp className="text-amber-500 w-5 h-5 md:w-6 md:h-6" />
-                                <h2 className="font-black uppercase text-slate-400 tracking-widest text-[9px] md:text-sm">Tes Champions</h2>
+                        <section className="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-800">
+                            <div className="flex items-center gap-2 mb-4">
+                                <TrendingUp className="text-amber-500 w-5 h-5" />
+                                <h2 className="font-bold uppercase text-slate-400 tracking-wider text-[10px]">Tes Champions</h2>
                             </div>
 
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+                            <div className="grid grid-cols-2 gap-3">
                                 {products.map(p => {
                                     const qty = todayTransactions
                                         .filter(t => t.productId === p.id && t.type === 'VENTE')
@@ -151,12 +138,12 @@ export default function BilanPage() {
                                     if (qty === 0) return null;
 
                                     return (
-                                        <div key={p.id} className="flex flex-col items-center gap-2 md:gap-3 bg-slate-50 dark:bg-slate-800/50 p-4 md:p-5 rounded-[20px] md:rounded-[24px] border border-slate-100 dark:border-slate-700 transition-transform hover:scale-105">
-                                            <div className={`p-3 md:p-4 rounded-xl md:rounded-2xl ${p.color} ${p.iconColor}`}>
-                                                <p.icon size={24} className="md:w-7 md:h-7" />
+                                        <div key={p.id} className="flex flex-col items-center gap-2 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
+                                            <div className={`p-2.5 rounded-lg ${p.color} ${p.iconColor}`}>
+                                                <p.icon size={20} />
                                             </div>
-                                            <span className="font-black text-[10px] md:text-xs text-slate-800 dark:text-white uppercase text-center line-clamp-1">{p.name}</span>
-                                            <span className="bg-amber-400 text-slate-900 px-2 md:px-3 py-1 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest shadow-md">
+                                            <span className="font-bold text-[10px] text-slate-800 dark:text-white uppercase text-center line-clamp-1">{p.name}</span>
+                                            <span className="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider">
                                                 {qty} VENDUS
                                             </span>
                                         </div>
@@ -230,15 +217,15 @@ export default function BilanPage() {
                     <div className="space-y-6 md:space-y-8">
                         {/* IA Advice */}
                         <motion.section
-                            initial={{ scale: 0.95, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            className="bg-slate-900 text-white rounded-[20px] md:rounded-[28px] p-4 md:p-6 shadow-xl relative overflow-hidden border-2 md:border-[3px] border-amber-400"
+                            initial={{ y: 20, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            className="bg-slate-900 text-white rounded-[32px] p-6 shadow-xl relative border border-slate-800"
                         >
-                            <div className="flex items-center gap-2 mb-3 md:mb-4">
-                                <div className="bg-amber-400 p-1 md:p-1.5 rounded-md text-slate-900 shadow-sm shadow-amber-400/20">
-                                    <TrendingUp size={16} className="md:w-5 md:h-5" />
+                            <div className="flex items-center gap-2 mb-4">
+                                <div className="bg-amber-400 p-1.5 rounded-lg text-slate-900 shadow-sm">
+                                    <TrendingUp size={18} />
                                 </div>
-                                <h2 className="font-black uppercase tracking-widest text-amber-400 text-[10px] md:text-sm">Conseil Intelligent</h2>
+                                <h2 className="font-bold uppercase tracking-wider text-amber-400 text-[10px]">Conseil Intelligent</h2>
                             </div>
 
                             <div className="relative z-10">
@@ -278,13 +265,13 @@ export default function BilanPage() {
                                     }
 
                                     return (
-                                        <div className="space-y-3">
-                                            <p className={`text-sm md:text-lg font-black leading-tight ${adviceColor} italic tracking-tight`}>{adviceText}</p>
+                                        <div className="space-y-4">
+                                            <p className={`text-base font-bold leading-snug ${adviceColor} tracking-tight`}>{adviceText}</p>
                                             <button
                                                 onClick={() => speak(voiceText)}
-                                                className="bg-amber-400 hover:bg-amber-300 text-slate-900 px-3 md:px-5 py-2 rounded-lg font-black uppercase text-[9px] md:text-xs tracking-widest flex items-center justify-center md:justify-start gap-2 active:scale-95 transition-all w-full sm:w-auto mt-2"
+                                                className="bg-amber-400 hover:bg-amber-300 text-slate-900 px-4 py-2.5 rounded-xl font-bold uppercase text-[10px] tracking-wider flex items-center justify-center md:justify-start gap-2 active:scale-95 transition-all w-full md:w-auto"
                                             >
-                                                <Volume2 size={16} className="md:w-5 md:h-5" /> Écouter le conseil
+                                                <Volume2 size={18} /> Écouter le conseil
                                             </button>
                                         </div>
                                     );
@@ -292,10 +279,10 @@ export default function BilanPage() {
                             </div>
                         </motion.section>
 
-                        <section className="bg-white dark:bg-slate-900 rounded-[20px] md:rounded-[28px] p-4 md:p-6 shadow-sm border border-slate-100 dark:border-slate-800">
-                            <div className="flex items-center gap-2 mb-3 md:mb-4">
-                                <Clock className="text-slate-400 w-5 h-5 md:w-6 md:h-6" />
-                                <h2 className="font-black uppercase text-slate-400 tracking-widest text-[9px] md:text-sm">Journal du Jour</h2>
+                        <section className="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-800">
+                            <div className="flex items-center gap-2 mb-5">
+                                <Clock className="text-slate-400 w-5 h-5" />
+                                <h2 className="font-bold uppercase text-slate-400 tracking-wider text-[10px]">Journal du Jour</h2>
                             </div>
 
                             <div className="space-y-3 md:space-y-4 max-h-[300px] md:max-h-[400px] overflow-y-auto pr-2 scrollbar-hide">
@@ -305,37 +292,36 @@ export default function BilanPage() {
                                     </div>
                                 ) : (
                                     todayTransactions.map((t) => (
-                                        <div key={t.id} className="flex items-center justify-between p-3 md:p-4 bg-slate-50 dark:bg-slate-800/40 rounded-[20px] md:rounded-[24px] border border-slate-100 dark:border-slate-700 hover:border-emerald-200 dark:hover:border-emerald-900 transition-colors gap-2">
-                                            <div className="flex items-center gap-3 md:gap-4 min-w-0">
-                                                <div className={`p-2.5 md:p-3 rounded-xl md:rounded-[15px] shrink-0 ${t.type === 'VENTE' ? 'bg-emerald-100 text-emerald-600' :
+                                        <div key={t.id} className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 transition-colors gap-3">
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <div className={`p-2.5 rounded-lg shrink-0 ${t.type === 'VENTE' ? 'bg-emerald-100 text-emerald-600' :
                                                     t.type === 'LIVRAISON' ? 'bg-blue-100 text-blue-600' :
                                                         'bg-red-100 text-red-600'
                                                     }`}>
-                                                    {t.type === 'VENTE' ? <ShoppingBag size={18} className="md:w-5 md:h-5" /> :
-                                                        t.type === 'LIVRAISON' ? <PlusCircle size={18} className="md:w-5 md:h-5" /> :
-                                                            <MinusCircle size={18} className="md:w-5 md:h-5" />}
+                                                    {t.type === 'VENTE' ? <ShoppingBag size={18} /> :
+                                                        t.type === 'LIVRAISON' ? <PlusCircle size={18} /> :
+                                                            <MinusCircle size={18} />}
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <p className="font-black text-slate-800 dark:text-white uppercase leading-tight mb-0.5 md:mb-1 flex flex-wrap items-center gap-1.5 md:gap-2 text-xs md:text-sm">
-                                                        <span className="truncate">{t.productName}</span>
+                                                    <p className="font-bold text-slate-800 dark:text-white text-xs truncate">
+                                                        {t.productName}
+                                                    </p>
+                                                    <div className="flex items-center gap-2 mt-1">
+                                                        <span className="text-[10px] font-medium text-slate-400">
+                                                            {new Date(t.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        </span>
                                                         {t.clientName && (
-                                                            <span className="bg-amber-100 text-amber-700 px-1.5 md:px-2 py-0.5 rounded-md md:rounded-lg text-[8px] md:text-[9px] font-black border border-amber-200 uppercase whitespace-nowrap">
+                                                            <span className="bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded text-[9px] font-bold border border-amber-100 uppercase">
                                                                 {t.clientName}
                                                             </span>
                                                         )}
-                                                    </p>
-                                                    <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-tighter mt-0.5 md:mt-1">
-                                                        {new Date(t.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {t.quantity} Qté
-                                                    </p>
+                                                    </div>
                                                 </div>
                                             </div>
                                             <div className="text-right shrink-0">
-                                                <p className={`font-black text-[13px] md:text-base ${t.status === 'DETTE' ? 'text-red-500' : t.type === 'VENTE' ? 'text-emerald-600' : 'text-slate-400'}`}>
+                                                <p className={`font-bold text-[14px] ${t.status === 'DETTE' ? 'text-red-500' : t.type === 'VENTE' ? 'text-emerald-600' : 'text-slate-400'}`}>
                                                     {t.type === 'VENTE' ? '+' : ''}{t.price} F
                                                 </p>
-                                                {t.status === 'DETTE' && (
-                                                    <span className="text-[8px] md:text-[9px] font-black text-red-500 uppercase bg-red-50 dark:bg-red-900/30 px-1 md:px-1.5 rounded-full border border-red-100 dark:border-red-900 shadow-sm">Dette</span>
-                                                )}
                                             </div>
                                         </div>
                                     ))
@@ -346,38 +332,32 @@ export default function BilanPage() {
                 </div>
 
                 {/* Bouton de Reset Discreet */}
-                <div className="flex justify-center py-6 md:py-10">
+                <div className="flex justify-center py-6 md:py-10 mb-16">
                     <button
                         onClick={handleReset}
-                        className="flex items-center gap-2 md:gap-3 text-slate-300 dark:text-slate-700 hover:text-rose-500 transition-colors py-3 md:py-4 px-6 md:px-8 rounded-[20px] md:rounded-full border-[1.5px] md:border-2 border-dashed border-slate-200 dark:border-slate-800 active:scale-95 text-center"
+                        className="flex items-center gap-2 md:gap-3 text-slate-300 dark:text-slate-700 hover:text-rose-500 transition-colors py-3 md:py-4 px-6 md:px-8 rounded-full border-[1.5px] border-dashed border-slate-200 dark:border-slate-800 active:scale-95 text-center"
                     >
-                        <RotateCcw size={16} className="md:w-5 md:h-5 shrink-0" />
+                        <RotateCcw size={16} className="shrink-0" />
                         <span className="font-black uppercase text-[10px] md:text-xs tracking-widest text-left">Remettre à zéro<br className="sm:hidden" /> (Fin de journée)</span>
                     </button>
                 </div>
-            </div>
+            </main>
 
             {/* Actions Fixes (Centrées) */}
-            <div className="fixed bottom-4 left-0 right-0 px-3 md:px-6 flex items-center justify-center pointer-events-none z-50">
-                <div className="w-full max-w-xl flex items-center gap-2 md:gap-4">
-                    {/* Micro */}
-                    <motion.button
-                        onClick={handleAction}
-                        whileTap={{ scale: 0.9 }}
-                        className={`h-14 w-14 md:h-20 md:w-20 shrink-0 rounded-2xl md:rounded-[28px] flex items-center justify-center shadow-xl border-[3px] border-white dark:border-slate-900 transition-all pointer-events-auto ${isListening ? 'bg-red-500 scale-105 animate-pulse' : isSpeaking ? 'bg-blue-500' : 'bg-slate-900'}`}
-                    >
-                        <Mic size={20} color="white" fill={isListening || isSpeaking ? "white" : "none"} className="md:w-8 md:h-8" />
-                    </motion.button>
-
-                    <button
-                        onClick={announceBilan}
-                        className="flex-1 h-14 md:h-20 bg-purple-700 hover:bg-purple-600 text-white rounded-[20px] md:rounded-[32px] flex items-center justify-center gap-2 md:gap-3 text-xs md:text-xl font-black uppercase tracking-tight shadow-xl active:bg-purple-800 transition-all border-[3px] border-white dark:border-slate-900 pointer-events-auto"
-                    >
-                        <Volume2 size={18} className="md:w-7 md:h-7" />
-                        <span>MON BILAN</span>
-                    </button>
-                </div>
+            <div className="fixed bottom-6 left-0 right-0 flex justify-center px-4 pointer-events-none z-50">
+                <button
+                    onClick={handleAction}
+                    className={`h-16 px-6 rounded-2xl shadow-xl text-white flex items-center gap-4 w-auto pointer-events-auto transition-all ${isListening ? 'bg-rose-500' : 'bg-slate-900'}`}
+                >
+                    <div className={`p-2 bg-slate-800 dark:bg-slate-700 text-white rounded-full transition-all shrink-0`}>
+                        <Mic size={20} fill={isSpeaking || isListening ? "currentColor" : "none"} />
+                    </div>
+                    <div className="flex flex-col items-start">
+                        <span className="text-xs font-bold uppercase tracking-widest">{isListening ? "ÉCOUTE..." : "PARLER AU BILAN"}</span>
+                        <span className="text-[9px] font-medium opacity-60 italic">Appuie pour me parler</span>
+                    </div>
+                </button>
             </div>
-        </main>
+        </div>
     );
 }

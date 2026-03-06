@@ -42,146 +42,153 @@ export default function CarnetPage() {
     const totalGlobalDette = Object.values(debtsByClient).reduce((acc, c) => acc + c.total, 0);
 
     return (
-        <main className="min-h-screen bg-slate-50 dark:bg-slate-950 p-3 pb-32 md:pb-64 lg:pb-48 max-w-5xl mx-auto">
-            {/* Header */}
-            <header className="flex items-center gap-2 md:gap-4 mb-4 md:mb-8 pt-2">
-                <button
-                    onClick={() => router.push('/')}
-                    className="w-9 h-9 md:w-12 md:h-12 bg-white dark:bg-slate-800 rounded-full shadow-md flex items-center justify-center text-slate-600 dark:text-slate-300 active:scale-90 transition-transform shrink-0"
-                >
-                    <ChevronLeft size={20} className="md:w-8 md:h-8" />
-                </button>
-                <h1 className="text-lg md:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter truncate">Mon Carnet</h1>
-            </header>
-
-            {/* Sommaire Dette */}
-            <section className="bg-rose-600 text-white rounded-[20px] md:rounded-[28px] p-4 md:p-6 mb-3 md:mb-6 shadow-xl shadow-rose-100 dark:shadow-rose-900/20 relative overflow-hidden">
-                <div className="relative z-10">
-                    <span className="font-black uppercase tracking-widest text-rose-100 text-[9px] md:text-xs">Argent Dehors</span>
-                    <div className="text-4xl md:text-6xl font-black tracking-tighter leading-none mt-1">{totalGlobalDette} <span className="text-lg md:text-3xl">F</span></div>
-                    <p className="mt-1 font-bold text-rose-100 text-[9px] md:text-xs max-w-sm">C'est l'argent que tes clients te doivent encore.</p>
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-36">
+            {/* Header Coloré (Card Overlap Style) */}
+            <div className="bg-primary pt-8 pb-32 px-4 rounded-b-[2.5rem] relative shadow-lg">
+                <div className="flex items-center gap-4 mb-6 max-w-lg mx-auto">
+                    <button onClick={() => router.push('/')} className="w-10 h-10 bg-white text-primary rounded-full flex items-center justify-center active:scale-95 transition-transform shadow-sm">
+                        <ChevronLeft size={20} />
+                    </button>
+                    <div className="flex-1">
+                        <h1 className="text-white font-bold text-lg tracking-wide uppercase">Mon Carnet</h1>
+                        <p className="text-emerald-200 text-[10px] font-bold uppercase tracking-widest mt-0.5">Crédits & Dettes</p>
+                    </div>
                 </div>
-                <User size={120} className="absolute -right-8 -bottom-8 text-white/10 rotate-12 hidden md:block" />
-                <User size={64} className="absolute -right-2 -bottom-2 text-white/10 rotate-12 md:hidden" />
-            </section>
 
-            {/* Barre de Recherche */}
-            <div className="relative mb-4 md:mb-6 max-w-xl">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 md:w-5 md:h-5" />
-                <input
-                    type="text"
-                    placeholder="CHERCHER..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full h-10 md:h-12 bg-white dark:bg-slate-900 rounded-[12px] md:rounded-[16px] pl-10 md:pl-12 pr-4 font-black text-xs md:text-sm text-slate-800 dark:text-white shadow-sm border border-slate-100 dark:border-slate-800 focus:outline-none focus:border-rose-500 transition-all uppercase"
-                />
+                {/* Sommaire Dette intégré au header */}
+                <div className="max-w-lg mx-auto flex flex-col items-center mt-2">
+                    <div className="flex items-center gap-2 mb-1">
+                        <DollarSign size={16} className="text-emerald-200" />
+                        <span className="font-bold uppercase tracking-wider text-emerald-100 text-[10px]">Argent Dehors</span>
+                    </div>
+                    <div className="flex items-baseline gap-2 mt-1">
+                        <span className="text-5xl font-bold tracking-tight text-white">{totalGlobalDette}</span>
+                        <span className="text-2xl font-semibold text-emerald-100">F</span>
+                    </div>
+                </div>
             </div>
 
-            {/* Liste des Clients */}
-            <div className="space-y-4 md:space-y-6">
-                <div className="flex justify-between items-center px-2 md:px-4">
-                    <span className="text-slate-400 font-black text-[10px] md:text-xs uppercase tracking-widest">{clientKeys.length} PERSONNES DOIVENT</span>
+            {/* Main Content Overlap */}
+            <main className="mt-[-40px] relative z-10 px-4 max-w-lg mx-auto space-y-6">
+
+                {/* Barre de Recherche */}
+                <div className="relative mb-6">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                    <input
+                        type="text"
+                        placeholder="Chercher un client..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full h-14 bg-white dark:bg-slate-900 rounded-[20px] pl-12 pr-4 font-semibold text-sm text-slate-800 dark:text-white shadow-xl border border-slate-100 dark:border-slate-800 focus:outline-none focus:border-rose-500 transition-all"
+                    />
                 </div>
 
-                {clientKeys.length === 0 ? (
-                    <div className="bg-white dark:bg-slate-900 rounded-[24px] md:rounded-[32px] p-10 md:p-16 text-center border-[3px] md:border-4 border-dashed border-slate-100 dark:border-slate-800">
-                        <p className="font-black text-slate-300 dark:text-slate-700 uppercase italic text-lg md:text-xl">Tout le monde a payé !</p>
+                {/* Liste des Clients */}
+                <div className="space-y-4">
+                    <div className="flex justify-between items-center px-2">
+                        <span className="text-slate-400 font-bold text-[10px] uppercase tracking-wider">{clientKeys.length} PERSONNES DOIVENT</span>
                     </div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                        {clientKeys.map(key => {
-                            const client = debtsByClient[key];
-                            return (
-                                <motion.div
-                                    key={key}
-                                    layout
-                                    className="bg-white dark:bg-slate-900 rounded-[20px] md:rounded-[24px] p-3 md:p-5 shadow-sm border border-slate-100 dark:border-slate-800"
-                                >
-                                    <div className="flex items-center justify-between mb-3 md:mb-4">
-                                        <div className="flex items-center gap-2 md:gap-3 w-full">
-                                            <div className={`w-10 h-10 md:w-12 md:h-12 shrink-0 rounded-xl md:rounded-2xl flex items-center justify-center ${client.name === 'CLIENT INCONNU' ? 'bg-slate-100 dark:bg-slate-800 text-slate-400' : 'bg-rose-100 dark:bg-rose-900/30 text-rose-600'}`}>
-                                                <User size={20} className="md:w-6 md:h-6" />
-                                            </div>
-                                            <div className="min-w-0 flex-1">
-                                                <h3 className="font-black text-slate-800 dark:text-white uppercase text-sm md:text-lg leading-none truncate">{client.name}</h3>
-                                                <p className="text-rose-600 font-black text-xs md:text-sm mt-0.5">Doit {client.total} F</p>
+
+                    {clientKeys.length === 0 ? (
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl p-12 text-center border-2 border-dashed border-slate-100 dark:border-slate-800">
+                            <p className="font-bold text-slate-300 dark:text-slate-700 uppercase italic text-lg">Tout le monde a payé !</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                            {clientKeys.map(key => {
+                                const client = debtsByClient[key];
+                                return (
+                                    <motion.div
+                                        key={key}
+                                        layout
+                                        className="bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm border border-slate-100 dark:border-slate-800"
+                                    >
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className="flex items-center gap-4 w-full">
+                                                <div className={`w-12 h-12 shrink-0 rounded-[14px] flex items-center justify-center ${client.name === 'CLIENT INCONNU' ? 'bg-slate-100 dark:bg-slate-800 text-slate-400' : 'bg-rose-100 dark:bg-rose-900 text-rose-600 dark:text-rose-400'}`}>
+                                                    <User size={24} />
+                                                </div>
+                                                <div className="min-w-0 flex-1">
+                                                    <h3 className="font-bold text-slate-800 dark:text-white uppercase text-base leading-none truncate">{client.name}</h3>
+                                                    <p className="text-rose-600 font-bold text-sm mt-1">Doit {client.total} F</p>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
 
-                                    <div className="flex gap-2">
-                                        <button
-                                            onClick={() => {
-                                                markAllAsPaid(client.name);
-                                                speak(`Parfait ${name}. ${client.name} a tout réglé, soit ${client.total} francs.`);
-                                            }}
-                                            className="flex-1 bg-emerald-600 text-white px-2 py-2 md:py-3 rounded-lg md:rounded-xl font-black text-[9px] md:text-[10px] uppercase shadow-md shadow-emerald-100 dark:shadow-none active:scale-95 transition-all text-center"
-                                        >
-                                            Tout Régler
-                                        </button>
-                                        <button
-                                            onClick={() => setSelectedClient(selectedClient === key ? null : key)}
-                                            className="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-3 md:px-5 py-2 md:py-3 rounded-lg md:rounded-xl font-black text-[9px] md:text-[10px] uppercase active:scale-95 transition-all shrink-0 border border-slate-100 dark:border-slate-700"
-                                        >
-                                            {selectedClient === key ? 'Fermer' : 'Détails'}
-                                        </button>
-                                    </div>
-
-                                    <AnimatePresence>
-                                        {selectedClient === key && (
-                                            <motion.div
-                                                initial={{ height: 0, opacity: 0 }}
-                                                animate={{ height: 'auto', opacity: 1 }}
-                                                exit={{ height: 0, opacity: 0 }}
-                                                className="overflow-hidden border-t-2 border-slate-50 dark:border-slate-800 mt-4 md:mt-6 pt-4 md:pt-6"
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => {
+                                                    markAllAsPaid(client.name);
+                                                    speak(`Parfait ${name}. ${client.name} a tout réglé, soit ${client.total} francs.`);
+                                                }}
+                                                className="flex-1 bg-emerald-600 text-white px-2 py-3 rounded-xl font-bold text-[10px] uppercase shadow-md active:scale-[0.98] transition-all text-center"
                                             >
-                                                <div className="space-y-3 md:space-y-4">
-                                                    {client.transactions.map(t => (
-                                                        <div key={t.id} className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/50 p-3 md:p-5 rounded-xl md:rounded-2xl gap-2">
-                                                            <div className="min-w-0">
-                                                                <p className="font-black text-slate-800 dark:text-white uppercase text-xs md:text-sm truncate">{t.productName}</p>
-                                                                <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase mt-0.5 md:mt-1">
-                                                                    {new Date(t.timestamp).toLocaleDateString()} • {t.quantity} un.
-                                                                </p>
-                                                            </div>
-                                                            <div className="flex items-center gap-2 md:gap-4 shrink-0">
-                                                                <span className="font-black text-rose-600 text-sm md:text-lg whitespace-nowrap">{t.price} F</span>
-                                                                <button
-                                                                    onClick={() => handleSettle(t.id, client.name, t.price)}
-                                                                    className="bg-emerald-500 text-white p-2.5 md:p-3 rounded-xl shadow-md active:scale-90 transition-transform"
-                                                                >
-                                                                    <CheckCircle2 size={18} className="md:w-6 md:h-6" />
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
-                                </motion.div>
-                            );
-                        })}
-                    </div>
-                )}
-            </div>
+                                                Tout Régler
+                                            </button>
+                                            <button
+                                                onClick={() => setSelectedClient(selectedClient === key ? null : key)}
+                                                className="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-4 py-3 rounded-xl font-bold text-[10px] uppercase active:bg-slate-100 transition-all shrink-0 border border-slate-100 dark:border-slate-700"
+                                            >
+                                                {selectedClient === key ? 'Fermer' : 'Détails'}
+                                            </button>
+                                        </div>
 
-            {/* Assistant Vocal (Centré et Responsive) */}
-            <div className="fixed bottom-4 left-0 right-0 flex justify-center px-4 md:px-6 pointer-events-none z-50">
-                <motion.button
+                                        <AnimatePresence>
+                                            {selectedClient === key && (
+                                                <motion.div
+                                                    initial={{ height: 0, opacity: 0 }}
+                                                    animate={{ height: 'auto', opacity: 1 }}
+                                                    exit={{ height: 0, opacity: 0 }}
+                                                    className="overflow-hidden border-t-2 border-slate-50 dark:border-slate-800 mt-4 md:mt-6 pt-4 md:pt-6"
+                                                >
+                                                    <div className="space-y-3">
+                                                        {client.transactions.map(t => (
+                                                            <div key={t.id} className="flex items-center justify-between bg-slate-50 dark:bg-slate-800 p-4 rounded-xl gap-3 border border-slate-100 dark:border-slate-700">
+                                                                <div className="min-w-0">
+                                                                    <p className="font-bold text-slate-800 dark:text-white text-xs truncate">{t.productName}</p>
+                                                                    <p className="text-[10px] font-medium text-slate-400 mt-1 uppercase">
+                                                                        {new Date(t.timestamp).toLocaleDateString()} • {t.quantity} un.
+                                                                    </p>
+                                                                </div>
+                                                                <div className="flex items-center gap-4 shrink-0">
+                                                                    <span className="font-bold text-rose-600 text-base whitespace-nowrap">{t.price} F</span>
+                                                                    <button
+                                                                        onClick={() => handleSettle(t.id, client.name, t.price)}
+                                                                        className="bg-emerald-500 text-white p-2.5 rounded-xl shadow-md active:scale-90 transition-transform"
+                                                                    >
+                                                                        <CheckCircle2 size={18} />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </motion.div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+
+            </main>
+
+            {/* Assistant Vocal (Centré et Fixé) */}
+            <div className="fixed bottom-6 left-0 right-0 flex justify-center px-4 pointer-events-none z-50">
+                <button
                     onClick={handleAction}
-                    whileTap={{ scale: 0.95 }}
-                    className={`h-14 w-auto px-4 md:h-20 md:px-8 rounded-[20px] md:rounded-[28px] shadow-xl text-white flex items-center justify-center gap-3 md:gap-4 pointer-events-auto border-[3px] border-white dark:border-slate-900 transition-all ${isListening ? 'bg-red-500 scale-105 animate-pulse' : 'bg-rose-600 active:bg-rose-700'}`}
+                    className={`h-16 px-6 rounded-2xl shadow-xl text-white flex items-center gap-4 w-auto pointer-events-auto transition-all ${isListening ? 'bg-rose-500' : 'bg-slate-900'}`}
                 >
-                    <div className={`p-2 bg-white/20 text-white rounded-full ${isSpeaking || isListening ? 'bg-white text-rose-600' : 'bg-white/20 text-white'} transition-all duration-300 shrink-0`}>
-                        <Mic size={20} className="md:w-6 md:h-6" fill={isSpeaking || isListening ? "currentColor" : "none"} strokeWidth={3} />
+                    <div className={`p-2 bg-slate-800 dark:bg-slate-700 text-white rounded-full transition-all shrink-0`}>
+                        <Mic size={20} fill={isSpeaking || isListening ? "currentColor" : "none"} />
                     </div>
-                    <div className="flex flex-col items-start pr-1 md:pr-2 text-left min-w-0">
-                        <span className="text-sm md:text-lg font-black leading-none uppercase truncate">{isListening ? "J'ÉCOUTE..." : "PARLER"}</span>
-                        <span className="text-[8px] md:text-[9px] font-bold opacity-80 italic tracking-tighter truncate">Dis "Fatou a payé"</span>
+                    <div className="flex flex-col items-start">
+                        <span className="text-xs font-bold uppercase tracking-widest">{isListening ? "ÉCOUTE..." : "PARLER"}</span>
+                        <span className="text-[9px] font-medium opacity-60 italic">Dis "Fatou a payé"</span>
                     </div>
-                </motion.button>
+                </button>
             </div>
-        </main>
+        </div>
     );
 }

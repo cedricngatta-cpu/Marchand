@@ -2,11 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, Package, AlertTriangle, Volume2, Mic, PlusCircle } from 'lucide-react';
+import { ChevronLeft, Package, AlertTriangle, Volume2, Mic, PlusCircle, LayoutGrid, Wheat, CupSoda, Sparkles, MoreHorizontal } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { StockItem } from '@/components/StockItem';
-import { StockDetailModal } from '@/components/StockDetailModal';
-import { AddProductModal } from '@/components/AddProductModal';
 import { useAssistant } from '@/hooks/useAssistant';
 import { useStock } from '@/hooks/useStock';
 import { useHistory } from '@/hooks/useHistory';
@@ -20,11 +18,15 @@ export default function StockPage() {
     const { speak, handleAction, isSpeaking, isListening } = useAssistant();
     const { stock, updateStock } = useStock();
     const { addTransaction } = useHistory();
-    const [selectedProduct, setSelectedProduct] = useState<any>(null);
-    const [isAddMode, setIsAddMode] = useState(false);
     const [activeCategory, setActiveCategory] = useState('TOUS');
 
-    const categories = ['TOUS', 'VIVRES', 'BOISSON', 'ENTRETIEN', 'AUTRE'];
+    const categories = [
+        { id: 'TOUS', label: 'Tous', icon: LayoutGrid },
+        { id: 'VIVRES', label: 'Vivres', icon: Wheat },
+        { id: 'BOISSON', label: 'Boisson', icon: CupSoda },
+        { id: 'ENTRETIEN', label: 'Entretien', icon: Sparkles },
+        { id: 'AUTRE', label: 'Autre', icon: MoreHorizontal },
+    ];
 
     const filteredProducts = activeCategory === 'TOUS'
         ? products
@@ -56,170 +58,148 @@ export default function StockPage() {
 
     const lowStockCount = products.filter(p => (stock[p.id] || 0) < 5).length;
 
-    const handleAddProduct = async (newProduct: { name: string, price: number, barcode?: string }) => {
-        await addProduct({
-            name: newProduct.name,
-            price: newProduct.price,
-            barcode: newProduct.barcode,
-            color: 'bg-slate-50',
-            iconColor: 'text-slate-600',
-            audioName: newProduct.name.toLowerCase(),
-            icon: Package
-        });
-        speak(`${newProduct.name} a été ajouté à ton catalogue.`);
-    };
-
     return (
-        <main className="min-h-screen bg-slate-50 dark:bg-slate-950 p-3 pb-32 md:pb-32 lg:pb-32 max-w-6xl mx-auto">
-            {/* Header Retour */}
-            <header className="flex items-center gap-2 md:gap-4 mb-4 md:mb-8 pt-2">
-                <button
-                    onClick={() => router.push('/')}
-                    className="w-9 h-9 md:w-12 md:h-12 bg-white dark:bg-slate-800 rounded-full shadow-md flex items-center justify-center text-slate-600 dark:text-slate-300 active:scale-95 transition-all shrink-0 border border-slate-100 dark:border-slate-800"
-                >
-                    <ChevronLeft size={20} className="md:w-8 md:h-8" />
-                </button>
-                <div className="min-w-0">
-                    <h1 className="text-lg md:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight leading-none truncate">Mon Stock</h1>
-                    <p className="text-amber-600 font-bold text-[8px] md:text-[10px] uppercase tracking-widest mt-0.5">Inventaire</p>
-                </div>
-                <div className="ml-auto flex items-center gap-1.5">
-                    <button
-                        onClick={() => setIsAddMode(true)}
-                        className="flex items-center gap-1.5 bg-emerald-600 text-white px-2.5 md:px-4 py-1.5 md:py-2.5 rounded-lg md:rounded-2xl font-black text-[8px] md:text-xs uppercase shadow-lg shadow-emerald-100 dark:shadow-none active:scale-95 transition-all"
-                    >
-                        <PlusCircle size={14} className="md:w-[18px] md:h-[18px]" />
-                        <span className="hidden sm:inline">Nouveau</span>
-                        <span className="sm:hidden">ADD</span>
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-32">
+            {/* Header Coloré (Card Overlap Style) */}
+            <div className="bg-primary pt-8 pb-32 px-4 rounded-b-[2.5rem] relative shadow-lg">
+                <div className="flex justify-between items-center mb-6 max-w-lg mx-auto">
+                    <button onClick={() => router.push('/')} className="w-10 h-10 bg-white text-primary rounded-full flex items-center justify-center active:scale-95 transition-transform shadow-sm">
+                        <ChevronLeft size={20} />
                     </button>
-                    <button
-                        onClick={speakFullStock}
-                        className="w-9 h-9 md:w-12 md:h-12 bg-white dark:bg-slate-800 rounded-full shadow-md flex items-center justify-center text-blue-600 active:scale-90 transition-transform border border-slate-100 dark:border-slate-800 shrink-0"
-                    >
-                        <Volume2 size={18} className="md:w-6 md:h-6" />
-                    </button>
-                </div>
-            </header>
-
-            {/* Alerte Stock Bas */}
-            {lowStockCount > 0 && (
-                <motion.div
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    onClick={() => speak(`${user?.name?.split(' ')[0] || 'Marchand'}, il y a ${lowStockCount} produits presque finis.`)}
-                    className="bg-red-50 dark:bg-red-900/10 border md:border-2 border-red-500 p-2 md:p-4 rounded-xl md:rounded-2xl mb-3 flex items-center gap-2 md:gap-3 text-red-700 dark:text-red-400 shadow-md shadow-red-200 dark:shadow-none cursor-pointer"
-                >
-                    <div className="bg-red-500 p-1.5 md:p-2 rounded-lg text-white shrink-0">
-                        <AlertTriangle size={16} className="md:w-6 md:h-6" />
+                    <div className="text-center">
+                        <h1 className="text-white font-bold text-lg tracking-wide uppercase">Mon Stock</h1>
+                        <p className="text-emerald-200 text-[10px] font-bold uppercase tracking-widest mt-0.5">État des réserves</p>
                     </div>
-                    <div>
-                        <h2 className="font-black uppercase text-xs md:text-sm leading-none">Attention !</h2>
-                        <p className="font-bold text-[9px] md:text-xs">Des produits sont bientôt finis.</p>
+                    <div className="flex items-center gap-2">
+                        <button onClick={speakFullStock} className="w-10 h-10 bg-white text-primary rounded-full flex items-center justify-center active:scale-95 transition-transform shadow-sm">
+                            <Volume2 size={18} />
+                        </button>
                     </div>
-                </motion.div>
-            )}
+                </div>
 
-            {/* Filtres Catégories */}
-            <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide -mx-4 px-4 mb-4">
-                {categories.map(cat => (
+                {/* Bouton Ajouter (Centré dans le header) */}
+                <div className="flex justify-center max-w-lg mx-auto mt-6">
                     <button
-                        key={cat}
-                        onClick={() => setActiveCategory(cat)}
-                        className={`px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all whitespace-nowrap border-2 ${activeCategory === cat ? 'bg-slate-900 border-slate-900 text-white shadow-lg' : 'bg-white border-slate-100 text-slate-400'}`}
+                        onClick={() => router.push('/stock/ajouter')}
+                        className="bg-white text-primary px-8 py-3.5 rounded-full font-bold text-sm uppercase tracking-widest flex items-center gap-2 shadow-md active:scale-95 transition-transform"
                     >
-                        {cat}
+                        <PlusCircle size={18} />
+                        Ajouter un produit
                     </button>
-                ))}
+                </div>
             </div>
 
-            {/* Liste des items de stock */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredProducts.map((product) => (
-                    <StockItem
-                        key={product.id}
-                        name={product.name}
-                        icon={product.icon}
-                        quantity={stock[product.id] || 0}
-                        color={product.color}
-                        iconColor={product.iconColor}
-                        onAdd={() => {
-                            const shortName = product.audioName.replace(/^[Ll]e\s+/, '').replace(/^[Ll]a\s+/, '').replace(/^[Ll]'\s+/, '');
-                            updateStock(product.id, 1);
-                            addTransaction({
-                                type: 'LIVRAISON',
-                                productId: product.id,
-                                productName: product.name,
-                                quantity: 1,
-                                price: product.price
-                            });
-                            speak(`un ${shortName} ajouté au stock.`);
-                        }}
-                        onRemove={() => {
-                            const shortName = product.audioName.replace(/^[Ll]e\s+/, '').replace(/^[Ll]a\s+/, '').replace(/^[Ll]'\s+/, '');
-                            updateStock(product.id, -1);
-                            addTransaction({
-                                type: 'RETRAIT',
-                                productId: product.id,
-                                productName: product.name,
-                                quantity: 1,
-                                price: product.price
-                            });
-                            speak(`un ${shortName} retiré du stock.`);
-                        }}
-                        onViewDetails={() => setSelectedProduct(product)}
-                        onSpeak={() => {
-                            const qty = stock[product.id] || 0;
-                            const shortName = product.audioName.replace(/^[Ll]e\s+/, '').replace(/^[Ll]a\s+/, '').replace(/^[Ll]'\s+/, '');
-                            const formatted = qty === 1 ? `un ${shortName}` : `${qty} ${shortName}${shortName.endsWith('s') || shortName.endsWith('x') ? '' : 's'}`;
-                            speak(`Il reste ${formatted}.`);
-                        }}
-                    />
-                ))}
-            </div>
+            {/* Main Content Overlap */}
+            <main className="mt-[-40px] relative z-10 px-4 max-w-lg mx-auto space-y-6">
 
-            <AnimatePresence>
-                {selectedProduct && (
-                    <StockDetailModal
-                        product={selectedProduct}
-                        currentStock={stock[selectedProduct.id] || 0}
-                        onClose={() => setSelectedProduct(null)}
-                    />
+                {/* Alerte Stock Bas */}
+                {lowStockCount > 0 && (
+                    <motion.div
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        onClick={() => speak(`${user?.name?.split(' ')[0] || 'Marchand'}, il y a ${lowStockCount} produits presque finis.`)}
+                        className="bg-red-50 dark:bg-red-900/10 border md:border-2 border-red-500 p-2 md:p-4 rounded-xl md:rounded-2xl mb-3 flex items-center gap-2 md:gap-3 text-red-700 dark:text-red-400 shadow-md shadow-red-200 dark:shadow-none cursor-pointer"
+                    >
+                        <div className="bg-red-500 p-1.5 md:p-2 rounded-lg text-white shrink-0">
+                            <AlertTriangle size={16} className="md:w-6 md:h-6" />
+                        </div>
+                        <div>
+                            <h2 className="font-black uppercase text-xs md:text-sm leading-none">Attention !</h2>
+                            <p className="font-bold text-[9px] md:text-xs">Des produits sont bientôt finis.</p>
+                        </div>
+                    </motion.div>
                 )}
-                {isAddMode && (
-                    <AddProductModal
-                        onClose={() => setIsAddMode(false)}
-                        onAdd={handleAddProduct}
-                    />
-                )}
-            </AnimatePresence>
 
-            {/* Aide Vocale */}
-            <div className="mt-6 bg-white dark:bg-slate-900 p-3 md:p-4 rounded-[20px] md:rounded-[24px] border border-slate-100 dark:border-slate-800 flex items-center gap-2 md:gap-4 shadow-sm mb-16 md:mb-20">
-                <div className="w-8 h-8 md:w-10 md:h-10 bg-slate-900 rounded-full flex items-center justify-center text-white shrink-0">
-                    <Package size={16} className="md:w-5 md:h-5" />
+                {/* Filtres Catégories (Sans défilement horizontal avec flex-wrap) */}
+                <div className="bg-white dark:bg-slate-900 rounded-3xl p-4 shadow-xl border border-slate-100 dark:border-slate-800 mb-6">
+                    <div className="flex flex-wrap justify-between gap-y-3 gap-x-1">
+                        {categories.map(cat => (
+                            <button
+                                key={cat.id}
+                                onClick={() => setActiveCategory(cat.id)}
+                                className={`flex flex-col items-center justify-center gap-1 p-2 w-14 h-16 rounded-[20px] transition-all border ${activeCategory === cat.id ? 'bg-primary border-primary text-white shadow-md scale-105' : 'bg-slate-50 dark:bg-slate-800 border-transparent text-slate-400 hover:border-slate-200'} active:scale-95`}
+                            >
+                                <cat.icon size={20} strokeWidth={activeCategory === cat.id ? 2.5 : 2} />
+                                <span className="font-bold text-[8px] uppercase tracking-widest truncate w-full text-center px-0.5">{cat.label}</span>
+                            </button>
+                        ))}
+                    </div>
                 </div>
-                <p className="font-bold text-slate-600 dark:text-slate-300 leading-tight text-[10px] md:text-xs">
-                    Appuie sur le bouton noir pour me parler et gérer ton stock.
-                </p>
-            </div>
 
-            {/* Micro Global Fixé */}
-            <div className="fixed bottom-4 left-0 right-0 flex justify-center px-4 pointer-events-none z-50">
-                <motion.button
-                    onClick={handleAction}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className={`h-16 md:h-20 px-4 md:px-6 rounded-[20px] md:rounded-[28px] shadow-xl text-white flex items-center gap-3 w-auto pointer-events-auto border-[3px] border-white dark:border-slate-900 transition-all ${isListening ? 'bg-red-500' : 'bg-slate-900 active:bg-slate-800'}`}
-                >
-                    <div className={`p-2 bg-white/20 text-white rounded-full ${isSpeaking || isListening ? 'bg-white text-slate-900' : 'bg-white/20 text-white'} transition-all duration-300 shrink-0`}>
-                        <Mic size={20} className="md:w-6 md:h-6" fill={isSpeaking || isListening ? "currentColor" : "none"} strokeWidth={3} />
+                {/* Liste des items de stock */}
+                <div className="grid grid-cols-1 gap-4">
+                    {filteredProducts.map((product) => (
+                        <StockItem
+                            key={product.id}
+                            name={product.name}
+                            icon={product.icon}
+                            imageUrl={product.imageUrl}
+                            quantity={stock[product.id] || 0}
+                            color={product.color}
+                            iconColor={product.iconColor}
+                            onAdd={() => {
+                                const shortName = product.audioName.replace(/^[Ll]e\s+/, '').replace(/^[Ll]a\s+/, '').replace(/^[Ll]'\s+/, '');
+                                updateStock(product.id, 1);
+                                addTransaction({
+                                    type: 'LIVRAISON',
+                                    productId: product.id,
+                                    productName: product.name,
+                                    quantity: 1,
+                                    price: product.price
+                                });
+                                speak(`un ${shortName} ajouté au stock.`);
+                            }}
+                            onRemove={() => {
+                                const shortName = product.audioName.replace(/^[Ll]e\s+/, '').replace(/^[Ll]a\s+/, '').replace(/^[Ll]'\s+/, '');
+                                updateStock(product.id, -1);
+                                addTransaction({
+                                    type: 'RETRAIT',
+                                    productId: product.id,
+                                    productName: product.name,
+                                    quantity: 1,
+                                    price: product.price
+                                });
+                                speak(`un ${shortName} retiré du stock.`);
+                            }}
+                            onViewDetails={() => router.push(`/stock/${product.id}`)}
+                            onSpeak={() => {
+                                const qty = stock[product.id] || 0;
+                                const shortName = product.audioName.replace(/^[Ll]e\s+/, '').replace(/^[Ll]a\s+/, '').replace(/^[Ll]'\s+/, '');
+                                const formatted = qty === 1 ? `un ${shortName}` : `${qty} ${shortName}${shortName.endsWith('s') || shortName.endsWith('x') ? '' : 's'}`;
+                                speak(`Il reste ${formatted}.`);
+                            }}
+                        />
+                    ))}
+                </div>
+
+
+
+                {/* Aide Vocale */}
+                <div className="mt-6 bg-white dark:bg-slate-900 p-3 md:p-4 rounded-[20px] md:rounded-[24px] border border-slate-100 dark:border-slate-800 flex items-center gap-2 md:gap-4 shadow-sm mb-16 md:mb-20">
+                    <div className="w-8 h-8 md:w-10 md:h-10 bg-slate-900 rounded-full flex items-center justify-center text-white shrink-0">
+                        <Package size={16} className="md:w-5 md:h-5" />
                     </div>
-                    <div className="flex flex-col items-start text-left min-w-0 pr-1 md:pr-2">
-                        <span className="text-sm md:text-[16px] font-black leading-none uppercase">{isListening ? "ÉCOUTE..." : "PARLER"}</span>
-                        <span className="text-[8px] md:text-[9px] font-bold opacity-80 tracking-tighter italic">Appuie pour me parler</span>
-                    </div>
-                </motion.button>
-            </div>
-        </main>
+                    <p className="font-bold text-slate-600 dark:text-slate-300 leading-tight text-[10px] md:text-xs">
+                        Appuie sur le bouton noir pour me parler et gérer ton stock.
+                    </p>
+                </div>
+
+                {/* Micro Global Fixé (Style Wave) */}
+                <div className="fixed bottom-6 left-0 right-0 flex justify-center px-4 pointer-events-none z-50">
+                    <button
+                        onClick={handleAction}
+                        className={`h-16 px-6 rounded-2xl shadow-xl text-white flex items-center gap-4 w-auto pointer-events-auto transition-all ${isListening ? 'bg-rose-500' : 'bg-slate-900'}`}
+                    >
+                        <div className={`p-2 bg-slate-800 dark:bg-slate-700 text-white rounded-full transition-all shrink-0`}>
+                            <Mic size={20} fill={isSpeaking || isListening ? "currentColor" : "none"} />
+                        </div>
+                        <div className="flex flex-col items-start">
+                            <span className="text-xs font-bold uppercase tracking-widest">{isListening ? "ÉCOUTE..." : "PARLER"}</span>
+                            <span className="text-[9px] font-medium opacity-60 italic">Appuie pour parler</span>
+                        </div>
+                    </button>
+                </div>
+            </main>
+        </div>
     );
 }

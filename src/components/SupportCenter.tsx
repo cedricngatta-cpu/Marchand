@@ -54,36 +54,36 @@ export const SupportCenter: React.FC<SupportCenterProps> = ({ isOpen, onClose, m
                 className="fixed inset-0 z-[1100] bg-slate-950/80 backdrop-blur-xl flex items-end md:items-center justify-center p-0 md:p-6"
             >
                 <motion.div
-                    initial={{ y: 100 }}
-                    animate={{ y: 0 }}
-                    exit={{ y: 100 }}
-                    className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-t-[40px] md:rounded-[48px] overflow-hidden flex flex-col h-[85vh] md:h-[700px] shadow-2xl"
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: 20, opacity: 0 }}
+                    className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl md:rounded-3xl overflow-hidden flex flex-col h-[85vh] md:h-[700px] shadow-2xl border border-slate-200 dark:border-slate-800"
                 >
                     {/* Header Style WhatsApp */}
-                    <header className="bg-emerald-600 p-6 text-white flex items-center justify-between">
+                    <header className="bg-primary p-6 text-white flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                            <div className="bg-white/20 p-2 rounded-2xl">
-                                <MessageCircle size={32} />
+                            <div className="bg-white/20 p-2.5 rounded-xl">
+                                <MessageCircle size={28} />
                             </div>
                             <div>
-                                <h3 className="font-black uppercase tracking-tighter text-xl leading-none">Assistance Directe</h3>
+                                <h3 className="font-bold tracking-tight text-xl leading-none">Assistance Directe</h3>
                                 <div className="flex items-center gap-1.5 mt-1">
-                                    <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
-                                    <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">Support en ligne</span>
+                                    <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full" />
+                                    <span className="text-[10px] font-semibold uppercase tracking-wider opacity-80">Support en ligne</span>
                                 </div>
                             </div>
                         </div>
-                        <button onClick={onClose} className="bg-white/10 hover:bg-white/20 p-2 rounded-full transition-colors">
-                            <X size={24} />
+                        <button onClick={onClose} className="bg-white/10 hover:bg-white/20 p-2 rounded-xl transition-colors">
+                            <X size={20} />
                         </button>
                     </header>
 
                     <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50 dark:bg-slate-950/50">
                         {view === 'OPTIONS' ? (
                             <>
-                                <div className="text-center space-y-2 mb-8">
-                                    <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em]">Besoin d'aide ?</p>
-                                    <h4 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Choisissez un sujet</h4>
+                                <div className="text-center space-y-2 mb-8 mt-4">
+                                    <h4 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Choisissez un sujet</h4>
+                                    <p className="text-slate-400 font-medium text-xs">Comment pouvons-nous vous aider ?</p>
                                 </div>
 
                                 <div className="space-y-4">
@@ -125,12 +125,12 @@ export const SupportCenter: React.FC<SupportCenterProps> = ({ isOpen, onClose, m
                                 <div className="mt-8 space-y-4">
                                     <button
                                         onClick={handleWhatsAppRedirect}
-                                        className="w-full bg-[#25D366] text-white p-6 rounded-3xl font-black uppercase tracking-[0.1em] flex items-center justify-center gap-3 shadow-xl transition-transform active:scale-95"
+                                        className="w-full bg-[#25D366] text-white p-5 rounded-xl font-bold uppercase tracking-wider flex items-center justify-center gap-3 shadow-md transition-all active:scale-[0.98]"
                                     >
-                                        <MessageCircle size={24} /> Continuer sur WhatsApp
+                                        <MessageCircle size={20} /> Continuer sur WhatsApp
                                     </button>
-                                    <p className="text-[10px] text-center text-slate-400 font-bold uppercase tracking-widest px-8">
-                                        C'est le moyen le plus rapide de parler à un administrateur pour valider votre demande.
+                                    <p className="text-[10px] text-center text-slate-400 font-semibold uppercase tracking-wider px-8">
+                                        C'est le moyen le plus rapide de parler à un administrateur.
                                     </p>
                                 </div>
                             </div>
@@ -142,19 +142,19 @@ export const SupportCenter: React.FC<SupportCenterProps> = ({ isOpen, onClose, m
     );
 };
 
-function OptionButton({ icon: Icon, label, onClick, color = "text-emerald-600" }: any) {
+function OptionButton({ icon: Icon, label, onClick, color = "text-primary" }: any) {
     return (
         <button
             onClick={onClick}
-            className="w-full bg-white dark:bg-slate-900 p-6 rounded-[32px] border border-slate-100 dark:border-slate-800 flex items-center justify-between group active:scale-[0.98] transition-all hover:border-emerald-500"
+            className="w-full bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-100 dark:border-slate-800 flex items-center justify-between group active:bg-slate-50 transition-all"
         >
-            <div className="flex items-center gap-5">
-                <div className={`bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl ${color} transition-all group-hover:bg-emerald-600 group-hover:text-white`}>
-                    <Icon size={24} />
+            <div className="flex items-center gap-4">
+                <div className={`bg-slate-50 dark:bg-slate-800 p-3 rounded-xl ${color}`}>
+                    <Icon size={20} />
                 </div>
-                <span className="font-black text-slate-900 dark:text-white uppercase text-sm tracking-tight">{label}</span>
+                <span className="font-bold text-slate-900 dark:text-white text-sm tracking-tight">{label}</span>
             </div>
-            <ChevronRight className="text-slate-300 group-hover:translate-x-1 transition-all" />
+            <ChevronRight size={18} className="text-slate-300 group-hover:translate-x-1 transition-all" />
         </button>
     );
 }

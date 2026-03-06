@@ -8,7 +8,6 @@ import {
     Phone,
     ShieldCheck,
     LogOut,
-    Store,
     Trash2,
     Bell,
     HelpCircle,
@@ -16,18 +15,19 @@ import {
     KeyRound,
     CheckCircle2,
     AlertTriangle,
-    Navigation2
+    RefreshCw
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useProfileContext } from '@/context/ProfileContext';
 import { SupportCenter } from '@/components/SupportCenter';
 import { useConfirm } from '@/context/ConfirmContext';
+import { useProductContext } from '@/context/ProductContext';
 
 export default function ProfilePage() {
     const router = useRouter();
     const { user, logout, updatePin, updateLanguage } = useAuth();
-    const { activeProfile } = useProfileContext();
+    const { syncGlobalCatalog } = useProductContext();
     const confirm = useConfirm();
 
     // UI States
@@ -127,82 +127,85 @@ export default function ProfilePage() {
     };
 
     return (
-        <main className="min-h-screen bg-slate-50 dark:bg-slate-950 p-3 pb-32 max-w-2xl mx-auto">
+        <main className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-32">
             <SupportCenter
                 isOpen={isSupportOpen}
                 onClose={() => setIsSupportOpen(false)}
                 merchantName={user?.name || 'Utilisateur'}
             />
 
-            {/* Header */}
-            <header className="flex items-center gap-4 mb-4 pt-2">
-                <button
-                    onClick={() => router.push(theme.homePath)}
-                    className="w-10 h-10 md:w-14 md:h-14 bg-white dark:bg-slate-900 rounded-xl md:rounded-[22px] shadow-sm flex items-center justify-center text-slate-600 active:scale-90 transition-all border-2 border-slate-100 dark:border-slate-800"
-                >
-                    <ChevronLeft size={24} />
-                </button>
-                <h1 className="text-xl md:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none">Profil & Paramètres</h1>
-            </header>
+            {/* Header Coloré (Card Overlap Style) */}
+            <div className={`${theme.primary} pt-8 pb-32 px-4 rounded-b-[2.5rem] relative shadow-lg`}>
+                <div className="flex justify-between items-center max-w-lg mx-auto mb-6">
+                    <button
+                        onClick={() => router.push(theme.homePath)}
+                        className="w-10 h-10 bg-white text-slate-900 rounded-full flex items-center justify-center active:scale-95 transition-transform shadow-sm"
+                    >
+                        <ChevronLeft size={20} />
+                    </button>
+                    <div className="text-center flex-1 pr-10">
+                        <h1 className="text-white font-bold text-lg tracking-wide uppercase">Mon Profil</h1>
+                        <p className="text-emerald-100/60 text-[10px] font-bold uppercase tracking-widest mt-0.5">Paramètres & Compte</p>
+                    </div>
+                </div>
+            </div>
 
-            <div className="space-y-8">
+            {/* Main Content Overlap */}
+            <div className="px-4 max-w-lg mx-auto relative -mt-20 z-10 space-y-6">
                 {/* User Identity Card */}
-                <section className="bg-white dark:bg-slate-900 p-4 md:p-10 rounded-[32px] md:rounded-[48px] shadow-sm border-2 border-slate-100 dark:border-slate-800 flex flex-col items-center relative overflow-hidden group">
-                    <div className={`w-16 h-16 md:w-24 md:h-24 ${theme.primary} rounded-[20px] md:rounded-[35px] flex items-center justify-center shadow-xl mb-4 relative z-10`}>
+                <section className="bg-white dark:bg-slate-900 p-8 rounded-[32px] shadow-xl border border-slate-100 dark:border-slate-800 flex flex-col items-center relative overflow-hidden group">
+                    <div className={`w-20 h-20 ${theme.primary} rounded-[24px] flex items-center justify-center shadow-md mb-4 relative z-10`}>
                         <User size={32} className="text-white" />
                     </div>
-                    <h2 className="text-2xl md:text-4xl font-black text-slate-900 dark:text-white uppercase tracking-tighter text-center leading-none relative z-10">
+                    <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter text-center leading-none relative z-10 uppercase">
                         {user?.name}
                     </h2>
-                    <div className={`flex items-center gap-2 mt-2 ${theme.bg} dark:${theme.darkBg} px-4 py-1.5 rounded-full relative z-10`}>
-                        <Navigation2 size={10} className={theme.secondary} />
-                        <span className={`${theme.secondary} font-black text-[9px] uppercase tracking-[0.2em]`}>{theme.label}</span>
+                    <div className={`flex items-center gap-2 mt-4 bg-emerald-50 dark:bg-slate-800 px-4 py-1.5 rounded-full relative z-10 border border-emerald-100 dark:border-slate-700`}>
+                        <span className={`text-emerald-600 dark:text-emerald-400 font-black text-[10px] uppercase tracking-[0.15em]`}>{theme.label}</span>
                     </div>
 
-                    <div className="flex items-center gap-2 mt-4 text-slate-400 font-bold uppercase text-[10px] tracking-widest leading-none">
-                        <Phone size={12} /> {user?.phoneNumber}
+                    <div className="flex items-center gap-2 mt-5 text-slate-400 font-bold text-[11px] uppercase tracking-widest">
+                        <Phone size={14} className="text-emerald-500" /> {user?.phoneNumber}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 w-full mt-6">
-                        <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-[20px] border border-slate-100 dark:border-slate-800 flex flex-col items-center gap-1 group-hover:scale-[1.02] transition-transform">
+                    <div className="grid grid-cols-2 gap-4 w-full mt-10">
+                        <div className="bg-slate-50 dark:bg-slate-800/50 p-5 rounded-[24px] border border-slate-100 dark:border-slate-800 flex flex-col items-center gap-1.5">
                             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Membre depuis</span>
-                            <span className="font-black text-slate-900 dark:text-white uppercase text-[9px]">Jan 2026</span>
+                            <span className="font-black text-slate-800 dark:text-white text-[11px] text-center uppercase">JANV. 2026</span>
                         </div>
-                        <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-[20px] border border-slate-100 dark:border-slate-800 flex flex-col items-center gap-1 group-hover:scale-[1.02] transition-transform">
-                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Statut</span>
+                        <div className="bg-slate-50 dark:bg-slate-800/50 p-5 rounded-[24px] border border-slate-100 dark:border-slate-800 flex flex-col items-center gap-1.5">
+                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Statut Compte</span>
                             <div className="flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                <span className="font-black text-emerald-600 uppercase text-[9px]">Vérifié</span>
+                                <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                                <span className="font-black text-emerald-600 text-[11px] uppercase tracking-widest">Vérifié</span>
                             </div>
                         </div>
-                    </div>
-
-                    {/* Decorative Background Icon */}
-                    <div className="absolute -right-8 -top-8 opacity-[0.03] group-hover:rotate-12 transition-transform duration-700">
-                        <User size={200} />
                     </div>
                 </section>
 
                 {/* Preferences Section */}
                 <section className="space-y-4">
-                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] ml-8 mb-4">Expérience vocale</h3>
+                    <div className="flex items-center gap-2 ml-4">
+                        <div className="w-1 h-3 bg-emerald-500 rounded-full" />
+                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Préférences IA</h3>
+                    </div>
 
-                    <div className="bg-white dark:bg-slate-900 p-4 md:p-8 rounded-[32px] md:rounded-[40px] border-2 border-slate-100 dark:border-slate-800 flex flex-col gap-4">
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-[32px] border border-slate-100 dark:border-slate-800 flex flex-col gap-5 shadow-sm">
                         <div className="flex items-center gap-4">
-                            <div className="bg-purple-100 dark:bg-purple-900/30 p-2.5 rounded-xl text-purple-600">
-                                <Globe size={20} strokeWidth={2.5} />
+                            <div className="bg-emerald-50 dark:bg-slate-800 p-3 rounded-2xl text-emerald-600">
+                                <Globe size={20} />
                             </div>
                             <div>
-                                <span className="font-black text-slate-900 dark:text-white uppercase text-xs tracking-tight">Langue de l'Assistant</span>
-                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">L'IA vous répondra dans cette langue</p>
+                                <span className="font-black text-slate-900 dark:text-white text-xs uppercase tracking-wider block">Langue de l'Assistant</span>
+                                <p className="text-[9px] font-bold text-slate-400 mt-0.5 uppercase tracking-widest">L'IA vous répondra dans cette langue</p>
                             </div>
                         </div>
-                        <div className="grid grid-cols-3 gap-2">
+                        <div className="flex gap-2">
                             {['Français', 'Dioula', 'Baoulé'].map(lang => (
                                 <button
                                     key={lang}
                                     onClick={() => handleLanguageChange(lang)}
-                                    className={`py-3 rounded-lg md:rounded-[22px] font-black uppercase text-[9px] tracking-widest transition-all ${userLanguage === lang ? 'bg-purple-600 text-white shadow-xl' : 'bg-slate-50 dark:bg-slate-800 text-slate-400 border border-slate-100 dark:border-slate-700 hover:border-purple-200'}`}
+                                    className={`flex-1 py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all border ${userLanguage === lang ? 'bg-primary border-primary text-white shadow-xl scale-[1.02]' : 'bg-slate-50 dark:bg-slate-800 text-slate-400 border-transparent hover:border-slate-200'}`}
                                 >
                                     {lang}
                                 </button>
@@ -213,54 +216,66 @@ export default function ProfilePage() {
                     <ProfileMenuItem
                         icon={ShieldCheck}
                         label="Sécurité du compte (PIN)"
-                        color="text-blue-600"
-                        bgColor="bg-blue-50"
+                        color="text-emerald-600"
+                        bgColor="bg-emerald-50"
                         actionLabel="Changer"
                         onClick={() => setShowPinModal(true)}
                     />
 
-                    <div className="w-full bg-white dark:bg-slate-900 p-4 md:p-6 rounded-[32px] md:rounded-[40px] border-2 border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                    <div className="w-full bg-white dark:bg-slate-900 p-5 rounded-[28px] border border-slate-100 dark:border-slate-800 flex items-center justify-between shadow-sm">
                         <div className="flex items-center gap-4">
-                            <div className="bg-amber-50 dark:bg-amber-900/30 p-2.5 rounded-xl text-amber-600 font-bold">
-                                <Bell size={20} strokeWidth={2.5} />
+                            <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-2xl text-slate-400">
+                                <Bell size={20} />
                             </div>
                             <div>
-                                <span className="font-black text-slate-900 dark:text-white uppercase text-xs tracking-tight">Alertes & Notifications</span>
-                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Messages et conseils IA</p>
+                                <span className="font-black text-slate-900 dark:text-white text-xs uppercase tracking-wider block">Notifications Sonores</span>
+                                <p className="text-[9px] font-bold text-slate-400 mt-0.5 uppercase tracking-widest">Messages et conseils IA</p>
                             </div>
                         </div>
                         <button
                             onClick={() => setNotifsEnabled(!notifsEnabled)}
                             className={`w-12 h-7 rounded-full flex items-center p-1 transition-all duration-300 ${notifsEnabled ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-700'}`}
                         >
-                            <div className={`h-5 w-5 bg-white rounded-full shadow-md transition-all duration-300 transform ${notifsEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
+                            <div className={`h-5 w-5 bg-white rounded-full shadow-lg transition-all duration-300 transform ${notifsEnabled ? 'translate-x-[20px]' : 'translate-x-0'}`} />
                         </button>
                     </div>
 
                     <ProfileMenuItem
                         icon={HelpCircle}
-                        label="Assistance & Support"
+                        label="Centre d'Assistance"
                         color="text-emerald-600"
                         bgColor="bg-emerald-50"
-                        actionLabel="Ouvrir"
+                        actionLabel="Aide"
                         onClick={() => setIsSupportOpen(true)}
+                    />
+
+                    <ProfileMenuItem
+                        icon={RefreshCw}
+                        label="Mettre à jour le catalogue"
+                        color="text-blue-600"
+                        bgColor="bg-blue-50"
+                        actionLabel="Sync"
+                        onClick={async () => {
+                            await syncGlobalCatalog();
+                            alert("Catalogue mis à jour avec les nouveaux produits !");
+                        }}
                     />
                 </section>
 
                 {/* Sign Out Section */}
-                <section className="pt-4 space-y-3">
+                <section className="pt-6 space-y-4">
                     <button
                         onClick={handleLogout}
-                        className="w-full bg-slate-900 dark:bg-slate-800 text-white p-5 rounded-[24px] font-black uppercase tracking-[0.2em] text-xs shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3 group"
+                        className="w-full bg-slate-900 dark:bg-slate-800 text-white p-5 rounded-[24px] font-black text-xs uppercase tracking-widest shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-4"
                     >
-                        <LogOut size={24} className="group-hover:translate-x-2 transition-transform" /> Se déconnecter
+                        <LogOut size={20} /> Se déconnecter
                     </button>
 
                     <button
                         onClick={handleCloseAccount}
-                        className="w-full bg-rose-50 dark:bg-rose-900/10 text-rose-500 p-5 rounded-[24px] font-black uppercase tracking-[0.2em] text-[9px] active:scale-95 transition-all flex items-center justify-center gap-3 hover:bg-rose-100 dark:hover:bg-rose-900/20"
+                        className="w-full text-slate-400 p-4 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:text-rose-500 transition-colors flex items-center justify-center gap-2"
                     >
-                        <Trash2 size={20} /> Fermer mon compte
+                        <Trash2 size={16} /> Fermer mon compte
                     </button>
                 </section>
             </div>
@@ -363,20 +378,20 @@ function ProfileMenuItem({ icon: Icon, label, color, bgColor, actionLabel, onCli
     return (
         <button
             onClick={onClick}
-            className="w-full bg-white dark:bg-slate-900 p-4 rounded-[28px] border-2 border-slate-100 dark:border-slate-800 flex items-center justify-between group active:scale-[0.98] transition-all hover:shadow-lg"
+            className="w-full bg-white dark:bg-slate-900 p-5 rounded-[28px] border border-slate-100 dark:border-slate-800 flex items-center justify-between group active:scale-[0.98] transition-all shadow-sm"
         >
             <div className="flex items-center gap-4">
-                <div className={`${bgColor} p-2.5 rounded-xl ${color} transition-all group-hover:scale-110`}>
-                    <Icon size={20} strokeWidth={2.5} />
+                <div className={`bg-slate-50 dark:bg-slate-800 p-3 rounded-2xl ${color}`}>
+                    <Icon size={20} />
                 </div>
                 <div>
-                    <span className="font-black text-slate-900 dark:text-white uppercase text-xs tracking-tight">{label}</span>
+                    <span className="font-black text-slate-900 dark:text-white text-xs uppercase tracking-wider">{label}</span>
                 </div>
             </div>
             <div className="flex items-center gap-3">
-                {actionLabel && <span className="text-[9px] font-black uppercase tracking-widest text-slate-300 group-hover:text-slate-500 transition-colors">{actionLabel}</span>}
-                <div className="bg-slate-50 dark:bg-slate-800 p-1.5 rounded-full text-slate-300 group-hover:translate-x-1 transition-all">
-                    <ChevronLeft size={16} className="rotate-180" />
+                {actionLabel && <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-1 rounded-md">{actionLabel}</span>}
+                <div className="text-slate-300 group-hover:translate-x-1 transition-transform">
+                    <ChevronLeft size={18} className="rotate-180" />
                 </div>
             </div>
         </button>

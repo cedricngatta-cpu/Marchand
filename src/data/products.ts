@@ -165,6 +165,17 @@ export const products = [
         audioName: 'La pomme de terre'
     },
     {
+        id: 'biscuit',
+        name: 'BISCUIT (PAQUET)',
+        imageUrl: '/images/products/biscuit.png',
+        icon: ShoppingBag,
+        price: 200,
+        barcode: '3061990141315',
+        color: 'bg-indigo-50',
+        iconColor: 'text-indigo-600',
+        audioName: 'Le biscuit'
+    },
+    {
         id: 'other',
         name: 'AUTRE',
         icon: Package,

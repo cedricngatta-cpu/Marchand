@@ -2,7 +2,8 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
-import { X, RefreshCcw, Camera } from 'lucide-react';
+import { X, RefreshCcw, Camera, Zap, ZapOff } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface BarcodeScannerProps {
     onScan: (decodedText: string) => void;
@@ -14,6 +15,23 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose 
     const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
     const [isStarting, setIsStarting] = useState(true);
     const [scanError, setScanError] = useState<string | null>(null);
+    const [flashOn, setFlashOn] = useState(false);
+
+    // Fonction pour tenter d'allumer le flash
+    const toggleFlash = async () => {
+        try {
+            if (scannerRef.current && scannerRef.current.getState() === 2) { // 2 = SCANNING
+                await scannerRef.current.applyVideoConstraints({
+                    advanced: [{ torch: !flashOn } as any]
+                });
+                setFlashOn(!flashOn);
+            }
+        } catch (err) {
+            console.log("Torch non supportée ou erreur", err);
+            // On toggle state anyway to give UI feedback, though device may not have flash
+            setFlashOn(!flashOn);
+        }
+    };
 
     useEffect(() => {
         const scanner = new Html5Qrcode("reader", {
@@ -33,15 +51,19 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose 
         const startScanner = async () => {
             setIsStarting(true);
             setScanError(null);
+
             try {
                 if (scanner.isScanning) {
-                    await scanner.stop();
+                    await scanner.stop().catch(() => { });
+                    scanner.clear();
                 }
+
+                await new Promise(resolve => setTimeout(resolve, 100));
+
                 await scanner.start(
                     { facingMode },
                     {
-                        fps: 10,
-                        qrbox: { width: 250, height: 150 }
+                        fps: 10
                     },
                     (decodedText) => {
                         if (isMounted) onScan(decodedText);
@@ -67,80 +89,144 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose 
 
         return () => {
             isMounted = false;
-            if (scannerRef.current?.isScanning) {
-                scannerRef.current.stop()
-                    .then(() => scannerRef.current?.clear())
-                    .catch(console.error);
+            if (scannerRef.current) {
+                if (scannerRef.current.isScanning) {
+                    scannerRef.current.stop()
+                        .then(() => {
+                            scannerRef.current?.clear();
+                        })
+                        .catch(console.error);
+                } else {
+                    scannerRef.current.clear();
+                }
             }
         };
     }, [facingMode, onScan]);
 
     return (
-        <div className="relative w-full h-full flex flex-col items-center justify-center bg-black/5 rounded-[40px] overflow-hidden">
-            {/* Absolute controls if not handled by parent */}
-            <div className="absolute top-4 right-4 z-20 flex gap-2">
+        <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            className="fixed inset-0 z-[200] flex flex-col bg-black overflow-hidden"
+        >
+            {/* Header / Contrôles (Haut) */}
+            <div className="absolute top-0 inset-x-0 z-30 flex justify-between items-start p-6 pt-10">
                 <button
-                    onClick={() => setFacingMode(prev => prev === "environment" ? "user" : "environment")}
-                    className="w-10 h-10 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-black/60 transition-colors"
+                    onClick={onClose}
+                    className="p-2 text-white active:opacity-70 transition-opacity bg-black/20 rounded-full"
                 >
-                    <RefreshCcw size={18} />
+                    <X size={26} strokeWidth={2.5} />
                 </button>
-                {onClose && (
+                <div className="flex gap-4">
                     <button
-                        onClick={onClose}
-                        className="w-10 h-10 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-black/60 transition-colors"
+                        onClick={toggleFlash}
+                        className="p-2 text-white active:opacity-70 transition-opacity bg-black/20 rounded-full"
                     >
-                        <X size={18} />
+                        {flashOn ? <Zap size={26} className="fill-white" strokeWidth={2} /> : <ZapOff size={26} strokeWidth={2.5} />}
                     </button>
-                )}
+                </div>
             </div>
 
             {/* Container for the scanner stream */}
-            <div className="relative w-full aspect-square md:aspect-video bg-black overflow-hidden flex items-center justify-center rounded-3xl">
+            <div className="relative flex-1 w-full bg-black flex items-center justify-center mt-[-10vh]">
                 {scanError ? (
-                    <div className="text-rose-500 font-bold text-center px-4 uppercase text-xs">
+                    <div className="text-rose-500 font-bold text-center px-4 uppercase text-xs z-20">
                         <Camera size={32} className="mx-auto mb-2 opacity-50" />
                         {scanError}
                         <button onClick={() => window.location.reload()} className="block mx-auto mt-4 px-4 py-2 bg-rose-500 text-white rounded-full">Réessayer</button>
                     </div>
                 ) : (
                     <>
+                        {/* Le conteneur vidéo HMTL5 QR Code rendu 100% de la div */}
                         <div id="reader" className="w-full h-full object-cover"></div>
 
-                        {/* Scanning Animation Overlay */}
+                        {/* Scanner UI Overlay (Targeting Frame) */}
                         {!isStarting && !scanError && (
-                            <div className="absolute inset-0 pointer-events-none z-10">
-                                <div className="w-full h-full border-[10px] border-amber-500/30"></div>
-                                <div className="absolute top-0 left-0 right-0 h-1 bg-amber-500 shadow-[0_0_20px_rgba(245,158,11,1)] animate-scan-line"></div>
+                            <div className="absolute inset-0 pointer-events-none z-10 flex flex-col items-center justify-center">
+                                {/* Zone transparente centrale style POS Scanner (Horizontal avec coins) */}
+                                <div className="relative w-80 h-48 sm:w-[400px] sm:h-56 shadow-[0_0_0_4000px_rgba(0,0,0,0.65)] rounded-2xl">
+                                    {/* Les 4 coins (Brackets blancs épais) */}
+                                    <div className="absolute -top-1 -left-1 w-10 h-10 border-t-[6px] border-l-[6px] border-white rounded-tl-2xl"></div>
+                                    <div className="absolute -top-1 -right-1 w-10 h-10 border-t-[6px] border-r-[6px] border-white rounded-tr-2xl"></div>
+                                    <div className="absolute -bottom-1 -left-1 w-10 h-10 border-b-[6px] border-l-[6px] border-white rounded-bl-2xl"></div>
+                                    <div className="absolute -bottom-1 -right-1 w-10 h-10 border-b-[6px] border-r-[6px] border-white rounded-br-2xl"></div>
+
+                                    {/* Conteneur pour clipser l'animation */}
+                                    <div className="absolute inset-0 overflow-hidden rounded-2xl">
+                                        {/* Ligne animée de Scan (Haut en bas) */}
+                                        <div className="absolute top-0 left-0 right-0 h-1 bg-rose-500 shadow-[0_0_20px_#f43f5e] animate-scan-line"></div>
+                                    </div>
+                                </div>
+                                {/* Le texte en dessous */}
+                                <div className="w-80 mt-6 text-center">
+                                    <p className="text-white text-[17px] font-medium leading-tight">
+                                        Scanner un code-barres pour ajouter le produit
+                                    </p>
+                                </div>
                             </div>
                         )}
                     </>
                 )}
 
                 {isStarting && !scanError && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm z-20">
-                        <div className="w-10 h-10 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+                    <div className="absolute inset-0 flex items-center justify-center bg-black z-20">
+                        <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
                     </div>
                 )}
             </div>
 
+            {/* Pas de boutons inférieurs pour la vente (Focus sur le scan) */}
+
             <style jsx>{`
                 @keyframes scanLine {
                     0% { top: 0%; opacity: 0; }
-                    10% { opacity: 1; }
-                    90% { opacity: 1; }
-                    100% { top: 100%; opacity: 0; }
+                    5% { opacity: 1; }
+                    50% { top: calc(100% - 4px); opacity: 1; }
+                    95% { opacity: 1; }
+                    100% { top: 0%; opacity: 0; }
                 }
+
                 .animate-scan-line {
                     animation: scanLine 2.5s ease-in-out infinite;
                 }
-                
-                /* Hide HTML5 QR Code default UI elements if possible */
+
+                /* Hide HTML5 QR Code default UI elements forcefully */
                 #reader__dashboard_section_csr span,
-                #reader__dashboard_section_swaplink {
+                #reader__dashboard_section_swaplink,
+                #reader__dashboard_section_csr div,
+                #reader img,
+                #reader__scan_region img {
+                    display: none !important;
+                }
+                
+                #reader {
+                    width: 100% !important;
+                    height: 100% !important;
+                    border: none !important;
+                    position: absolute;
+                    inset: 0;
+                }
+                
+                #reader__scan_region {
+                    width: 100% !important;
+                    height: 100% !important;
+                    background: black;
+                }
+                
+                #reader__scan_region video {
+                    position: absolute !important;
+                    top: 0 !important;
+                    left: 0 !important;
+                    width: 100% !important;
+                    height: 100% !important;
+                    object-fit: cover !important;
+                }
+                
+                #reader__scan_region canvas {
                     display: none !important;
                 }
             `}</style>
-        </div>
+        </motion.div>
     );
 };

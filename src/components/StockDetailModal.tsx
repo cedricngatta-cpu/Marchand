@@ -38,76 +38,74 @@ export const StockDetailModal: React.FC<StockDetailModalProps> = ({
         <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-slate-900/90 z-[200] flex items-end sm:items-center justify-center p-4"
+            className="fixed inset-0 bg-slate-950 z-[200] flex items-end sm:items-center justify-center p-4"
         >
             <motion.div
-                initial={{ y: 100 }}
-                animate={{ y: 0 }}
-                exit={{ y: 100 }}
-                className="bg-white w-full max-w-lg rounded-t-[32px] sm:rounded-[40px] mt-auto sm:mt-0 overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 20, opacity: 0 }}
+                className="bg-white w-full max-w-lg rounded-2xl md:rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh] border border-slate-200 dark:border-slate-800"
             >
-                <div className={`p-6 sm:p-8 ${product.color} flex justify-between items-start shrink-0`}>
-                    <div className="flex items-center gap-3 sm:gap-4 overflow-hidden">
-                        <div className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-white/50 ${product.iconColor} shrink-0`}>
-                            <product.icon size={32} className="sm:w-10 sm:h-10" />
+                <div className={`p-6 ${product.color} flex justify-between items-center shrink-0`}>
+                    <div className="flex items-center gap-3 overflow-hidden">
+                        <div className={`p-2.5 rounded-xl bg-white shadow-sm border border-slate-100 ${product.iconColor} shrink-0`}>
+                            <product.icon size={26} />
                         </div>
-                        <h2 className="text-xl sm:text-3xl font-black text-slate-900 uppercase tracking-tighter truncate">{product.name}</h2>
+                        <h2 className="text-xl font-bold text-slate-900 tracking-tight truncate">{product.name}</h2>
                     </div>
-                    <button onClick={onClose} className="bg-white/50 p-2 rounded-full text-slate-600 active:scale-90 transition-transform shrink-0 ml-4">
-                        <X size={20} className="sm:w-6 sm:h-6" />
+                    <button onClick={onClose} className="bg-white shadow-sm border border-slate-100 p-2 rounded-xl text-slate-600 active:scale-95 transition-transform shrink-0 ml-4">
+                        <X size={20} />
                     </button>
                 </div>
 
-                <div className="p-6 sm:p-8 space-y-4 sm:space-y-6 overflow-y-auto">
-                    <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                        <div className="bg-slate-50 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-100 text-center">
-                            <span className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase block mb-1 tracking-widest">Prix Unité</span>
-                            <span className="text-lg sm:text-xl font-black text-slate-800 tracking-tighter truncate">{product.price} F</span>
+                <div className="p-6 space-y-5 overflow-y-auto">
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-center">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1 tracking-wider">Prix Unité</span>
+                            <span className="text-lg font-bold text-slate-800 tracking-tight truncate">{product.price} F</span>
                         </div>
-                        <div className="bg-slate-50 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-100 text-center">
-                            <span className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase block mb-1 tracking-widest">Valeur Stock</span>
-                            <span className="text-lg sm:text-xl font-black text-emerald-600 tracking-tighter truncate">{capitalValue} F</span>
+                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-center">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1 tracking-wider">Valeur Stock</span>
+                            <span className="text-lg font-bold text-primary tracking-tight truncate">{capitalValue} F</span>
                         </div>
                     </div>
 
                     <div
                         onClick={announceCapital}
-                        className="bg-blue-50 p-4 sm:p-6 rounded-2xl sm:rounded-3xl flex items-start gap-3 sm:gap-4 text-blue-800 cursor-pointer active:bg-blue-100 transition-colors"
+                        className="bg-emerald-50 p-4 rounded-xl flex items-start gap-3 text-primary cursor-pointer active:bg-emerald-100 transition-colors"
                     >
-                        <Volume2 className="shrink-0 w-5 h-5 sm:w-6 sm:h-6" />
-                        <p className="font-bold text-xs sm:text-sm leading-snug">
-                            Ce produit représente {capitalValue} F de votre capital.
+                        <Volume2 className="shrink-0 w-5 h-5" />
+                        <p className="font-semibold text-xs leading-snug">
+                            Ce produit représente {capitalValue} F de votre capital marchand.
                         </p>
                     </div>
 
-                    {/* Section Historique Spécifique */}
                     <div>
-                        <div className="flex items-center gap-2 mb-3 sm:mb-4">
-                            <Clock size={14} className="text-slate-400 sm:w-4 sm:h-4" />
-                            <h3 className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-widest">Dernières actions</h3>
+                        <div className="flex items-center gap-2 mb-3">
+                            <Clock size={14} className="text-slate-400" />
+                            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Dernières actions</h3>
                         </div>
                         <div className="space-y-2 sm:space-y-3">
                             {productHistory.length === 0 ? (
                                 <p className="text-xs sm:text-sm font-bold text-slate-300 italic">Aucun historique pour le moment</p>
                             ) : (
                                 productHistory.map(t => (
-                                    <div key={t.id} className="flex items-center justify-between p-3 sm:p-4 bg-slate-50 rounded-[14px] sm:rounded-2xl border border-slate-100">
-                                        <div className="flex items-center gap-2 sm:gap-3 min-w-0 pr-2">
-                                            <div className={`p-1.5 sm:p-2 rounded-lg shrink-0 ${t.type === 'VENTE' ? 'bg-emerald-100 text-emerald-600' :
+                                    <div key={t.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                        <div className="flex items-center gap-3 min-w-0 pr-2">
+                                            <div className={`p-2 rounded-lg shrink-0 ${t.type === 'VENTE' ? 'bg-emerald-100 text-emerald-600' :
                                                 t.type === 'LIVRAISON' ? 'bg-blue-100 text-blue-600' :
                                                     'bg-red-100 text-red-600'
                                                 }`}>
-                                                {t.type === 'VENTE' ? <ShoppingBag size={12} className="sm:w-[14px] sm:h-[14px]" /> :
-                                                    t.type === 'LIVRAISON' ? <PlusCircle size={12} className="sm:w-[14px] sm:h-[14px]" /> :
-                                                        <MinusCircle size={12} className="sm:w-[14px] sm:h-[14px]" />}
+                                                {t.type === 'VENTE' ? <ShoppingBag size={14} /> :
+                                                    t.type === 'LIVRAISON' ? <PlusCircle size={14} /> :
+                                                        <MinusCircle size={14} />}
                                             </div>
                                             <div className="min-w-0">
-                                                <p className="font-bold text-slate-800 text-xs sm:text-sm leading-none truncate">{t.type}</p>
-                                                <p className="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase truncate">{new Date(t.timestamp).toLocaleDateString()} • {t.quantity} un.</p>
+                                                <p className="font-bold text-slate-800 text-sm leading-none truncate">{t.type}</p>
+                                                <p className="text-[10px] text-slate-400 font-semibold uppercase truncate mt-1">{new Date(t.timestamp).toLocaleDateString()} • {t.quantity} un.</p>
                                             </div>
                                         </div>
-                                        <p className="font-black text-xs sm:text-sm text-slate-500 shrink-0 whitespace-nowrap">
+                                        <p className="font-bold text-sm text-slate-500 shrink-0 whitespace-nowrap">
                                             {t.type === 'VENTE' ? '+' : '-'}{t.price} F
                                         </p>
                                     </div>
@@ -118,9 +116,9 @@ export const StockDetailModal: React.FC<StockDetailModalProps> = ({
 
                     <button
                         onClick={onClose}
-                        className="w-full h-14 sm:h-16 bg-slate-900 text-white rounded-[20px] sm:rounded-[25px] text-base sm:text-lg font-black uppercase tracking-tight shadow-lg active:scale-95 transition-all mt-2 sm:mt-4 shrink-0"
+                        className="w-full py-4 bg-slate-900 text-white rounded-xl text-sm font-bold uppercase tracking-wider shadow-md active:scale-[0.98] transition-all mt-4"
                     >
-                        OK, J'AI COMPRIS
+                        J'ai compris
                     </button>
                 </div>
             </motion.div>

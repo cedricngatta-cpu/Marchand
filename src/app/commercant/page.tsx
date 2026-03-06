@@ -14,182 +14,202 @@ import {
     PieChart,
     PlayCircle,
     Landmark,
-    BrainCircuit
+    BrainCircuit,
+    Eye,
+    EyeOff,
+    MoreHorizontal,
+    QrCode,
+    Camera
 } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useNotifications } from '@/context/NotificationContext';
-import { NotificationModal } from '@/components/NotificationModal';
-import AdviceModal from '@/components/AdviceModal';
 import { useHistory } from '@/hooks/useHistory';
 import { useAssistant } from '@/hooks/useAssistant';
 import { useVoice } from '@/hooks/useVoice';
 import { useSync } from '@/context/SyncContext';
-import { WifiOff } from 'lucide-react';
 
 export default function CommercantDashboard() {
     const router = useRouter();
     const { user } = useAuth();
     const { speak } = useVoice();
-    const { balance } = useHistory();
+    const { balance, history } = useHistory();
     const { unreadCount } = useNotifications();
-    const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-    const [isAdviceOpen, setIsAdviceOpen] = useState(false);
-    const { isOnline } = useSync();
+    const [showBalance, setShowBalance] = useState(true);
 
-    const menuItems = [
-        { id: 'vendre', name: 'Vendre', icon: ShoppingBag, color: 'bg-emerald-500', path: '/vendre' },
-        { id: 'marche', name: 'Marché', icon: Store, color: 'bg-indigo-500', path: '/approvisionnement' },
-        { id: 'acheter', name: 'Ajouter', icon: PlusCircle, color: 'bg-blue-500', path: '/acheter' },
-        { id: 'carnet', name: 'Carnet', icon: BookOpen, color: 'bg-rose-500', path: '/carnet' },
-        { id: 'stock', name: 'Stock', icon: Package, color: 'bg-amber-500', path: '/stock' },
-        { id: 'bilan', name: 'Bilan', icon: PieChart, color: 'bg-purple-500', path: '/bilan' },
-        { id: 'finance', name: 'Crédit', icon: Landmark, color: 'bg-violet-600', path: '/finance' },
-        { id: 'conseils', name: 'Conseils IA', icon: BrainCircuit, color: 'bg-indigo-600', path: '/conseils' },
-        { id: 'formation', name: 'Aide', icon: PlayCircle, color: 'bg-cyan-500', path: '/formation' },
-    ];
-
-    const toggleNotifications = () => {
-        setIsNotificationOpen(!isNotificationOpen);
-        if (!isNotificationOpen) {
-            speak(`${user?.name?.split(' ')[0] || 'Marchand'}, tu as ${unreadCount} nouveaux messages.`);
-        }
+    const handleNotifications = () => {
+        speak(`${user?.name?.split(' ')[0] || 'Marchand'}, tu as ${unreadCount} nouveaux messages.`);
+        router.push('/notifications');
     };
 
+    // Style inspiré de l'image de référence (icônes rondes colorées en bas)
+    const quickActions = [
+        { id: 'vendre', name: 'Vendre', icon: ShoppingBag, bg: 'bg-emerald-100 dark:bg-emerald-900/40', text: 'text-emerald-600 dark:text-emerald-400', path: '/vendre' },
+        { id: 'stock', name: 'Stock', icon: Package, bg: 'bg-amber-100 dark:bg-amber-900/40', text: 'text-amber-600 dark:text-amber-400', path: '/stock' },
+        { id: 'bilan', name: 'Bilan', icon: PieChart, bg: 'bg-blue-100 dark:bg-blue-900/40', text: 'text-blue-600 dark:text-blue-400', path: '/bilan' },
+        { id: 'carnet', name: 'Carnet', icon: BookOpen, bg: 'bg-rose-100 dark:bg-rose-900/40', text: 'text-rose-600 dark:text-rose-400', path: '/carnet' },
+        { id: 'finance', name: 'Crédit', icon: Landmark, bg: 'bg-purple-100 dark:bg-purple-900/40', text: 'text-purple-600 dark:text-purple-400', path: '/finance' },
+        { id: 'marche', name: 'Marché', icon: Store, bg: 'bg-indigo-100 dark:bg-indigo-900/40', text: 'text-indigo-600 dark:text-indigo-400', path: '/approvisionnement' },
+        { id: 'conseils', name: 'Coaching', icon: BrainCircuit, bg: 'bg-cyan-100 dark:bg-cyan-900/40', text: 'text-cyan-600 dark:text-cyan-400', path: '/conseils' },
+        { id: 'formation', name: 'Aide', icon: PlayCircle, bg: 'bg-slate-200 dark:bg-slate-800', text: 'text-slate-600 dark:text-slate-400', path: '/formation' },
+    ];
+
     return (
-        <main className="min-h-screen bg-slate-50 dark:bg-slate-950 p-3 sm:p-4 pb-20 sm:pb-32 max-w-5xl mx-auto">
-            {/* Header */}
-            <header className="flex justify-between items-center mb-4 sm:mb-8 pt-2 sm:pt-4">
-                <div className="flex items-center gap-2 sm:gap-3">
+        <main className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-24">
+            {/* EN-TÊTE COLORÉ (Le bloc vert en haut avec arrondi) */}
+            <div className="bg-primary pt-8 pb-32 px-4 rounded-b-[2.5rem] relative shadow-lg">
+                {/* Navbar supérieure */}
+                <div className="flex justify-between items-center mb-6">
+                    {/* Icône Profil (Engrenage ou User selon réf) */}
                     <button
                         onClick={() => router.push('/profil')}
-                        className="w-10 h-10 sm:w-14 sm:h-14 bg-emerald-600 rounded-lg sm:rounded-2xl flex items-center justify-center text-white shadow-lg active:scale-95 transition-transform shrink-0"
+                        className="w-10 h-10 bg-white text-primary rounded-full flex items-center justify-center active:scale-95 transition-transform shadow-sm"
                     >
-                        <Store size={20} className="sm:w-7 sm:h-7" />
+                        <User size={20} />
                     </button>
-                    <div className="min-w-0">
-                        <h1 className="text-lg sm:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none truncate">{user?.name || 'MARCHAND'}</h1>
-                        <p className="text-[8px] sm:text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-0.5 sm:mt-1 italic">Boutique Ouverte</p>
+
+                    {/* Points décoratifs centripètes */}
+                    <div className="flex items-center gap-1.5">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-300 dark:bg-emerald-700" />
+                        <div className="w-2 h-2 rounded-full bg-emerald-300 dark:bg-emerald-700" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-300 dark:bg-emerald-700" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-300 dark:bg-emerald-700" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-300 dark:bg-emerald-700" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-300 dark:bg-emerald-700" />
                     </div>
-                </div>
-                <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-                    <button
-                        onClick={() => setIsAdviceOpen(true)}
-                        className="w-9 h-9 sm:w-12 sm:h-12 bg-amber-400 text-slate-900 rounded-full flex items-center justify-center shadow-md active:scale-95 transition-transform"
-                    >
-                        <TrendingUp size={18} className="sm:w-6 sm:h-6" />
-                    </button>
-                    <button
-                        onClick={toggleNotifications}
-                        className="w-9 h-9 sm:w-12 sm:h-12 bg-white dark:bg-slate-800 rounded-full shadow-md flex items-center justify-center text-slate-600 dark:text-slate-300 relative transition-transform active:scale-95"
-                    >
-                        <Bell size={18} className="sm:w-6 sm:h-6" />
-                        {unreadCount > 0 && (
-                            <span className="absolute -top-1 -right-1 w-4 h-4 sm:w-6 sm:h-6 bg-rose-500 text-white text-[8px] sm:text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white dark:border-slate-800">
-                                {unreadCount}
-                            </span>
-                        )}
-                    </button>
-                </div>
-            </header>
 
-            <motion.section
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                onClick={() => speak(`Tu as ${balance} francs dans ta caisse.`)}
-                className="bg-emerald-600 p-3 sm:p-6 rounded-[20px] sm:rounded-[28px] text-white shadow-xl shadow-emerald-100 dark:shadow-none mb-3 sm:mb-6 relative overflow-hidden cursor-pointer"
-            >
-                <div className="relative z-10 flex items-end justify-between">
-                    <div>
-                        <span className="text-emerald-100 font-black text-[10px] sm:text-xs uppercase tracking-widest block mb-0.5">Ma Caisse Aujourd'hui</span>
-                        <div className="text-3xl sm:text-5xl font-black tracking-tighter leading-none">{balance} <span className="text-base sm:text-xl opacity-80">F</span></div>
-                    </div>
-                </div>
-                <TrendingUp size={60} className="sm:w-[100px] sm:h-[100px] absolute -right-2 -bottom-2 sm:-right-4 sm:-bottom-4 text-white/10 rotate-12" />
-            </motion.section>
-
-            {/* Grille Menu */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4 mb-3 sm:mb-6">
-                {menuItems.map((item) => {
-                    const requiresOnline = ['marche', 'conseils'].includes(item.id);
-                    const isDisabled = requiresOnline && !isOnline;
-
-                    return (
-                        <motion.button
-                            key={item.id}
-                            whileTap={isDisabled ? {} : { scale: 0.95 }}
-                            onClick={() => {
-                                if (isDisabled) {
-                                    speak(`${item.name} nécessite une connexion internet.`);
-                                    return;
-                                }
-                                router.push(item.path);
-                            }}
-                            className={`${isDisabled ? 'bg-slate-200 dark:bg-slate-800 cursor-not-allowed' : item.color} p-2.5 sm:p-4 rounded-[18px] sm:rounded-[24px] text-white flex flex-col items-center justify-center gap-1.5 sm:gap-2 shadow-sm active:scale-95 transition-all border-b-[3px] border-black/10 min-h-[85px] sm:min-h-[120px] relative`}
+                    {/* Icônes Droite (Notifications & Caisse) */}
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={handleNotifications}
+                            className="w-10 h-10 bg-white text-primary rounded-full flex items-center justify-center active:scale-95 transition-transform shadow-sm relative"
                         >
-                            {!isOnline && requiresOnline && (
-                                <div className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 bg-slate-900/40 p-1 rounded-full text-white/80">
-                                    <WifiOff size={10} />
+                            <Bell size={20} />
+                            {unreadCount > 0 && (
+                                <div className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-rose-500 border-2 border-white rounded-full flex items-center justify-center">
+                                    <span className="text-[8px] font-black text-white">{unreadCount}</span>
                                 </div>
                             )}
-                            <div className={`${isDisabled ? 'bg-slate-400/20 text-slate-400' : 'bg-white/20'} p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl`}>
-                                <item.icon size={20} className="sm:w-6 sm:h-6" />
-                            </div>
-                            <span className={`font-black uppercase tracking-widest text-[9px] sm:text-xs text-center leading-tight ${isDisabled ? 'text-slate-400' : 'text-white'}`}>{item.name}</span>
-                        </motion.button>
-                    );
-                })}
-
-                {/* Scanner - Full width on small screens if odd items, but here we have 9 items so keep grid consistent */}
-                <motion.button
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => router.push('/scanner')}
-                    className="col-span-2 sm:col-span-1 bg-slate-900 p-2.5 sm:p-4 rounded-[18px] sm:rounded-[24px] text-white flex sm:flex-col items-center justify-center gap-2 sm:gap-2 shadow-sm border-b-[3px] border-black/20 min-h-[50px] sm:min-h-[120px]"
-                >
-                    <div className="bg-white/10 p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl">
-                        <Scan size={18} className="sm:w-6 sm:h-6" />
+                        </button>
+                        <button
+                            onClick={() => setShowBalance(!showBalance)}
+                            className="w-10 h-10 bg-white text-primary rounded-full flex items-center justify-center active:scale-95 transition-transform shadow-sm"
+                        >
+                            {showBalance ? <Eye size={20} /> : <EyeOff size={20} />}
+                        </button>
                     </div>
-                    <span className="font-black uppercase tracking-widest text-[10px] sm:text-xs">Scanner</span>
-                </motion.button>
+                </div>
+
+                {/* Affichage Solde/Caisse */}
+                <div className="text-center px-4">
+                    <p className="text-emerald-100 font-bold text-[10px] uppercase tracking-widest mb-2">
+                        CAISSE DU JOUR
+                    </p>
+                    <div className="flex items-center justify-center gap-2">
+                        <span className="text-5xl sm:text-6xl font-black text-white tracking-tighter">
+                            {showBalance ? balance.toLocaleString('fr-FR') : '••••••'}
+                        </span>
+                        <span className="text-2xl text-emerald-200 font-bold mt-2">F</span>
+                    </div>
+                </div>
             </div>
 
-            {/* Section Conseil IA */}
-            <motion.section
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                className={`rounded-[20px] sm:rounded-[28px] p-4 sm:p-6 border shadow-sm relative overflow-hidden mb-4 transition-colors ${!isOnline ? 'bg-slate-100 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800' : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800'}`}
-            >
-                <div className="relative z-10 max-w-2xl text-center sm:text-left">
-                    <div className={`flex items-center justify-center sm:justify-start gap-2 mb-2`}>
-                        <div className={`p-1.5 rounded-lg ${!isOnline ? 'bg-slate-200 dark:bg-slate-800 text-slate-400' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-600'}`}>
-                            {isOnline ? <TrendingUp size={16} /> : <WifiOff size={16} />}
-                        </div>
-                        <h2 className="font-black uppercase text-slate-400 tracking-widest text-[8px] sm:text-[10px]">Conseil du Coach</h2>
+            {/* LE CORPS DE LA PAGE (Scanner & Grille) */}
+            <div className="px-4 max-w-lg mx-auto relative -mt-24 z-10">
+                {/* LA CARTE CENTRALE (Scanner) - Overlap */}
+                <button
+                    onClick={() => router.push('/scanner')}
+                    className="w-full bg-white dark:bg-slate-900 rounded-[24px] p-6 shadow-xl mb-6 active:scale-[0.98] transition-all group overflow-hidden relative block"
+                >
+                    {/* Motif de fond stylisé pour la carte scanner (inspiré du bleu de réf) */}
+                    <div className="absolute inset-x-0 inset-y-0 opacity-10 pointer-events-none overflow-hidden rounded-[24px]">
+                        {/* Simuler le pattern chevron bleu ciel en fond (on utilise juste quelques traits/cercles ou gradient pour faire pro) */}
+                        <div className="absolute -top-10 -right-10 w-40 h-40 bg-blue-500 rounded-full blur-3xl" />
+                        <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-emerald-500 rounded-full blur-3xl" />
                     </div>
-                    <p className={`text-sm sm:text-lg font-bold leading-tight mb-3 sm:mb-4 ${!isOnline ? 'text-slate-400' : 'text-slate-800 dark:text-white'}`}>
-                        {isOnline ? `"${user?.name?.split(' ')[0] || 'Marchand'}, j'ai analysé tes ventes. Tu as un conseil pour booster ton commerce !"` : `"${user?.name?.split(' ')[0] || 'Marchand'}, reconnecte-toi à internet pour recevoir ton analyse quotidienne."`}
-                    </p>
-                    <button
-                        onClick={() => {
-                            if (!isOnline) {
-                                speak("Les conseils IA nécessitent une connexion internet.");
-                                return;
-                            }
-                            setIsAdviceOpen(true);
-                        }}
-                        disabled={!isOnline}
-                        className={`w-full sm:w-auto px-6 py-3.5 sm:py-5 rounded-xl sm:rounded-[25px] font-black uppercase text-[10px] sm:text-sm tracking-widest transition-all border-b-4 ${!isOnline ? 'bg-slate-300 dark:bg-slate-800 text-slate-500 border-slate-400 dark:border-slate-700 cursor-not-allowed' : 'bg-amber-400 text-slate-900 shadow-lg shadow-amber-400/20 active:scale-95 border-amber-600'}`}
-                    >
-                        {isOnline ? 'Voir le conseil' : 'Hors-ligne'}
-                    </button>
+
+                    <div className="relative z-10 flex flex-col items-center">
+                        <div className="w-full h-40 max-w-[200px] border-4 border-slate-100 dark:border-slate-800 rounded-[20px] mb-4 bg-white dark:bg-slate-950 flex flex-col items-center justify-center relative overflow-hidden group-hover:border-primary/30 transition-colors">
+                            <QrCode size={80} className="text-slate-800 dark:text-slate-200" strokeWidth={1} />
+
+                            {/* Petit bouton caméra flottant en bas à droite du QR code */}
+                            <div className="absolute bottom-2 right-2 bg-primary text-white p-2 rounded-xl shadow-md flex items-center gap-1.5 text-[10px] font-bold">
+                                <Camera size={14} />
+                            </div>
+                        </div>
+                        <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Scanner Produit</h2>
+                        <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-widest">Appuie pour vendre</p>
+                    </div>
+                </button>
+
+                {/* GRILLE DES ACTIONS RAPIDES (Boutons ronds) */}
+                <div className="bg-white dark:bg-slate-900 rounded-[24px] p-6 shadow-sm mb-6 border border-slate-100 dark:border-slate-800">
+                    <div className="grid grid-cols-4 gap-y-6 gap-x-2">
+                        {quickActions.map((action) => (
+                            <button
+                                key={action.id}
+                                onClick={() => router.push(action.path)}
+                                className="flex flex-col items-center gap-2 active:scale-95 transition-transform"
+                            >
+                                <div className={`w-14 h-14 rounded-[20px] ${action.bg} flex items-center justify-center shadow-sm relative overflow-hidden group-hover:shadow-md transition-shadow`}>
+                                    <action.icon size={24} className={action.text} strokeWidth={2} />
+                                    {/* Petit badge conditionnel pour les conseils IA par exemple */}
+                                    {action.id === 'conseils' && unreadCount > 0 && (
+                                        <div className="absolute top-0 right-0 w-3 h-3 bg-rose-500 border-2 border-white rounded-full" />
+                                    )}
+                                </div>
+                                <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300 text-center leading-tight">
+                                    {action.name}
+                                </span>
+                            </button>
+                        ))}
+                    </div>
                 </div>
-                {isOnline && <TrendingUp size={120} className="sm:w-[200px] sm:h-[200px] absolute -right-6 -bottom-6 sm:-right-12 sm:-bottom-12 text-slate-50 dark:text-slate-800/50 rotate-12 hidden sm:block" />}
-            </motion.section>
 
+                {/* LISTE HISTORIQUE SIMPLIFIÉE */}
+                <div className="bg-white dark:bg-slate-900 rounded-[24px] p-6 shadow-sm border border-slate-100 dark:border-slate-800">
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-widest">Aujourd'hui</h3>
+                        <MoreHorizontal size={18} className="text-slate-400" />
+                    </div>
 
-            <NotificationModal isOpen={isNotificationOpen} onClose={() => setIsNotificationOpen(false)} />
-            <AdviceModal isOpen={isAdviceOpen} onClose={() => setIsAdviceOpen(false)} />
+                    <div className="space-y-4">
+                        {history.slice(0, 5).map((t: any, index: number) => (
+                            <div key={index} className="flex items-center justify-between group">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center shrink-0 border border-slate-100 dark:border-slate-700">
+                                        {t.type === 'VENTE' ? (
+                                            <ShoppingBag size={16} className="text-slate-500" />
+                                        ) : t.type === 'ACHAT' ? (
+                                            <Store size={16} className="text-slate-500" />
+                                        ) : (
+                                            <Package size={16} className="text-slate-500" />
+                                        )}
+                                    </div>
+                                    <div>
+                                        <p className="font-bold text-xs sm:text-sm text-slate-800 dark:text-white capitalize truncate">
+                                            {t.type === 'VENTE' ? `Vendu ${t.clientName ? `à ${t.clientName}` : 'au client'}` : t.type}
+                                        </p>
+                                        <p className="text-[10px] text-slate-400 capitalize -mt-0.5">
+                                            {new Date(t.timestamp).toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' })} • {user?.name?.split(' ')[0]}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="font-bold text-xs sm:text-sm text-slate-800 dark:text-white whitespace-nowrap">
+                                    {t.type === 'VENTE' ? '+' : '-'}{t.price}F
+                                </div>
+                            </div>
+                        ))}
+
+                        {history.length === 0 && (
+                            <div className="text-center py-6 text-slate-400">
+                                <Package size={24} className="mx-auto mb-2 opacity-30" />
+                                <p className="text-[10px] font-bold uppercase tracking-widest">Aucune vente aujourd'hui</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
         </main>
     );
 }

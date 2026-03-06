@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { ArrowLeft, PlayCircle, PauseCircle, Headphones, Play } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowLeft, PlayCircle, PauseCircle, Headphones, Play, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useVoice } from '@/hooks/useVoice';
 
@@ -28,61 +28,104 @@ export default function FormationPage() {
         }
     };
 
-    React.useEffect(() => {
+    useEffect(() => {
         return () => stopSpeaking();
     }, [stopSpeaking]);
 
     return (
-        <main className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-6 max-w-5xl mx-auto pb-32">
-            <header className="flex items-center gap-3 md:gap-4 mb-6 md:mb-10 pt-4">
-                <button
-                    onClick={() => {
-                        stopSpeaking();
-                        router.back();
-                    }}
-                    className="w-10 h-10 md:w-12 md:h-12 bg-white dark:bg-slate-800 rounded-xl md:rounded-2xl flex items-center justify-center shadow-sm text-slate-600 dark:text-slate-300 active:scale-90 transition-all border border-slate-100 dark:border-slate-800 shrink-0"
-                >
-                    <ArrowLeft size={24} className="w-6 h-6 md:w-7 md:h-7" />
-                </button>
-                <div className="min-w-0">
-                    <h1 className="text-xl md:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none truncate">Formation</h1>
-                    <p className="text-cyan-600 font-bold text-[9px] md:text-[11px] uppercase tracking-widest mt-0.5 md:mt-1 truncate">Écouter & Apprendre</p>
+        <main className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-32">
+            {/* Header Coloré (Card Overlap Style) */}
+            <div className="bg-cyan-600 pt-8 pb-32 px-4 rounded-b-[2.5rem] relative shadow-lg">
+                <div className="flex justify-between items-center max-w-lg mx-auto mb-6">
+                    <button
+                        onClick={() => {
+                            stopSpeaking();
+                            router.back();
+                        }}
+                        className="w-10 h-10 bg-white text-cyan-600 rounded-full flex items-center justify-center active:scale-95 transition-transform shadow-sm"
+                    >
+                        <ArrowLeft size={20} />
+                    </button>
+                    <div className="text-center flex-1 pr-10">
+                        <h1 className="text-white font-bold text-lg tracking-wide uppercase">Apprentissage</h1>
+                        <p className="text-cyan-100/60 text-[10px] font-bold uppercase tracking-widest mt-0.5">Écouter & Apprendre</p>
+                    </div>
                 </div>
-            </header>
-
-            <div className="bg-cyan-600 p-6 md:p-10 rounded-[32px] md:rounded-[40px] text-white shadow-xl shadow-cyan-200 dark:shadow-none mb-6 md:mb-10 relative overflow-hidden">
-                <div className="relative z-10 w-3/4 md:w-full">
-                    <h2 className="text-2xl md:text-4xl font-black uppercase tracking-tight mb-2 md:mb-4">Tutoriels Audio</h2>
-                    <p className="font-bold opacity-90 leading-relaxed text-[10px] md:text-base uppercase tracking-widest text-cyan-100">Appuie sur lecture pour écouter le coach t'expliquer comment utiliser l'application comme un pro.</p>
-                </div>
-                <Headphones size={120} className="absolute -right-4 -bottom-6 text-white/10 rotate-12 md:w-32 md:h-32" />
             </div>
 
-            <div className="space-y-3 md:space-y-4">
-                {tutorials.map((tuto) => {
-                    const isPlaying = playingId === tuto.id && isSpeaking;
-                    return (
-                        <motion.div
-                            key={tuto.id}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={() => togglePlay(tuto)}
-                            className={`bg-white dark:bg-slate-900 p-4 md:p-6 rounded-[24px] md:rounded-[35px] shadow-sm border-2 cursor-pointer transition-all flex items-center gap-4 md:gap-6 ${isPlaying ? 'border-cyan-500 shadow-cyan-100 dark:shadow-none' : 'border-slate-100 dark:border-slate-800 hover:border-cyan-200'}`}
-                        >
-                            <div className={`p-3 md:p-4 rounded-xl md:rounded-2xl shrink-0 ${isPlaying ? 'bg-cyan-50 text-cyan-500 shadow-inner' : 'bg-slate-50 dark:bg-slate-800 text-slate-400'}`}>
-                                {isPlaying ? <PauseCircle size={28} className="animate-pulse md:w-8 md:h-8" /> : <PlayCircle size={28} className="md:w-8 md:h-8" />}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <h3 className="font-black uppercase tracking-tight text-slate-900 dark:text-white text-sm md:text-lg leading-tight mb-1 truncate">{tuto.title}</h3>
-                                <div className="flex items-center gap-1.5 md:gap-2 text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                    <span className="flex items-center gap-1"><Play size={10} className="md:w-[12px] md:h-[12px]" /> Audio</span>
-                                    <span>•</span>
-                                    <span>{tuto.duration}</span>
+            {/* Main Content Overlap */}
+            <div className="px-4 max-w-lg mx-auto relative -mt-20 z-10 space-y-6">
+                {/* Intro Card */}
+                <div className="bg-white dark:bg-slate-900 p-8 rounded-[32px] shadow-xl border border-slate-100 dark:border-slate-800 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
+                        <Headphones size={80} className="text-cyan-600 rotate-12" />
+                    </div>
+
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Sparkles size={16} className="text-amber-500" />
+                            <span className="text-[10px] font-black text-cyan-600 uppercase tracking-[0.2em]">Coach Personnel</span>
+                        </div>
+                        <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter uppercase leading-none mb-3">
+                            Tutoriels Audio
+                        </h2>
+                        <p className="text-slate-500 dark:text-slate-400 font-bold text-[10px] uppercase tracking-widest leading-loose">
+                            Appuie sur lecture pour écouter le coach t'expliquer comment utiliser l'application comme un expert.
+                        </p>
+                    </div>
+                </div>
+
+                {/* Tutorials List */}
+                <div className="space-y-4">
+                    <div className="flex items-center gap-2 ml-4">
+                        <div className="w-1 h-3 bg-cyan-500 rounded-full" />
+                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Leçons disponibles</h3>
+                    </div>
+
+                    {tutorials.map((tuto) => {
+                        const isPlaying = playingId === tuto.id && isSpeaking;
+                        return (
+                            <motion.button
+                                key={tuto.id}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={() => togglePlay(tuto)}
+                                className={`w-full bg-white dark:bg-slate-900 p-5 rounded-[28px] border transition-all flex items-center gap-5 text-left shadow-sm ${isPlaying ? 'border-cyan-500 ring-2 ring-cyan-500/10' : 'border-slate-100 dark:border-slate-800'}`}
+                            >
+                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 transition-colors ${isPlaying ? 'bg-cyan-600 text-white shadow-lg' : 'bg-slate-50 dark:bg-slate-800 text-slate-400'}`}>
+                                    {isPlaying ? (
+                                        <PauseCircle size={24} className="animate-pulse" />
+                                    ) : (
+                                        <PlayCircle size={24} />
+                                    )}
                                 </div>
-                            </div>
-                            {isPlaying && <div className="w-2 h-2 md:w-3 md:h-3 rounded-full bg-cyan-500 animate-ping ml-2 md:mr-4 shrink-0" />}
-                        </motion.div>
-                    );
-                })}
+                                <div className="flex-1 min-w-0">
+                                    <h4 className="font-black uppercase tracking-tight text-slate-900 dark:text-white text-xs leading-none mb-2 truncate">
+                                        {tuto.title}
+                                    </h4>
+                                    <div className="flex items-center gap-2 text-[8px] font-black text-slate-400 uppercase tracking-widest">
+                                        <span className="flex items-center gap-1">
+                                            <Play size={8} fill="currentColor" /> {tuto.duration}
+                                        </span>
+                                        <span className="w-1 h-1 bg-slate-200 rounded-full" />
+                                        <span className="text-cyan-600">Audio</span>
+                                    </div>
+                                </div>
+                                {isPlaying && (
+                                    <div className="flex gap-0.5 items-end h-3">
+                                        {[1, 2, 3].map(i => (
+                                            <motion.div
+                                                key={i}
+                                                animate={{ height: [4, 12, 4] }}
+                                                transition={{ duration: 0.5, repeat: Infinity, delay: i * 0.1 }}
+                                                className="w-0.5 bg-cyan-500 rounded-full"
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                            </motion.button>
+                        );
+                    })}
+                </div>
             </div>
         </main>
     );

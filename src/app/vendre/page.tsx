@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, Mic, ShoppingBag, Trash2, CheckCircle2, ShoppingCart, User } from 'lucide-react';
+import { ChevronLeft, Mic, ShoppingBag, Trash2, CheckCircle2, ShoppingCart, Smartphone, Landmark, Banknote, Barcode } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ProductGrid } from '@/components/ProductGrid';
 import { BarcodeScanner } from '@/components/BarcodeScanner';
@@ -12,12 +12,11 @@ import { useStock } from '@/hooks/useStock';
 import { useHistory } from '@/hooks/useHistory';
 import { useProductContext } from '@/context/ProductContext';
 import { useAuth } from '@/context/AuthContext';
-import { Barcode } from 'lucide-react';
 
 export default function VendrePage() {
     const router = useRouter();
     const { products } = useProductContext();
-    const { speak, listen, isSpeaking, isListening, handleAction } = useAssistant();
+    const { speak, isSpeaking, isListening, handleAction } = useAssistant();
     const { items, addItem, removeItem, clearCart, total } = useCart();
     const { updateStock } = useStock();
     const { addTransaction } = useHistory();
@@ -26,19 +25,6 @@ export default function VendrePage() {
     const [isScanning, setIsScanning] = useState(false);
     const [clientName, setClientName] = useState('');
     const [paymentStatus, setPaymentStatus] = useState<'PAYÉ' | 'DETTE' | 'MOMO'>('PAYÉ');
-
-    React.useEffect(() => {
-        const handleAssistantClient = (e: any) => {
-            if (e.detail?.name) {
-                setClientName(e.detail.name);
-            }
-            if (e.detail?.status) {
-                setPaymentStatus(e.detail.status);
-            }
-        };
-        window.addEventListener('assistant-set-client', handleAssistantClient);
-        return () => window.removeEventListener('assistant-set-client', handleAssistantClient);
-    }, [speak]);
 
     const handleFinish = async () => {
         if (items.length === 0) {
@@ -56,7 +42,6 @@ export default function VendrePage() {
         speak(message);
         setShowConfirmation(true);
 
-        // On lance les mises à jour en arrière-plan pendant l'animation
         try {
             const updates = items.map(async (item) => {
                 await updateStock(item.id, -item.quantity);
@@ -73,23 +58,43 @@ export default function VendrePage() {
 
             await Promise.all(updates);
 
-            // On attend la fin du message vocal/animation
             setTimeout(() => {
                 clearCart();
-                router.push('/');
-            }, 6000); // 6 seconds to let user view the receipt
+                router.push('/commercant');
+            }, 6000);
         } catch (err) {
             console.error("Erreur lors de la validation :", err);
             speak(`Désolé ${user?.name?.split(' ')[0] || 'Marchand'}, il y a eu un petit problème technique.`);
         }
     };
 
+    React.useEffect(() => {
+        const handleAssistantClient = (e: any) => {
+            if (e.detail?.name) {
+                setClientName(e.detail.name);
+            }
+            if (e.detail?.status) {
+                setPaymentStatus(e.detail.status);
+            }
+        };
+
+        const handleAssistantFinish = () => {
+            handleFinish();
+        };
+
+        window.addEventListener('assistant-set-client', handleAssistantClient);
+        window.addEventListener('assistant-finish-sale', handleAssistantFinish);
+        return () => {
+            window.removeEventListener('assistant-set-client', handleAssistantClient);
+            window.removeEventListener('assistant-finish-sale', handleAssistantFinish);
+        };
+    }, [speak, items, clientName, paymentStatus, handleFinish]);
+
     const handleBarcodeScan = (barcode: string) => {
         const product = products.find(p => p.barcode === barcode);
         if (product) {
             addItem(product);
             speak(`${product.name} ajouté.`);
-            // Petit feedback sonore visuel si possible (ici on a speak)
         } else {
             speak("Produit non reconnu.");
         }
@@ -97,26 +102,38 @@ export default function VendrePage() {
     };
 
     return (
-        <main className="min-h-screen bg-slate-50 dark:bg-slate-950 p-3 pb-32 md:pb-64 lg:pb-40">
-            {/* Header Retour */}
-            <header className="flex items-center gap-3 mb-4 pt-1">
-                <button
-                    onClick={() => router.push('/')}
-                    className="w-9 h-9 md:w-12 md:h-12 bg-white dark:bg-slate-800 rounded-full shadow-md flex items-center justify-center text-slate-600 dark:text-slate-300 active:scale-95 transition-all"
-                >
-                    <ChevronLeft size={20} className="md:w-8 md:h-8" />
-                </button>
-                <h1 className="text-lg md:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Vendre</h1>
+        <main className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-32 font-sans">
+            {/* Header Vert Type Wave CI */}
+            <div className="bg-primary pt-8 pb-32 px-4 rounded-b-[2.5rem] relative shadow-lg">
+                {/* Navbar */}
+                <div className="flex justify-between items-center mb-8 max-w-lg mx-auto">
+                    <button onClick={() => router.push('/commercant')} className="w-10 h-10 bg-white text-primary rounded-full flex items-center justify-center active:scale-95 transition-transform shadow-sm">
+                        <ChevronLeft size={20} />
+                    </button>
+                    <div className="flex items-center gap-1.5">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-300 dark:bg-emerald-700" />
+                        <div className="w-2 h-2 rounded-full bg-emerald-300 dark:bg-emerald-700" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-300 dark:bg-emerald-700" />
+                    </div>
+                    <button onClick={() => setIsScanning(true)} className="w-10 h-10 bg-white text-primary rounded-full flex items-center justify-center active:scale-95 transition-transform relative shadow-sm">
+                        <Barcode size={20} />
+                        {items.length > 0 && (
+                            <div className="absolute top-0 right-0 w-3 h-3 bg-rose-500 rounded-full border-2 border-primary" />
+                        )}
+                    </button>
+                </div>
 
-                <button
-                    onClick={() => setIsScanning(true)}
-                    className="ml-auto flex items-center gap-2 bg-blue-600 text-white px-3 py-1.5 md:py-2.5 rounded-lg md:rounded-2xl font-black text-[9px] md:text-xs uppercase shadow-lg shadow-blue-100 dark:shadow-none active:scale-95 transition-all"
-                >
-                    <Barcode size={14} className="md:w-[18px] md:h-[18px]" />
-                    <span className="hidden sm:inline">Scanner</span>
-                    <span className="sm:hidden">SCAN</span>
-                </button>
-            </header>
+                {/* Total du panier */}
+                <div className="text-center px-4">
+                    <p className="text-emerald-100 font-bold text-[10px] uppercase tracking-widest mb-1">TOTAL À PAYER</p>
+                    <div className="flex items-center justify-center gap-2">
+                        <span className="text-5xl sm:text-6xl font-black text-white tracking-tighter">
+                            {total.toLocaleString('fr-FR')}
+                        </span>
+                        <span className="text-2xl text-emerald-200 font-bold mt-2">F</span>
+                    </div>
+                </div>
+            </div>
 
             <AnimatePresence>
                 {isScanning && (
@@ -127,176 +144,161 @@ export default function VendrePage() {
                 )}
             </AnimatePresence>
 
-            {/* Conteneur principal adaptatif */}
-            <div className="flex flex-col lg:flex-row gap-4 md:gap-8 items-start max-w-7xl mx-auto">
-                {/* Section Gauche : Résumé Panier (Visuel) - Fixé sur Desktop */}
-                <section className="w-full lg:w-80 lg:sticky lg:top-24 bg-white dark:bg-slate-900 rounded-[20px] md:rounded-[32px] p-3 md:p-6 shadow-sm border border-slate-100 dark:border-slate-800">
-                    <div className="flex justify-between items-center mb-3 gap-2">
-                        <span className="font-bold text-slate-400 uppercase tracking-widest text-[9px] md:text-sm whitespace-nowrap">Panier</span>
-                        {clientName && (
-                            <div className="bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full text-[8px] md:text-xs font-black uppercase flex items-center gap-1 min-w-0">
-                                <span className="truncate">Client: {clientName}</span>
-                            </div>
-                        )}
+            {/* Conteneur principal (Overlaps the header) */}
+            <div className="px-4 max-w-lg mx-auto relative -mt-20 z-10 flex flex-col gap-6">
+
+                {/* Carte Overlap : Le Panier */}
+                <div className="bg-white dark:bg-slate-900 rounded-[24px] p-6 shadow-xl w-full border border-slate-100 dark:border-slate-800">
+                    <div className="flex justify-between items-center mb-6">
+                        <div className="flex flex-col">
+                            <h3 className="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-widest">Contenu du Panier</h3>
+                            {clientName && <span className="text-emerald-500 text-[10px] font-bold mt-0.5">CLIENT: {clientName}</span>}
+                        </div>
                         {items.length > 0 && (
-                            <button onClick={clearCart} className="text-red-500 font-bold text-[9px] md:text-sm flex items-center gap-1 text-right whitespace-nowrap shrink-0">
-                                <Trash2 size={12} className="md:w-4 md:h-4" /> VIDER
+                            <button onClick={clearCart} className="text-rose-500 hover:text-rose-600 font-bold text-[10px] uppercase tracking-wider bg-rose-50 dark:bg-rose-500/10 px-3 py-1.5 rounded-full active:scale-95 transition-all">
+                                Vider tout
                             </button>
                         )}
                     </div>
 
+                    {/* Liste des articles */}
                     {items.length === 0 ? (
-                        <div className="py-4 md:py-8 text-center text-slate-300 font-bold uppercase italic text-[10px] md:text-sm">
-                            Appuie sur les produits
+                        <div className="py-10 text-center text-slate-400">
+                            <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-full mx-auto flex items-center justify-center mb-3">
+                                <ShoppingCart size={24} className="opacity-50" />
+                            </div>
+                            <p className="text-[10px] font-bold uppercase tracking-widest">Le panier est vide</p>
+                            <p className="text-[9px] mt-1 opacity-70">Ajoute des produits via le catalogue</p>
                         </div>
                     ) : (
-                        <div className="space-y-1.5 md:space-y-3 max-h-[25vh] lg:max-h-[50vh] overflow-y-auto pr-1 scrollbar-none">
+                        <div className="max-h-[35vh] overflow-y-auto space-y-4 pr-1 scrollbar-none mb-6">
                             {items.map(item => (
-                                <div key={item.id} className="flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 p-2 md:p-3 rounded-xl md:rounded-2xl gap-2 md:gap-3">
-                                    <div className="flex items-center gap-2 md:gap-4 min-w-0">
-                                        <div className="relative w-8 h-8 md:w-12 md:h-12 bg-white dark:bg-slate-800 rounded-lg md:rounded-xl overflow-hidden shadow-sm flex items-center justify-center border border-slate-100 dark:border-slate-700 shrink-0">
+                                <div key={item.id} className="flex justify-between items-center group">
+                                    <div className="flex items-center gap-4 min-w-0">
+                                        <div className="relative w-12 h-12 bg-slate-50 dark:bg-slate-800 rounded-xl flex items-center justify-center shrink-0">
                                             {item.imageUrl ? (
-                                                <img src={item.imageUrl} className="w-full h-full object-contain" alt="" />
+                                                <img src={item.imageUrl} className="w-full h-full object-contain p-2" alt="" />
                                             ) : (
-                                                <ShoppingBag size={18} className="text-slate-300" />
+                                                <ShoppingBag size={20} className="text-slate-400" />
                                             )}
-                                            <div className="absolute top-0 right-0 bg-blue-500 text-white text-[9px] md:text-[10px] font-black w-4 h-4 md:w-5 md:h-5 flex items-center justify-center rounded-bl-lg">
+                                            <div className="absolute -top-1.5 -right-1.5 bg-slate-900 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full shadow-sm">
                                                 {item.quantity}
                                             </div>
                                         </div>
                                         <div className="flex flex-col min-w-0">
-                                            <span className="font-black text-slate-800 dark:text-slate-100 uppercase text-[10px] md:text-xs leading-tight truncate">{item.name}</span>
-                                            <span className="text-[9px] md:text-[10px] font-bold text-slate-400">{item.price} F / u</span>
+                                            <span className="font-bold text-slate-900 dark:text-white text-xs leading-tight truncate">{item.name}</span>
+                                            <span className="text-[10px] font-bold text-slate-400 mt-0.5">{item.price} F / u</span>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-3 md:gap-4 shrink-0">
-                                        <span className="font-black text-slate-900 dark:text-white text-xs md:text-sm">{item.price * item.quantity} F</span>
-                                        <button onClick={() => removeItem(item.id)} className="w-6 h-6 flex items-center justify-center text-slate-300 hover:text-red-500 transition-colors">✕</button>
+                                    <div className="flex items-center gap-3 shrink-0">
+                                        <span className="font-bold text-slate-900 dark:text-white text-xs">{item.price * item.quantity} F</span>
+                                        <button onClick={() => removeItem(item.id)} className="w-8 h-8 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 active:bg-rose-50 active:text-rose-500 transition-colors">
+                                            <Trash2 size={14} />
+                                        </button>
                                     </div>
                                 </div>
                             ))}
                         </div>
                     )}
 
-                    <div className="mt-2 md:mt-6 pt-2 md:pt-6 border-t-2 md:border-t-4 border-slate-50 dark:border-slate-800 flex flex-col gap-2 md:gap-3">
-                        <div className="flex justify-between items-center">
-                            <span className="text-sm md:text-xl font-black text-slate-400 uppercase tracking-tighter">TOTAL</span>
-                            <span className="text-lg md:text-3xl font-black text-emerald-600">{total} F</span>
-                        </div>
-
-                        <div className="flex gap-1 md:gap-2">
+                    {/* Sélecteur de Paiement (Style Toggle Wave) */}
+                    <div className="border-t border-slate-100 dark:border-slate-800 pt-5 mt-2">
+                        <p className="font-bold text-slate-400 text-[10px] uppercase tracking-widest mb-3 text-center">Choix du Règlement</p>
+                        <div className="flex gap-1.5 p-1.5 bg-slate-100 dark:bg-slate-800 rounded-2xl w-full border border-slate-200 dark:border-slate-700">
                             <button
                                 onClick={() => setPaymentStatus('PAYÉ')}
-                                className={`flex-1 py-1.5 md:py-2.5 rounded-lg md:rounded-2xl font-black text-[8px] md:text-xs uppercase tracking-widest border-2 transition-all ${paymentStatus === 'PAYÉ' ? 'bg-emerald-600 border-emerald-600 text-white shadow-md' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-400'}`}
+                                className={`flex-1 py-3 px-2 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all flex flex-col items-center gap-1.5 ${paymentStatus === 'PAYÉ' ? 'bg-white dark:bg-slate-700 text-primary shadow-sm' : 'text-slate-500'}`}
                             >
-                                Cash
+                                <Banknote size={16} /> CASH
                             </button>
                             <button
                                 onClick={() => setPaymentStatus('MOMO')}
-                                className={`flex-1 py-2.5 rounded-lg md:rounded-2xl font-black text-center text-[8px] md:text-xs uppercase tracking-widest border-2 transition-all ${paymentStatus === 'MOMO' ? 'bg-blue-600 border-blue-600 text-white shadow-lg' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-400'}`}
+                                className={`flex-1 py-3 px-2 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all flex flex-col items-center gap-1.5 ${paymentStatus === 'MOMO' ? 'bg-white dark:bg-slate-700 text-yellow-500 shadow-sm' : 'text-slate-500'}`}
                             >
-                                MOMO
+                                <Smartphone size={16} /> MOMO
                             </button>
                             <button
                                 onClick={() => setPaymentStatus('DETTE')}
-                                className={`flex-1 py-2.5 rounded-lg md:rounded-2xl font-black text-center text-[8px] md:text-xs uppercase tracking-widest border-2 transition-all ${paymentStatus === 'DETTE' ? 'bg-red-600 border-red-600 text-white shadow-lg' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-400'}`}
+                                className={`flex-1 py-3 px-2 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all flex flex-col items-center gap-1.5 ${paymentStatus === 'DETTE' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500'}`}
                             >
-                                Dette
+                                <Landmark size={16} /> CRÉDIT
                             </button>
                         </div>
                     </div>
-                </section>
+                </div>
 
-                {/* Section Droite : Grille de Produits */}
-                <div className="flex-1 w-full">
+                {/* Grille des Produits du Catalogue */}
+                <div className="w-full mt-2">
                     <ProductGrid onAdd={addItem} onSpeak={speak} />
                 </div>
             </div>
 
-            {/* Actions Fixes adaptatifs */}
-            <div className="fixed bottom-4 left-0 right-0 px-3 md:px-6 flex items-center justify-center z-50 pointer-events-none">
-                <div className="flex items-center gap-2 md:gap-4 w-full max-w-xl pointer-events-auto">
-                    {/* Micro */}
+            {/* Actions Fixes Flottantes (Validation) */}
+            <div className="fixed bottom-6 left-0 right-0 px-4 flex justify-center z-50 pointer-events-none">
+                <div className="flex items-center gap-3 w-full max-w-lg pointer-events-auto bg-white dark:bg-slate-900 p-2 rounded-[28px] border border-slate-200 dark:border-slate-800 shadow-xl">
                     <button
                         onClick={handleAction}
-                        className={`h-12 w-12 md:h-20 md:w-20 shrink-0 rounded-full flex items-center justify-center shadow-xl border-2 md:border-[3px] border-white dark:border-slate-900 transition-all ${isListening ? 'bg-red-500 scale-105 animate-pulse' : isSpeaking ? 'bg-blue-500' : 'bg-amber-500 active:bg-amber-600'}`}
+                        className={`h-14 w-14 shrink-0 rounded-full flex items-center justify-center shadow-md transition-all ${isListening ? 'bg-rose-500' : 'bg-slate-900 border-2 border-slate-800'}`}
                     >
-                        <Mic size={18} className="md:w-7 md:h-7" color="white" fill={isListening || isSpeaking ? "white" : "none"} />
+                        <Mic size={24} color="white" fill={isListening || isSpeaking ? "white" : "none"} />
                     </button>
 
-                    {/* Bouton Valider */}
                     <button
                         onClick={handleFinish}
-                        className="flex-1 h-12 md:h-20 bg-emerald-600 rounded-[16px] md:rounded-[32px] shadow-xl text-white flex items-center justify-center gap-2 border-2 md:border-[3px] border-white dark:border-slate-900 active:bg-emerald-700 transition-all overflow-hidden"
+                        className="flex-1 h-14 bg-primary rounded-[20px] shadow-md text-white flex items-center justify-center gap-3 active:scale-[0.98] transition-transform"
                     >
-                        <CheckCircle2 size={16} className="md:w-6 md:h-6" />
-                        <span className="text-xs md:text-xl font-black uppercase tracking-tighter">C'EST FINI</span>
+                        <CheckCircle2 size={20} />
+                        <span className="text-sm font-bold uppercase tracking-widest">Confirmer l'Action</span>
                     </button>
                 </div>
             </div>
 
-            {/* Overlay de Confirmation Success - Reçu Numérique */}
+            {/* Overlay de Confirmation Success - Reçu */}
             <AnimatePresence>
                 {showConfirmation && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex flex-col items-center justify-center p-6"
+                        className="fixed inset-0 bg-slate-900 z-[100] flex flex-col items-center justify-center p-6"
                     >
                         <motion.div
-                            initial={{ scale: 0.8, y: 50 }}
-                            animate={{ scale: 1, y: 0 }}
-                            transition={{ type: "spring", damping: 15 }}
-                            className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-[35px] overflow-hidden shadow-2xl relative border-4 border-slate-100 dark:border-slate-800"
+                            initial={{ scale: 0.95, y: 20, opacity: 0 }}
+                            animate={{ scale: 1, y: 0, opacity: 1 }}
+                            className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-[32px] overflow-hidden shadow-2xl relative"
                         >
-                            {/* Receipt Header */}
-                            <div className="bg-emerald-500 p-8 text-center text-white">
+                            <div className="bg-primary p-8 text-center text-white relative">
                                 <motion.div
                                     initial={{ scale: 0 }}
-                                    animate={{ scale: 1, rotate: 360 }}
-                                    transition={{ type: "spring", damping: 10, delay: 0.2 }}
-                                    className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm"
+                                    animate={{ scale: 1 }}
+                                    className="w-16 h-16 bg-white text-primary shadow-sm rounded-full flex items-center justify-center mx-auto mb-4"
                                 >
-                                    <CheckCircle2 size={40} className="text-white" />
+                                    <CheckCircle2 size={32} />
                                 </motion.div>
-                                <h2 className="text-2xl font-black uppercase tracking-widest mb-1">Paiement Réussi</h2>
-                                <p className="text-xs font-bold uppercase tracking-widest opacity-80">{new Date().toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                <h2 className="text-xl font-bold uppercase tracking-wider mb-1">Paiement Validé</h2>
                             </div>
 
-                            {/* Ticket ZigZag border simulation */}
-                            <div className="h-4 bg-emerald-500 w-full relative" style={{ backgroundImage: 'radial-gradient(circle at 10px 0, transparent 10px, white 11px)', backgroundSize: '20px 20px', backgroundRepeat: 'repeat-x', top: '-2px' }} />
-
-                            {/* Receipt Content */}
-                            <div className="p-6 md:p-8 pt-4 space-y-4 md:space-y-6">
+                            <div className="p-8 pt-6 space-y-6">
                                 <div className="text-center">
-                                    <span className="block text-xs md:text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">Montant Total</span>
-                                    <span className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tighter">{total} <span className="text-xl md:text-2xl opacity-50">F</span></span>
+                                    <span className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Montant Payé</span>
+                                    <span className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter">{total} <span className="text-2xl opacity-50">F</span></span>
                                 </div>
 
-                                <div className="space-y-3">
-                                    <div className="flex justify-between items-center text-sm font-bold border-b border-dashed border-slate-200 dark:border-slate-800 pb-3">
+                                <div className="space-y-4">
+                                    <div className="flex justify-between items-center text-xs font-bold border-b border-dashed border-slate-200 dark:border-slate-800 pb-3">
                                         <span className="text-slate-400 uppercase tracking-widest">Mode</span>
                                         <span className="text-slate-900 dark:text-white uppercase tracking-widest">
                                             {paymentStatus === 'MOMO' ? 'Mobile Money' : paymentStatus === 'DETTE' ? 'Crédit' : 'Espèces'}
                                         </span>
                                     </div>
-                                    {clientName && (
-                                        <div className="flex justify-between items-center text-sm font-bold border-b border-dashed border-slate-200 dark:border-slate-800 pb-3">
-                                            <span className="text-slate-400 uppercase tracking-widest">Client</span>
-                                            <span className="text-slate-900 dark:text-white uppercase tracking-widest">{clientName}</span>
-                                        </div>
-                                    )}
-                                    <div className="flex justify-between items-center text-sm font-bold">
+                                    <div className="flex justify-between items-center text-xs font-bold border-b border-dashed border-slate-200 dark:border-slate-800 pb-3">
                                         <span className="text-slate-400 uppercase tracking-widest">Articles</span>
                                         <span className="text-slate-900 dark:text-white uppercase tracking-widest">{items.length} produit(s)</span>
                                     </div>
                                 </div>
 
-                                <button
-                                    className="w-full py-4 mt-4 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-black text-xs uppercase tracking-widest rounded-2xl flex justify-center items-center gap-2 active:scale-95 transition-all"
-                                >
-                                    Partager le reçu
+                                <button className="w-full py-4 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-xs uppercase tracking-widest rounded-2xl active:scale-95 transition-all">
+                                    Voir le détail
                                 </button>
                             </div>
                         </motion.div>

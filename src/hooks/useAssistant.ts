@@ -14,7 +14,7 @@ export const useAssistant = () => {
     const { speak, listen, isSpeaking, isListening, transcript, clearTranscript, stopSpeaking } = useVoice();
     const { updateStock, getStockLevel } = useStock();
     const { history, addTransaction, markAsPaid, markAllAsPaid } = useHistory();
-    const { addItem, removeItem } = useCart();
+    const { items, addItem, removeItem } = useCart();
 
     const userName = user?.name?.split(' ')[0] || 'Marchand';
     const userRole = user?.role || 'MERCHANT';
@@ -36,13 +36,60 @@ export const useAssistant = () => {
     const processCommand = useCallback((text: string) => {
         const lowerText = text.toLowerCase();
 
-        if (lowerText.includes('payé') || lowerText.includes('payer') || lowerText.includes('paye') || lowerText.includes('réglé') || lowerText.includes('donne')) {
+        // Pre-processing : Corriger les erreurs de transcription courantes (French quirks)
+        const normalize = (str: string) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+        let processedText = lowerText
+            .replace(/\bvingt[\s-]deux\s+rue\b/g, 'vend 2 riz')
+            .replace(/\bvingt[\s-]deux\b/g, 'vend 2')
+            .replace(/\bvingt[\s-]trois\b/g, 'vend 3')
+            .replace(/\b22\s+rue\b/g, 'vend 2 riz')
+            .replace(/\b23\s+riz\b/g, 'vend 3 riz')
+            .replace(/\b22\b/g, 'vend 2')
+            .replace(/\b23\b/g, 'vend 3')
+            .replace(/\brue\b/g, 'riz'); // Par précaution, rue est souvent entendu pour riz
+
+        const lowerTextProcessed = processedText;
+        const normText = normalize(lowerTextProcessed);
+
+        if (products.length === 0) {
+            speak(`Mon catalogue est encore vide ${userName}. Va dans ton profil pour le mettre à jour.`);
+            return;
+        }
+
+        // --- SECTION 1: INTENTIONS GLOBALES (STOCK, PANIER, ETC.) ---
+        if (normText.includes('stock') || normText.includes('inventaire') || normText.includes('reste') || normText.includes('bilan')) {
+            const inStock = products.filter(p => getStockLevel(p.id) > 0);
+            if (inStock.length > 0) {
+                const list = inStock.slice(0, 3).map(p => p.audioName || p.name).join(', ');
+                const totalItems = inStock.length;
+                speak(`Tu as du stock pour ${totalItems} produits, comme le ${list}. Pour lequel veux-tu le détail ?`, true);
+            } else {
+                speak(`${userName}, ton stock est vide. Tu dois ajouter des produits.`);
+            }
+            return;
+        }
+
+        if ((normText.includes('panier') || normText.includes('commande')) && (normText.includes('quoi') || normText.includes('voir') || normText.includes('liste'))) {
+            if (pathname === '/vendre' && items.length > 0) {
+                const list = items.slice(0, 3).map(item => item.name).join(', ');
+                speak(`Dans ton panier, il y a : ${list}.`);
+            } else if (pathname === '/vendre') {
+                speak(`Ton panier est vide ${userName}.`);
+            } else {
+                speak(`Je peux t'aider avec tes ventes, ${userName}. Est-ce que tu veux vendre quelque chose ?`, true);
+            }
+            return;
+        }
+
+        // --- SECTION 2: GESTION DES DETTES ---
+        if (normText.includes('paye') || normText.includes('payer') || normText.includes('regle') || normText.includes('donne')) {
             // "Fatou a payé" ou "Fatou a tout payé" ou "Fatou a réglé"
-            let clientMatch = lowerText.match(/([a-zA-Záàâäãåçéèêëíìîïñóòôöõúùûüýÿ]+)\s+(?:a|me)\s+(?:tout\s+|enfin\s+)?(?:payé|payer|paye|réglé)/i);
+            let clientMatch = lowerTextProcessed.match(/([a-zA-Záàâäãåçéèêëíìîïñóòôöõúùûüýÿ]+)\s+(?:a|me)\s+(?:tout\s+|enfin\s+)?(?:payé|payer|paye|réglé)/i);
 
             // "Payé sa dette pour Fatou" ou "Payé à Fatou"
             if (!clientMatch) {
-                clientMatch = lowerText.match(/(?:payé|payer|paye|réglé|donne)\s+(?:sa\s+dette\s+)?(?:à|pour|a)\s+([a-zA-Záàâäãåçéèêëíìîïñóòôöõúùûüýÿ]+)/i);
+                clientMatch = lowerTextProcessed.match(/(?:payé|payer|paye|réglé|donne)\s+(?:sa\s+dette\s+)?(?:à|pour|a)\s+([a-zA-Záàâäãåçéèêëíìîïñóòôöõúùûüýÿ]+)/i);
             }
 
             const clientName = clientMatch ? (clientMatch[1]).trim() : undefined;
@@ -58,49 +105,98 @@ export const useAssistant = () => {
                     speak(`${userName}, je ne trouve pas de dette pour ${clientName}.`);
                     return;
                 }
-            } else if (lowerText.includes('payé') || lowerText.includes('paye')) {
+            } else if (lowerTextProcessed.includes('payé') || lowerTextProcessed.includes('paye')) {
                 speak("Je n'ai pas compris qui a payé sa dette.");
                 return;
             }
         }
 
-        // 2. Identifier le produit
-        const product = products.find(p => {
-            const name = p.name.toLowerCase();
-            const audioName = p.audioName.toLowerCase().replace(/^[Ll]e\s+/, '').replace(/^[Ll]a\s+/, '').replace(/^[Ll]'\s+/, '');
-            return lowerText.includes(name) || lowerText.includes(audioName);
-        });
-
-        if (!product) {
-            speak(`Désolé ${userName}, je n'ai pas compris de quel produit tu parles.`);
+        if (products.length === 0) {
+            speak(`Mon catalogue est encore vide ${userName}. Va dans ton profil pour le mettre à jour.`);
             return;
         }
 
-        // 3. Identifier la quantité et le prix (Ex: "Vend 2 tomates 3000")
+        // 2. Identifier le produit (Détection ultra-flexible avec phonétique)
+        const genericWords = ['sac', 'paquet', 'boite', 'boîte', 'bidon', 'litre', 'unité', 'morceau', 'kilo', 'gramme', 'de', 'le', 'la', 'les', 'des', 'un', 'une'];
+        const phonetics: Record<string, string[]> = {
+            'riz': ['rz', 'ri', 'ry', 'rise', 'ris', 'rue', 'roue'],
+            'huile': ['uil', 'oile', 'huil'],
+            'sucre': ['suc', 'suk', 'sucre'],
+            'biscuit': ['biscui', 'biscuite', 'biski'],
+            'attieke': ['atieke', 'adjeke', 'ateke']
+        };
+
+        const sortedProducts = [...products].sort((a, b) => b.name.length - a.name.length);
+
+        const product = sortedProducts.find(p => {
+            const nName = normalize(p.name);
+            const nAudio = normalize(p.audioName || p.name).replace(/^[Ll]e\s+/, '').replace(/^[Ll]a\s+/, '').replace(/^[Ll]'\s+/, '');
+
+            const wordsInText = normText.split(/[\s']+/);
+            const pKeywords = nName.split(/[\s']+/).filter(w => w.length >= 2 && !genericWords.includes(w));
+            const aKeywords = nAudio.split(/[\s']+/).filter(w => w.length >= 2 && !genericWords.includes(w));
+            const allKeywords = [...new Set([...pKeywords, ...aKeywords])];
+
+            // 1. Match Direct ou Complet
+            if (normText.includes(nName) || normText.includes(nAudio)) return true;
+
+            // 2. Match par mots-clés et racines (Gestion des pluriels et fautes)
+            return wordsInText.some(word => {
+                // Check direct match or startsWith
+                if (allKeywords.some(kw => word.startsWith(kw) || kw.startsWith(word))) return true;
+
+                // Gestion générique des terminaisons (s, x, t, e muets)
+                const cleanWord = word.replace(/[sxte]$/, '');
+                if (cleanWord.length >= 3 && allKeywords.some(kw => kw.startsWith(cleanWord) || cleanWord.startsWith(kw.replace(/[sxte]$/, '')))) return true;
+
+                // Check phonetic aliases
+                return allKeywords.some(kw => {
+                    const aliases = phonetics[kw] || [];
+                    return aliases.some(alias => word.includes(alias) || alias.includes(word));
+                });
+            });
+        });
+
+        if (!product) {
+            speak(`Désolé ${userName}, je n'ai pas trouvé ce produit dans ton catalogue. J'ai entendu "${text}".`, true);
+            return;
+        }
+
+        // 3. Identifier la quantité et le prix
+        const numberMap: Record<string, number> = {
+            'un': 1, 'une': 1, 'deux': 2, 'trois': 3, 'quatre': 4, 'cinq': 5,
+            'six': 6, 'sept': 7, 'huit': 8, 'neuf': 9, 'dix': 10
+        };
+
         let quantity = 1;
         let customPrice: number | undefined = undefined;
 
-        const allNumbers = Array.from(lowerText.matchAll(/(\d+)/g)).map(m => parseInt(m[1]));
+        // Tenter de trouver des chiffres
+        const allDigits = Array.from(normText.matchAll(/(\d+)/g)).map(m => parseInt(m[1]));
 
-        if (allNumbers.length === 1) {
-            if (allNumbers[0] >= 50) {
-                customPrice = allNumbers[0];
+        // Tenter de trouver des nombres en lettres
+        const words = normText.split(/[\s']+/);
+        const letterNumber = words.find(w => numberMap[w]) ? numberMap[words.find(w => numberMap[w])!] : null;
+
+        if (allDigits.length > 0) {
+            if (allDigits.length === 1) {
+                if (allDigits[0] >= 50) customPrice = allDigits[0];
+                else quantity = allDigits[0];
             } else {
-                quantity = allNumbers[0];
+                // Si on a 2 nombres, le premier est souvent la quantité, le 2ème le prix (ou inversement si 1er > 50)
+                if (allDigits[0] < 50) {
+                    quantity = allDigits[0];
+                    if (allDigits[1] >= 50) customPrice = allDigits[1];
+                } else {
+                    customPrice = allDigits[0];
+                    if (allDigits[1] < 50) quantity = allDigits[1];
+                }
             }
-        } else if (allNumbers.length >= 2) {
-            if (allNumbers[0] < 50 && allNumbers[1] >= 50) {
-                quantity = allNumbers[0];
-                customPrice = allNumbers[1];
-            } else if (allNumbers[0] >= 50 && allNumbers[1] < 50) {
-                customPrice = allNumbers[0];
-                quantity = allNumbers[1];
-            } else {
-                quantity = allNumbers[0];
-            }
+        } else if (letterNumber) {
+            quantity = letterNumber;
         }
 
-        const priceMatch = lowerText.match(/(?:à|pour|f|francs|cfa|prix)?\s*(\d{2,}(?:[.,]\d+)?)\s*(?:francs|f|cfa|balle|mille)?/i);
+        const priceMatch = lowerTextProcessed.match(/(?:à|pour|f|francs|cfa|prix)?\s*(\d{2,}(?:[.,]\d+)?)\s*(?:francs|f|cfa|balle|mille)?/i);
         if (priceMatch) {
             const parsedPrice = parseInt(priceMatch[1].replace(/[,.]/g, ''));
             if (parsedPrice >= 50) customPrice = parsedPrice;
@@ -112,7 +208,7 @@ export const useAssistant = () => {
         }
 
         // 4. Identifier l'action produit
-        if (lowerText.includes('ajoute') || lowerText.includes('reçu') || lowerText.includes('livré') || lowerText.includes('prend')) {
+        if (lowerTextProcessed.includes('ajoute') || lowerTextProcessed.includes('reçu') || lowerTextProcessed.includes('livré') || lowerTextProcessed.includes('prend')) {
             if (pathname === '/vendre') {
                 addItem(finalProduct, quantity);
                 speak(`${formatSpeech(finalProduct.audioName, quantity)} ajouté au panier.`);
@@ -128,11 +224,11 @@ export const useAssistant = () => {
                 speak(`${formatSpeech(finalProduct.audioName, quantity)} ajouté au stock.`);
             }
         }
-        else if (lowerText.includes('vendu') || lowerText.includes('vend')) {
-            const isDebtCommand = lowerText.includes('crédit') || lowerText.includes('dette');
+        else if (lowerTextProcessed.includes('vendu') || lowerTextProcessed.includes('vend')) {
+            const isDebtCommand = lowerTextProcessed.includes('crédit') || lowerTextProcessed.includes('dette');
 
             // Extraire le nom du client (après à, a, pour) en ignorant "crédit" et "dette"
-            const clientMatches = Array.from(lowerText.matchAll(/(?:à|pour|a)\s+([a-zA-Záàâäãåçéèêëíìîïñóòôöõúùûüýÿ]+)/gi));
+            const clientMatches = Array.from(lowerTextProcessed.matchAll(/(?:à|pour|a)\s+([a-zA-Záàâäãåçéèêëíìîïñóòôöõúùûüýÿ]+)/gi));
             let clientName = undefined;
 
             for (const match of clientMatches) {
@@ -159,6 +255,11 @@ export const useAssistant = () => {
                         status: isDebtCommand ? 'DETTE' : 'PAYÉ'
                     }
                 }));
+
+                // Déclencher la validation automatique après un court délai
+                setTimeout(() => {
+                    window.dispatchEvent(new Event('assistant-finish-sale'));
+                }, 2000);
             } else {
                 const currentStock = getStockLevel(finalProduct.id);
                 if (currentStock < quantity) {
@@ -183,7 +284,7 @@ export const useAssistant = () => {
                 }
             }
         }
-        else if (lowerText.includes('retire') || lowerText.includes('enlève') || lowerText.includes('supprime')) {
+        else if (lowerTextProcessed.includes('retire') || lowerTextProcessed.includes('enlève') || lowerTextProcessed.includes('supprime')) {
             if (pathname === '/vendre') {
                 removeItem(finalProduct.id);
                 speak(`${finalProduct.audioName} retiré du panier.`);
@@ -200,9 +301,11 @@ export const useAssistant = () => {
             }
         }
         else {
-            speak("Je n'ai pas compris ce que tu veux faire avec ce produit.");
+            // Par défaut : Information sur le produit (Stock et Prix)
+            const currentStock = getStockLevel(finalProduct.id);
+            speak(`Pour le ${finalProduct.audioName}, tu en as ${currentStock} en stock et le prix est de ${finalProduct.price} francs.`);
         }
-    }, [speak, updateStock, getStockLevel, addTransaction, markAsPaid, addItem, removeItem, pathname, history]);
+    }, [speak, updateStock, getStockLevel, addTransaction, markAsPaid, addItem, removeItem, pathname, history, products, userName, items]);
 
     useEffect(() => {
         stopSpeaking();

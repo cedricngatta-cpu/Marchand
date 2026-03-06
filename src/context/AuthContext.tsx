@@ -73,11 +73,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         const handleVisibilityChange = () => {
             if (document.visibilityState === 'hidden' && isAuthenticated) {
-                // Petit délai pour éviter les verrouillages lors de transitions rapides
                 lockTimeout = setTimeout(() => {
                     setIsLocked(true);
                     localStorage.setItem('app_locked', 'true');
-                }, 300);
+                }, 60000); // 60 secondes
             } else if (document.visibilityState === 'visible') {
                 if (lockTimeout) clearTimeout(lockTimeout);
             }

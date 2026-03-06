@@ -91,10 +91,10 @@ export default function AdviceModal({ isOpen, onClose }: AdviceModalProps) {
                 />
 
                 <motion.div
-                    initial={{ scale: 0.9, opacity: 0, y: 20 }}
-                    animate={{ scale: 1, opacity: 1, y: 0 }}
-                    exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                    className="relative w-full max-w-xl bg-white dark:bg-slate-900 rounded-[40px] shadow-2xl overflow-hidden border-4 border-amber-400"
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: 20, opacity: 0 }}
+                    className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800"
                 >
                     <button
                         onClick={onClose}
@@ -103,40 +103,40 @@ export default function AdviceModal({ isOpen, onClose }: AdviceModalProps) {
                         <X size={24} />
                     </button>
 
-                    <div className="p-8 md:p-12">
-                        <div className="flex items-center gap-4 mb-8">
-                            <div className={`p-4 rounded-2xl ${advice?.type === 'WARNING' ? 'bg-rose-100 text-rose-600' :
-                                advice?.type === 'SUCCESS' ? 'bg-emerald-100 text-emerald-600' :
-                                    'bg-blue-100 text-blue-600'
+                    <div className="p-6 md:p-8">
+                        <div className="flex items-center gap-4 mb-6">
+                            <div className={`p-3 rounded-xl ${advice?.type === 'WARNING' ? 'bg-rose-50 text-rose-500' :
+                                advice?.type === 'SUCCESS' ? 'bg-emerald-50 text-emerald-600' :
+                                    'bg-indigo-50 text-indigo-600'
                                 }`}>
-                                {advice?.type === 'WARNING' ? <AlertCircle size={32} /> :
-                                    advice?.type === 'SUCCESS' ? <CheckCircle2 size={32} /> :
-                                        <TrendingUp size={32} />}
+                                {advice?.type === 'WARNING' ? <AlertCircle size={24} /> :
+                                    advice?.type === 'SUCCESS' ? <CheckCircle2 size={24} /> :
+                                        <TrendingUp size={24} />}
                             </div>
                             <div>
-                                <h2 className="text-sm font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Ton Assistant</h2>
-                                <h3 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">{advice?.title}</h3>
+                                <h2 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Conseil de l'Assistant</h2>
+                                <h3 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">{advice?.title}</h3>
                             </div>
                         </div>
 
-                        <div className="bg-slate-50 dark:bg-slate-800/50 p-8 rounded-[32px] border-2 border-slate-100 dark:border-slate-800 mb-8">
-                            <p className="text-xl md:text-2xl font-bold text-slate-800 dark:text-slate-200 leading-tight italic">
-                                "{advice?.text}"
+                        <div className="bg-slate-50 dark:bg-slate-800/40 p-6 rounded-xl border border-slate-100 dark:border-slate-800 mb-6">
+                            <p className="text-lg md:text-xl font-medium text-slate-700 dark:text-slate-200 leading-snug">
+                                {advice?.text}
                             </p>
                         </div>
 
-                        <div className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-3">
                             <button
                                 onClick={() => advice && speak(advice.voice)}
-                                className="w-full h-20 bg-amber-400 hover:bg-amber-300 text-slate-900 rounded-[25px] flex items-center justify-center gap-4 text-xl font-black uppercase tracking-widest shadow-xl shadow-amber-400/20 active:scale-95 transition-all border-b-4 border-amber-600"
+                                className="w-full py-4 bg-primary text-white rounded-xl flex items-center justify-center gap-3 text-sm font-bold shadow-md active:scale-[0.98] transition-all"
                             >
-                                <Volume2 size={32} />
+                                <Volume2 size={20} />
                                 ÉCOUTER LE CONSEIL
                             </button>
 
                             <button
                                 onClick={onClose}
-                                className="w-full h-16 bg-slate-100 dark:bg-slate-800 text-slate-500 font-black uppercase text-sm tracking-widest rounded-[20px] active:scale-95 transition-all"
+                                className="w-full py-4 bg-slate-50 dark:bg-slate-800 text-slate-500 font-bold text-xs uppercase tracking-widest rounded-xl active:bg-slate-100 transition-colors"
                             >
                                 J'ai compris
                             </button>

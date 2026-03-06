@@ -1,7 +1,7 @@
 'use client';
 
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useState } from 'react';
+import { ShoppingBag, Search, Filter, LayoutGrid, Wheat, CupSoda, Sparkles } from 'lucide-react';
 import { useProductContext } from '../context/ProductContext';
 import { useStock } from '../hooks/useStock';
 
@@ -10,90 +10,93 @@ interface ProductGridProps {
     onSpeak: (text: string) => void;
 }
 
-export const ProductGrid: React.FC<ProductGridProps> = ({ onAdd, onSpeak }) => {
+export const ProductGrid = ({ onAdd, onSpeak }: ProductGridProps) => {
     const { products } = useProductContext();
     const { stock } = useStock();
-    const [activeCategory, setActiveCategory] = React.useState('TOUS');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [activeFilter, setActiveFilter] = useState('TOUS');
 
-    const categories = ['TOUS', 'VIVRES', 'FRUITS & LÉGUMES', 'TUBERCULES', 'BOISSON', 'ENTRETIEN', 'AUTRE'];
+    const categories = [
+        { id: 'TOUS', label: 'Tous', icon: LayoutGrid },
+        { id: 'VIVRES', label: 'Vivres', icon: Wheat },
+        { id: 'BOISSON', label: 'Boisson', icon: CupSoda },
+        { id: 'ENTRETIEN', label: 'Entretien', icon: Sparkles },
+    ];
 
-    const filteredProducts = activeCategory === 'TOUS'
-        ? products
-        : products.filter(p => {
-            const name = (p.name || '').toUpperCase();
-
-            const isFruitsLegumes = name.includes('TOMATE') || name.includes('OIGNON') || name.includes('CAROTTE') || name.includes('ANANAS') || name.includes('BANANE') || name.includes('FRUIT') || name.includes('LÉGUME');
-            const isTubercules = name.includes('IGNAME') || name.includes('MANIOC') || name.includes('POMME DE TERRE') || name.includes('TUBERCULE');
-            const isVivres = (name.includes('RIZ') || name.includes('HUILE') || name.includes('LAIT') || name.includes('ATTIÉKÉ') || name.includes('PAIN') || name.includes('SUCRE') || name.includes('VIVRE')) && !isFruitsLegumes && !isTubercules;
-            const isBoisson = name.includes('EAU') || name.includes('CAFÉ') || name.includes('JUS') || name.includes('BOISSON') || name.includes('BIÈRE') || name.includes('VIN');
-            const isEntretien = name.includes('SAVON') || name.includes('JAVEL') || name.includes('PAPIER') || name.includes('ENTRETIEN') || name.includes('LESSIVE');
-
-            if (activeCategory === 'FRUITS & LÉGUMES') return isFruitsLegumes;
-            if (activeCategory === 'TUBERCULES') return isTubercules;
-            if (activeCategory === 'VIVRES') return isVivres;
-            if (activeCategory === 'BOISSON') return isBoisson;
-            if (activeCategory === 'ENTRETIEN') return isEntretien;
-            if (activeCategory === 'AUTRE') return !isVivres && !isBoisson && !isEntretien && !isFruitsLegumes && !isTubercules;
-
-            return false;
-        });
+    const filteredProducts = products.filter(p => {
+        const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesCat = activeFilter === 'TOUS' || p.category === activeFilter;
+        return matchesSearch && matchesCat;
+    });
 
     return (
         <div className="space-y-6">
-            {/* Filtres Catégories */}
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4">
-                {categories.map(cat => (
-                    <button
-                        key={cat}
-                        onClick={() => setActiveCategory(cat)}
-                        className={`px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all whitespace-nowrap border-2 ${activeCategory === cat ? 'bg-slate-900 border-slate-900 text-white shadow-lg' : 'bg-white border-slate-100 text-slate-400'}`}
-                    >
-                        {cat}
-                    </button>
-                ))}
+            {/* Search and Filters */}
+            <div className="sticky top-0 z-20 bg-slate-50 dark:bg-slate-950 pt-2 pb-4 space-y-4 border-b border-slate-100 dark:border-slate-800 mb-6">
+                <div className="relative group">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={18} />
+                    <input
+                        type="search"
+                        placeholder="Rechercher un produit..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 py-4 pl-12 pr-4 rounded-2xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                    />
+                </div>
+
+                <div className="flex flex-wrap gap-2 pb-2">
+                    {categories.map(cat => (
+                        <button
+                            key={cat.id}
+                            onClick={() => setActiveFilter(cat.id)}
+                            className={`flex flex-col items-center justify-center gap-1.5 p-3 w-16 h-16 rounded-[20px] transition-all border ${activeFilter === cat.id ? 'bg-primary border-primary text-white shadow-md scale-105' : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 text-slate-400 hover:border-slate-200'} active:scale-95`}
+                        >
+                            <cat.icon size={20} strokeWidth={activeFilter === cat.id ? 2.5 : 2} />
+                            <span className="font-bold text-[8px] uppercase tracking-widest">{cat.label}</span>
+                        </button>
+                    ))}
+                </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {filteredProducts.map((product) => {
-                    const stockLevel = stock[product.id] || 0;
-
+            {/* Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
+                {filteredProducts.map((p) => {
+                    const stockLevel = stock[p.id] || 0;
                     return (
-                        <motion.button
-                            key={product.id}
-                            whileTap={{ scale: 0.95 }}
+                        <div
+                            key={p.id}
                             onClick={() => {
-                                onAdd(product);
-                                onSpeak(`Ajouté : ${product.audioName}`);
+                                onAdd(p);
+                                onSpeak(`${p.name} ajouté.`);
                             }}
-                            className={`${product.color} p-3 rounded-[20px] sm:rounded-[24px] flex flex-col items-center justify-center gap-1.5 shadow-sm border border-black/5 active:shadow-inner transition-all h-32 relative`}
+                            className="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 cursor-pointer active:scale-95 transition-all group relative"
                         >
-                            {/* Badge Stock */}
-                            <div className="absolute top-2 right-2 bg-white/90 px-1.5 py-0.5 rounded-lg border border-black/5 shadow-sm flex items-center">
-                                <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter mr-1 hidden sm:inline">Stock</span>
-                                <span className={`text-[10px] sm:text-xs font-black leading-none ${stockLevel <= 5 ? 'text-red-500' : 'text-slate-900'}`}>{stockLevel}</span>
+                            <div className="absolute top-2 right-2 bg-slate-50 dark:bg-slate-800 px-1.5 py-0.5 rounded-md text-[10px] font-bold text-slate-400 border border-slate-100 dark:border-slate-700">
+                                {stockLevel}
                             </div>
-
-                            <div className="w-full h-14 sm:h-16 mb-0.5 flex items-center justify-center relative overflow-hidden rounded-xl">
-                                {product.imageUrl ? (
-                                    <img
-                                        src={product.imageUrl}
-                                        alt={product.name}
-                                        className="w-full h-full object-contain hover:scale-110 transition-transform duration-500"
-                                    />
+                            <div className="relative aspect-square bg-slate-50 dark:bg-slate-800 rounded-xl overflow-hidden mb-4 border border-slate-50 dark:border-slate-700">
+                                {p.imageUrl ? (
+                                    <img src={p.imageUrl} className="w-full h-full object-contain p-2" alt={p.name} />
                                 ) : (
-                                    <product.icon size={28} className={`${product.iconColor} sm:w-8 sm:h-8`} />
+                                    <div className="w-full h-full flex items-center justify-center text-slate-300">
+                                        <ShoppingBag size={24} />
+                                    </div>
                                 )}
                             </div>
-                            <span className="font-black text-slate-900 tracking-tight text-[10px] sm:text-xs uppercase leading-tight text-center line-clamp-2 px-1">{product.name}</span>
-                            {product.price > 0 && (
-                                <span className="bg-white/60 px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold text-slate-600 leading-none">
-                                    {product.price} F
-                                </span>
-                            )}
-                        </motion.button>
+                            <div className="space-y-1">
+                                <h3 className="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-wider truncate">{p.name}</h3>
+                                <p className="text-primary font-bold text-sm">{p.price} F</p>
+                            </div>
+                        </div>
                     );
                 })}
             </div>
+
+            {filteredProducts.length === 0 && (
+                <div className="py-20 text-center">
+                    <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Aucun produit trouvé</p>
+                </div>
+            )}
         </div>
     );
 };

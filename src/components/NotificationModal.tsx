@@ -24,23 +24,23 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({ isOpen, on
                 className="fixed inset-0 z-[1100] bg-slate-950/80 backdrop-blur-xl flex items-end md:items-center justify-center p-0 md:p-6"
             >
                 <motion.div
-                    initial={{ y: 100 }}
-                    animate={{ y: 0 }}
-                    exit={{ y: 100 }}
-                    className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-t-[40px] md:rounded-[48px] overflow-hidden flex flex-col h-[85vh] md:h-[600px] shadow-2xl"
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: 20, opacity: 0 }}
+                    className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl md:rounded-3xl overflow-hidden flex flex-col h-[85vh] md:h-[600px] shadow-2xl border border-slate-200 dark:border-slate-800"
                 >
-                    <header className="bg-rose-600 p-8 text-white flex items-center justify-between">
+                    <header className="bg-primary p-6 text-white flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                            <div className="bg-white/20 p-3 rounded-2xl">
-                                <Bell size={32} />
+                            <div className="bg-white/20 p-2.5 rounded-xl">
+                                <Bell size={28} />
                             </div>
                             <div>
-                                <h3 className="font-black uppercase tracking-tighter text-2xl leading-none">Notifications</h3>
-                                <p className="text-rose-100 text-[10px] font-black uppercase tracking-widest mt-1 opacity-80">Messages de l'administration</p>
+                                <h3 className="font-bold tracking-tight text-xl leading-none">Notifications</h3>
+                                <p className="text-emerald-50 text-[10px] font-semibold uppercase tracking-wider mt-1 opacity-80">Messages et alertes</p>
                             </div>
                         </div>
-                        <button onClick={onClose} className="bg-white/10 hover:bg-white/20 p-2 rounded-full transition-colors">
-                            <X size={24} />
+                        <button onClick={onClose} className="bg-white/10 hover:bg-white/20 p-2 rounded-xl transition-colors">
+                            <X size={20} />
                         </button>
                     </header>
 
@@ -56,15 +56,15 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({ isOpen, on
                             notifications.map(n => (
                                 <motion.div
                                     key={n.id}
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    className={`bg-white dark:bg-slate-900 p-6 rounded-[32px] shadow-sm border-2 transition-all ${n.is_read ? 'border-transparent opacity-60' : 'border-rose-100 dark:border-rose-900/30 shadow-rose-100/50'}`}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className={`bg-white dark:bg-slate-900 p-5 rounded-xl shadow-sm border transition-all ${n.is_read ? 'border-slate-100 dark:border-slate-800 opacity-60' : 'border-emerald-100 dark:border-emerald-900/30'}`}
                                     onClick={() => !n.is_read && markAsRead(n.id)}
                                 >
                                     <div className="flex justify-between items-start mb-3">
                                         <div className="flex items-center gap-2">
-                                            {!n.is_read && <div className="w-2 h-2 bg-rose-500 rounded-full animate-pulse" />}
-                                            <span className="font-black text-slate-900 dark:text-white uppercase text-base tracking-tight leading-none">{n.title}</span>
+                                            {!n.is_read && <div className="w-2 h-2 bg-emerald-500 rounded-full" />}
+                                            <span className="font-bold text-slate-900 dark:text-white text-base tracking-tight leading-none">{n.title}</span>
                                         </div>
                                         <div className="flex items-center gap-2 text-[10px] font-bold text-slate-300 uppercase">
                                             <Clock size={12} />
@@ -82,9 +82,9 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({ isOpen, on
                                         {!n.is_read && (
                                             <button
                                                 onClick={(e) => { e.stopPropagation(); markAsRead(n.id); }}
-                                                className="text-[10px] font-black uppercase text-emerald-600 tracking-widest flex items-center gap-1.5"
+                                                className="text-[10px] font-bold text-primary tracking-wider flex items-center gap-1.5 p-1 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors"
                                             >
-                                                <CheckCircle2 size={14} /> Lu
+                                                <CheckCircle2 size={14} /> Marquer comme lu
                                             </button>
                                         )}
                                     </div>

@@ -1,13 +1,14 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #1a1a1b;
+  --background: #f8fafc;
+  --foreground: #0f172a;
   --primary: #059669;
+  /* Vert Emeraude Wave */
   --primary-foreground: #ffffff;
-  --secondary: #f59e0b;
+  --secondary: #10b981;
   --secondary-foreground: #ffffff;
-  --accent: #3b82f6;
+  --accent: #0d9488;
   --accent-foreground: #ffffff;
 }
 
@@ -20,16 +21,18 @@
   --color-secondary-foreground: var(--secondary-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
-  
-  --radius-massive: 2rem;
+
+  --radius-massive: 0.75rem;
+  /* Plus sobre que 2rem */
+  --radius-standard: 0.5rem;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0f172a;
+    --background: #020617;
     --foreground: #f8fafc;
     --primary: #10b981;
-    --secondary: #fbbf24;
+    --secondary: #34d399;
   }
 }
 
@@ -42,6 +45,6 @@ body {
 
 @layer components {
   .btn-massive {
-    @apply flex flex-col items-center justify-center p-8 rounded-(--radius-massive) transition-all active:scale-95 shadow-xl border-2 border-transparent text-center gap-4;
+    @apply flex flex-col items-center justify-center p-6 rounded-(--radius-massive) transition-all active:scale-[0.98] shadow-sm border border-slate-200 dark:border-slate-800 text-center gap-3 bg-white dark:bg-slate-900;
   }
 }
