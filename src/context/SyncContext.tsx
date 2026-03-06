@@ -62,6 +62,8 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     }
                     case 'UPDATE_STOCK': {
                         const { product_id, quantity, store_id } = item.payload;
+
+                        // 1. Récupérer la quantité actuelle pour faire un calcul relatif
                         const { data: currentStock, error: fetchError } = await supabase
                             .from('stock')
                             .select('quantity')
@@ -75,11 +77,20 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         }
 
                         const newQty = Math.max(0, (currentStock?.quantity || 0) + quantity);
+
+                        // 2. Utiliser un ID unique composé pour éviter les erreurs de contraintes
+                        // Format: [store_id]_[product_id]
+                        const compositeId = `${store_id}_${product_id}`;
+
                         const { error: sError } = await supabase
                             .from('stock')
                             .upsert(
-                                { product_id, store_id, quantity: newQty },
-                                { onConflict: 'product_id,store_id' }
+                                {
+                                    id: compositeId,
+                                    product_id,
+                                    store_id,
+                                    quantity: newQty
+                                }
                             );
 
                         if (!sError) success = true;
