@@ -46,7 +46,7 @@ export const HistoryProvider: React.FC<{ children: React.ReactNode }> = ({ child
             .equals(activeProfile.id)
             .reverse()
             .sortBy('created_at')
-            .then(data => data.slice(0, 500)); // Protection RAM: 500 mx
+            .then(data => data.slice(0, 1000)); // Limite augmentée pour une meilleure balance
 
         if (localData.length > 0) {
             const mapped: Transaction[] = localData.map(t => ({
@@ -70,7 +70,7 @@ export const HistoryProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 .select('*')
                 .eq('store_id', activeProfile.id)
                 .order('created_at', { ascending: false })
-                .limit(500);
+                .limit(1000);
 
             if (data && data.length > 0) {
                 // Mettre à jour la base locale avec les données du cloud
@@ -96,7 +96,7 @@ export const HistoryProvider: React.FC<{ children: React.ReactNode }> = ({ child
                     .equals(activeProfile.id)
                     .reverse()
                     .sortBy('created_at')
-                    .then(data => data.slice(0, 500));
+                    .then(data => data.slice(0, 1000));
 
                 const mapped: Transaction[] = updatedLocal.map(t => ({
                     id: t.id,

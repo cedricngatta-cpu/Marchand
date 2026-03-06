@@ -19,6 +19,12 @@ export const useAssistant = () => {
     const userName = user?.name?.split(' ')[0] || 'Marchand';
     const userRole = user?.role || 'MERCHANT';
 
+    const getGreeting = () => {
+        const hour = new Date().getHours();
+        if (hour >= 18 || hour < 5) return 'Bonsoir';
+        return 'Bonjour';
+    };
+
     const formatSpeech = (audioName: string, quantity: number) => {
         const shortName = audioName.replace(/^[Ll]e\s+/, '').replace(/^[Ll]a\s+/, '').replace(/^[Ll]'\s+/, '');
         if (quantity === 1) return `un ${shortName}`;
@@ -164,7 +170,7 @@ export const useAssistant = () => {
 
         // 3. Identifier la quantité et le prix
         const numberMap: Record<string, number> = {
-            'un': 1, 'une': 1, 'deux': 2, 'trois': 3, 'quatre': 4, 'cinq': 5,
+            'un': 1, 'une': 1, 'deux': 2, 'duex': 2, 'trois': 3, 'quatre': 4, 'cinq': 5,
             'six': 6, 'sept': 7, 'huit': 8, 'neuf': 9, 'dix': 10
         };
 
@@ -224,7 +230,7 @@ export const useAssistant = () => {
                 speak(`${formatSpeech(finalProduct.audioName, quantity)} ajouté au stock.`);
             }
         }
-        else if (lowerTextProcessed.includes('vendu') || lowerTextProcessed.includes('vend')) {
+        else if (lowerTextProcessed.includes('vendu') || lowerTextProcessed.includes('vend') || lowerTextProcessed.includes('vends')) {
             const isDebtCommand = lowerTextProcessed.includes('crédit') || lowerTextProcessed.includes('dette');
 
             // Extraire le nom du client (après à, a, pour) en ignorant "crédit" et "dette"
@@ -314,14 +320,14 @@ export const useAssistant = () => {
 
         const greetings: Record<string, string> = {
             '/': `Bienvenue ${userName}. Appuie sur le gros bouton en bas pour me parler.`,
-            '/commercant': `Bonjour ${userName}. Prêt pour tes ventes de la journée ?`,
-            '/producteur': `Bonjour ${userName}. Voici l'état de ta production et de tes stocks.`,
-            '/cooperative': `Bonjour ${userName}. Prêt pour piloter ta coopérative ?`,
+            '/commercant': `${getGreeting()} ${userName}. Prêt pour tes ventes de la journée ?`,
+            '/producteur': `${getGreeting()} ${userName}. Voici l'état de ta production et de tes stocks.`,
+            '/cooperative': `${getGreeting()} ${userName}. Prêt pour piloter ta coopérative ?`,
             '/vendre': `Enregistre tes ventes ici, ${userName}. Choisis tes produits.`,
             '/stock': `C'est ton stock, ${userName}. Regarde ce qu'il te reste en boutique.`,
-            '/bilan': `Voici ton bilan, ${user?.name?.split(' ')[0] || 'Marchand'}. Regarde ton argent et tes ventes.`,
-            '/acheter': `Ici ${user?.name?.split(' ')[0] || 'Marchand'}, tu peux noter ce que les livreurs t'apportent.`,
-            '/carnet': `C'est ton carnet de dettes, ${user?.name?.split(' ')[0] || 'Marchand'}. Voici ceux qui ne t'ont pas encore payé.`
+            '/bilan': `Voici ton bilan, ${userName}. Regarde ton argent et tes ventes.`,
+            '/acheter': `Ici ${userName}, tu peux noter ce que les livreurs t'apportent.`,
+            '/carnet': `C'est ton carnet de dettes, ${userName}. Voici ceux qui ne t'ont pas encore payé.`
         };
 
         const timer = setTimeout(() => {

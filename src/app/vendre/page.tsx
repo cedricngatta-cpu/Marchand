@@ -25,6 +25,7 @@ export default function VendrePage() {
     const [isScanning, setIsScanning] = useState(false);
     const [clientName, setClientName] = useState('');
     const [paymentStatus, setPaymentStatus] = useState<'PAYÉ' | 'DETTE' | 'MOMO'>('PAYÉ');
+    const lastScanRef = React.useRef<{ code: string, time: number } | null>(null);
 
     const handleFinish = async () => {
         if (items.length === 0) {
@@ -91,6 +92,12 @@ export default function VendrePage() {
     }, [speak, items, clientName, paymentStatus, handleFinish]);
 
     const handleBarcodeScan = (barcode: string) => {
+        const now = Date.now();
+        if (lastScanRef.current && lastScanRef.current.code === barcode && (now - lastScanRef.current.time) < 2000) {
+            return;
+        }
+        lastScanRef.current = { code: barcode, time: now };
+
         const product = products.find(p => p.barcode === barcode);
         if (product) {
             addItem(product);
@@ -98,7 +105,6 @@ export default function VendrePage() {
         } else {
             speak("Produit non reconnu.");
         }
-        setIsScanning(false);
     };
 
     return (
