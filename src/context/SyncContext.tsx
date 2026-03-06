@@ -9,6 +9,7 @@ interface SyncContextType {
     isSyncing: boolean;
     syncPendingCount: number;
     syncAll: () => Promise<void>;
+    triggerSync: () => Promise<void>;
 }
 
 const SyncContext = createContext<SyncContextType | undefined>(undefined);
@@ -171,7 +172,8 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
             isOnline,
             isSyncing,
             syncPendingCount,
-            syncAll: processQueue
+            syncAll: processQueue,
+            triggerSync: processQueue
         }}>
             {children}
         </SyncContext.Provider>

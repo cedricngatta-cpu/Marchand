@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useProductContext } from './ProductContext';
 import { useProfileContext } from './ProfileContext';
 import { db } from '@/lib/db';
+import { useSync } from './SyncContext';
 
 interface StockLevels {
     [productId: string]: number;
@@ -20,39 +21,48 @@ const StockContext = createContext<StockContextType | undefined>(undefined);
 
 export const StockProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { activeProfile } = useProfileContext();
+    const { triggerSync } = useSync();
     const [stock, setStock] = useState<StockLevels>({});
 
     const fetchStock = async () => {
         if (!activeProfile) return;
 
-        // 1. Lire depuis IndexedDB
-        const localStocks = await db.stocks.where('store_id').equals(activeProfile.id).toArray();
-        const levels: StockLevels = {};
-        localStocks.forEach(s => {
-            levels[s.product_id] = s.quantity;
-        });
-        setStock(levels);
+        try {
+            // 1. Lire depuis IndexedDB
+            const localStocks = await db.stocks.where('store_id').equals(activeProfile.id).toArray();
+            const levels: StockLevels = {};
+            localStocks.forEach(s => {
+                levels[s.product_id] = s.quantity;
+            });
+            setStock(levels);
 
-        // 2. Refresh depuis Supabase si online
-        if (navigator.onLine) {
-            const { data, error } = await supabase
-                .from('stock')
-                .select('*')
-                .eq('store_id', activeProfile.id); // ✅ Filtre par boutique
+            // 2. Refresh depuis Supabase si online
+            if (navigator.onLine) {
+                const { data, error } = await supabase
+                    .from('stock')
+                    .select('*')
+                    .eq('store_id', activeProfile.id);
 
-            if (data) {
-                for (const s of data) {
-                    await db.stocks.put({
-                        id: `${activeProfile.id}_${s.product_id}`,
-                        product_id: s.product_id,
-                        quantity: s.quantity,
-                        store_id: activeProfile.id,
-                        synced: 1
-                    });
-                    levels[s.product_id] = s.quantity;
+                if (data) {
+                    for (const s of data) {
+                        try {
+                            await db.stocks.put({
+                                id: `${activeProfile.id}_${s.product_id}`,
+                                product_id: s.product_id,
+                                quantity: s.quantity,
+                                store_id: activeProfile.id,
+                                synced: 1
+                            });
+                            levels[s.product_id] = s.quantity;
+                        } catch (e) {
+                            console.error("[StockContext] Error putting stock:", e);
+                        }
+                    }
+                    setStock({ ...levels });
                 }
-                setStock({ ...levels });
             }
+        } catch (err) {
+            console.error("[StockContext] fetchStock error:", err);
         }
     };
 
@@ -79,39 +89,46 @@ export const StockProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const updateStock = useCallback(async (productId: string, amount: number) => {
         if (!activeProfile) return;
 
-        // Optimistic update
-        const newQty = Math.max(0, (stock[productId] || 0) + amount);
-        setStock(current => ({
-            ...current,
-            [productId]: newQty
-        }));
+        try {
+            // Optimistic update
+            const currentQty = stock[productId] || 0;
+            const newQty = Math.max(0, currentQty + amount);
 
-        // 1. Sauvegarde locale
-        await db.stocks.put({
-            id: `${activeProfile.id}_${productId}`,
-            product_id: productId,
-            quantity: newQty,
-            store_id: activeProfile.id,
-            synced: 0
-        });
+            setStock(current => ({
+                ...current,
+                [productId]: newQty
+            }));
 
-        // 2. File de synchro
-        await db.syncQueue.add({
-            action: 'UPDATE_STOCK',
-            payload: {
+            // 1. Sauvegarde locale
+            await db.stocks.put({
+                id: `${activeProfile.id}_${productId}`,
                 product_id: productId,
-                quantity: amount, // On envoie l'incrément pour éviter les écrasements si possible
-                store_id: activeProfile.id
-            },
-            status: 'PENDING',
-            created_at: Date.now()
-        });
+                quantity: newQty,
+                store_id: activeProfile.id,
+                synced: 0
+            });
 
-        // Forcer synchro si en ligne
-        if (navigator.onLine) {
-            window.dispatchEvent(new Event('online'));
+            // 2. File de synchro
+            await db.syncQueue.add({
+                action: 'UPDATE_STOCK',
+                payload: {
+                    product_id: productId,
+                    quantity: amount,
+                    store_id: activeProfile.id
+                },
+                status: 'PENDING',
+                retry_count: 0,
+                created_at: Date.now()
+            });
+
+            // Forcer synchro si en ligne
+            if (navigator.onLine) {
+                triggerSync();
+            }
+        } catch (err) {
+            console.error("[StockContext] updateStock error:", err);
         }
-    }, [activeProfile, stock]);
+    }, [activeProfile, stock, triggerSync]);
 
     const getStockLevel = useCallback((productId: string) => stock[productId] || 0, [stock]);
 

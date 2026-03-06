@@ -242,6 +242,7 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 category: product.category || 'OTHER'
             },
             status: 'PENDING',
+            retry_count: 0,
             created_at: Date.now()
         });
 
@@ -269,6 +270,7 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
             action: 'UPDATE_PRODUCT',
             payload: { id, ...updates },
             status: 'PENDING',
+            retry_count: 0,
             created_at: Date.now()
         });
 
@@ -281,6 +283,7 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
             action: 'DELETE_PRODUCT',
             payload: { id },
             status: 'PENDING',
+            retry_count: 0,
             created_at: Date.now()
         });
         await fetchProducts();

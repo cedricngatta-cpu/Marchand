@@ -39,14 +39,29 @@ export default function StockPage() {
             return false;
         });
 
-    const lowStockCount = products.filter(p => (stock[p.id] || 0) < 5).length;
+    const [isUpdating, setIsUpdating] = useState<string | null>(null);
+
+    const handleUpdateStock = async (productId: string, amount: number) => {
+        if (isUpdating) return;
+        setIsUpdating(productId);
+        try {
+            await updateStock(productId, amount);
+        } finally {
+            // Petit délai pour laisser le re-render se faire proprement
+            setTimeout(() => setIsUpdating(null), 100);
+        }
+    };
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-32">
             {/* Header Coloré (Card Overlap Style) */}
             <div className="bg-primary pt-8 pb-32 px-4 rounded-b-[2.5rem] relative shadow-lg">
                 <div className="flex justify-between items-center mb-6 max-w-lg mx-auto">
-                    <button onClick={() => router.push('/commercant')} className="w-10 h-10 bg-white text-primary rounded-full flex items-center justify-center active:scale-95 transition-transform shadow-sm">
+                    <button
+                        type="button"
+                        onClick={() => router.push('/commercant')}
+                        className="w-10 h-10 bg-white text-primary rounded-full flex items-center justify-center active:scale-95 transition-transform shadow-sm"
+                    >
                         <ChevronLeft size={20} />
                     </button>
                     <div className="text-center">
@@ -59,6 +74,7 @@ export default function StockPage() {
                 {/* Bouton Ajouter (Centré dans le header) */}
                 <div className="flex justify-center max-w-lg mx-auto mt-6">
                     <button
+                        type="button"
                         onClick={() => router.push('/stock/ajouter')}
                         className="bg-white text-primary px-8 py-3.5 rounded-full font-bold text-sm uppercase tracking-widest flex items-center gap-2 shadow-md active:scale-95 transition-transform"
                     >
@@ -90,6 +106,7 @@ export default function StockPage() {
                         {categories.map(cat => (
                             <button
                                 key={cat.id}
+                                type="button"
                                 onClick={() => setActiveCategory(cat.id)}
                                 className={`flex flex-col items-center justify-center gap-1 p-2 w-14 h-16 rounded-[20px] transition-all border ${activeCategory === cat.id ? 'bg-primary border-primary text-white shadow-md scale-105' : 'bg-slate-50 dark:bg-slate-800 border-transparent text-slate-400 hover:border-slate-200'} active:scale-95`}
                             >
@@ -100,11 +117,12 @@ export default function StockPage() {
                     </div>
                 </div>
 
-                {/* Liste des items de stock — INLINE pour contrôle total */}
+                {/* Liste des items de stock */}
                 <div className="grid grid-cols-1 gap-4">
                     {filteredProducts.map((product) => {
                         const qty = stock[product.id] || 0;
                         const isLow = qty < 5;
+                        const updating = isUpdating === product.id;
                         return (
                             <div
                                 key={product.id}
@@ -131,18 +149,23 @@ export default function StockPage() {
 
                                 <div className="flex items-center gap-2 shrink-0">
                                     <button
-                                        onClick={() => updateStock(product.id, -1)}
-                                        className="w-10 h-10 bg-slate-50 dark:bg-slate-800 rounded-xl flex items-center justify-center text-slate-400 hover:text-rose-500 transition-colors active:scale-90"
+                                        type="button"
+                                        disabled={updating}
+                                        onClick={() => handleUpdateStock(product.id, -1)}
+                                        className="w-10 h-10 bg-slate-50 dark:bg-slate-800 rounded-xl flex items-center justify-center text-slate-400 hover:text-rose-500 transition-colors active:scale-90 disabled:opacity-50"
                                     >
                                         <Minus size={18} />
                                     </button>
                                     <button
-                                        onClick={() => updateStock(product.id, 1)}
-                                        className="w-10 h-10 bg-slate-50 dark:bg-slate-800 rounded-xl flex items-center justify-center text-slate-400 hover:text-emerald-500 transition-colors active:scale-90"
+                                        type="button"
+                                        disabled={updating}
+                                        onClick={() => handleUpdateStock(product.id, 1)}
+                                        className="w-10 h-10 bg-slate-50 dark:bg-slate-800 rounded-xl flex items-center justify-center text-slate-400 hover:text-emerald-500 transition-colors active:scale-90 disabled:opacity-50"
                                     >
                                         <Plus size={18} />
                                     </button>
                                     <button
+                                        type="button"
                                         onClick={() => router.push(`/stock/${product.id}`)}
                                         className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-lg active:bg-slate-800 transition-colors active:scale-90"
                                     >

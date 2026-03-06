@@ -53,11 +53,11 @@ export class InclusionDB extends Dexie {
 
     constructor() {
         super('InclusionDatabase');
-        this.version(1).stores({
+        this.version(2).stores({
             transactions: 'id, store_id, product_id, type, status, created_at, synced',
             products: 'id, store_id, category, barcode, synced',
             stocks: 'id, store_id, product_id, synced',
-            syncQueue: '++id, action, status, created_at'
+            syncQueue: '++id, action, status, retry_count, created_at'
         });
     }
 }
