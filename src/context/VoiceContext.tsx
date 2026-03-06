@@ -78,7 +78,14 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const speak = useCallback((text: string, autoListen: boolean = false) => {
         if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
             window.speechSynthesis.cancel(); // Stop old speech
-            const utterance = new SpeechSynthesisUtterance(text);
+
+            // Nettoyage : Transformer les mots en MAJUSCULES (ex: ADJO) en minuscules (ex: Adjo)
+            // Cela évite que le moteur TTS n'épèle le mot lettre par lettre.
+            const sanitizedText = text.replace(/\b([A-Z])([A-Z]{1,})\b/g, (match, p1, p2) => {
+                return p1 + p2.toLowerCase();
+            });
+
+            const utterance = new SpeechSynthesisUtterance(sanitizedText);
             utterance.lang = 'fr-FR';
             utterance.rate = 0.95; // Slightly faster for responsiveness
             utterance.onstart = () => setIsSpeaking(true);
