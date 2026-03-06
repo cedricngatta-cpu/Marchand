@@ -46,6 +46,7 @@ export const useAssistant = () => {
     }, [isSpeaking, stopSpeaking, listen]);
 
     const processCommand = useCallback((text: string) => {
+        console.log('🎙️ Assistant RAW transcript:', text);
         const lowerText = text.toLowerCase();
 
         // Pre-processing : Corriger les erreurs de transcription courantes (French quirks)
@@ -170,15 +171,19 @@ export const useAssistant = () => {
 
         // 3. Identifier la quantité
         const numberMap: Record<string, number> = {
-            'un': 1, 'une': 1, 'deux': 2, 'duex': 2, 'trois': 3, 'quatre': 4, 'cinq': 5,
-            'six': 6, 'sept': 7, 'huit': 8, 'neuf': 9, 'dix': 10
+            'un': 1, 'une': 1, 'deux': 2, 'duex': 2, 'de': 2, 'des': 2, 'd\'': 2,
+            'trois': 3, 'quatre': 4, 'cinq': 5, 'six': 6, 'sept': 7, 'huit': 8, 'neuf': 9, 'dix': 10
         };
 
         let quantity = 1;
         let customPrice: number | undefined = undefined;
 
+        // 1. Chercher des chiffres (prioritaire)
         const allDigits = Array.from(normText.matchAll(/(\d+)/g)).map(m => parseInt(m[1]));
+
+        // 2. Chercher des nombres en lettres
         const words = normText.split(/[\s']+/);
+        // On cherche le nombre AVANT le produit si possible
         const letterNumberKey = words.find(w => numberMap[w]);
         const letterNumber = letterNumberKey ? numberMap[letterNumberKey] : null;
 
@@ -208,7 +213,12 @@ export const useAssistant = () => {
         const finalProduct = { ...product };
         if (customPrice !== undefined) finalProduct.price = customPrice;
 
-        // 4. Identifier l'action produit
+        console.log('📦 Assistant Parsed Result:', {
+            product: finalProduct.name,
+            quantity: quantity,
+            price: finalProduct.price,
+            isVendrePage: pathname === '/vendre'
+        });
         const isSaleIntent = lowerTextProcessed.includes('vendu') ||
             lowerTextProcessed.includes('vend') ||
             lowerTextProcessed.includes('vends') ||
@@ -244,15 +254,17 @@ export const useAssistant = () => {
         }
         else if (isSaleIntent) {
             const isDebtCommand = lowerTextProcessed.includes('crédit') || lowerTextProcessed.includes('dette');
-            const clientMatches = Array.from(lowerTextProcessed.matchAll(/(?:à|pour|a)\s+([a-zA-Záàâäãåçéèêëíìîïñóòôöõúùûüýÿ]+)/gi));
+
+            // Regex plus costaude pour le client (capte jusqu'à la fin de la phrase ou un mot clé)
+            const clientMatch = lowerTextProcessed.match(/(?:à|pour|a)\s+([a-zA-Z\s]+?)(?:\s+(?:en|sur|avec|pour|à|a|termine|fini|confirme)|$)/i);
             let clientName = undefined;
 
-            for (const match of clientMatches) {
-                const name = match[1].trim();
-                const ln = name.toLowerCase();
-                if (ln !== 'crédit' && ln !== 'dette' && ln !== 'panier' && ln !== 'mon') {
-                    clientName = name;
-                    break;
+            if (clientMatch) {
+                const rawName = clientMatch[1].trim();
+                const ln = rawName.toLowerCase();
+                // Éviter de prendre "crédit", "dette" ou un nom de produit comme nom de client
+                if (!['crédit', 'dette', 'panier', 'mon', '2', 'deux', 'des'].includes(ln) && rawName.length > 1) {
+                    clientName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
                 }
             }
 
