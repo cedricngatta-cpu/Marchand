@@ -142,7 +142,7 @@ export default function ScannerPage() {
                     </motion.div>
                 )}
 
-                {/* Results Panel */}
+                {/* Results Panel - Wave Style Bottom Sheet */}
                 <AnimatePresence>
                     {!isScanning && scannedProduct && (
                         <motion.div
@@ -150,51 +150,58 @@ export default function ScannerPage() {
                             initial={{ opacity: 0, y: '100%' }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: '100%' }}
-                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                            className="absolute bottom-0 left-0 right-0 bg-white dark:bg-slate-900 rounded-t-[40px] p-6 pb-10 shadow-[0_-10px_40px_rgba(0,0,0,0.3)] z-30"
+                            transition={{ type: "spring", damping: 30, stiffness: 300 }}
+                            className="absolute bottom-0 left-0 right-0 bg-white dark:bg-slate-900 rounded-t-[40px] p-6 pb-12 shadow-[0_-15px_50px_rgba(0,0,0,0.4)] z-30"
                         >
-                            <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full mx-auto mb-6" />
+                            {/* Handle bars style Wave */}
+                            <div className="w-12 h-1 bg-slate-200 dark:bg-slate-800 rounded-full mx-auto mb-8" />
 
-                            <div className="flex items-center gap-4 mb-6">
-                                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 ${scannedProduct.color || 'bg-slate-100'} ${scannedProduct.iconColor || 'text-slate-600'}`}>
-                                    {scannedProduct.icon ? React.createElement(scannedProduct.icon, { size: 32 }) : <Package size={32} />}
+                            <div className="flex items-center gap-5 mb-8">
+                                <div className="w-20 h-20 bg-slate-50 dark:bg-slate-800 rounded-[28px] flex items-center justify-center shrink-0 shadow-sm border border-slate-100 dark:border-slate-700">
+                                    {scannedProduct.imageUrl ? (
+                                        <img src={scannedProduct.imageUrl} className="w-full h-full object-contain p-2" alt="" />
+                                    ) : (
+                                        <Package size={36} className="text-slate-700 dark:text-slate-300" />
+                                    )}
                                 </div>
-                                <div>
-                                    <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none mb-1">{scannedProduct.name}</h2>
-                                    <p className="text-amber-500 font-black text-xl">{scannedProduct.price} F</p>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-3 mb-6">
-                                <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-3xl border border-slate-100 dark:border-slate-700">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">En Stock</p>
-                                    <p className={`text-2xl font-black ${(stock[scannedProduct.id] || 0) < 5 ? 'text-rose-500' : 'text-emerald-500'}`}>
-                                        {stock[scannedProduct.id] || 0}
+                                <div className="flex flex-col gap-1">
+                                    <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-tight">
+                                        {scannedProduct.name}
+                                    </h2>
+                                    <p className="text-orange-500 font-black text-2xl tracking-tight">
+                                        {scannedProduct.price.toLocaleString()} F
                                     </p>
                                 </div>
-                                {/* Could add more stats here */}
                             </div>
 
-                            <div className="flex gap-3">
+                            {/* Info Card Stock style Wave */}
+                            <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-[32px] mb-8 border border-slate-100 dark:border-slate-700/50">
+                                <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">En Stock</p>
+                                <p className="text-3xl font-black text-emerald-500 leading-none">
+                                    {stock[scannedProduct.id] || 0}
+                                </p>
+                            </div>
+
+                            <div className="flex gap-4 mb-6">
                                 <button
                                     onClick={() => setShowDetails(true)}
-                                    className="flex-1 py-4 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-[24px] font-black uppercase text-xs tracking-widest active:scale-95 transition-all flex items-center justify-center gap-2"
+                                    className="flex-1 py-5 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white rounded-[24px] font-black uppercase text-xs tracking-[0.15em] active:scale-95 transition-all shadow-sm flex items-center justify-center gap-2"
                                 >
-                                    <Info size={18} />
+                                    <Info size={16} />
                                     Détails
                                 </button>
                                 <button
                                     onClick={handleQuickSell}
-                                    className="flex-[2] py-4 bg-emerald-500 text-white rounded-[24px] font-black uppercase text-sm tracking-widest active:scale-95 transition-all shadow-xl shadow-emerald-500/30 flex items-center justify-center gap-2"
+                                    className="flex-[1.5] py-5 bg-primary text-white rounded-[24px] font-black uppercase text-xs tracking-[0.15em] active:scale-95 transition-all shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-2.5"
                                 >
-                                    <ShoppingCart size={20} />
+                                    <ShoppingCart size={18} />
                                     Vendre
                                 </button>
                             </div>
 
                             <button
                                 onClick={resetScanner}
-                                className="w-full mt-4 py-4 text-slate-400 font-bold uppercase text-xs tracking-widest hover:text-slate-600 transition-colors"
+                                className="w-full text-slate-400 font-bold uppercase text-[10px] tracking-[0.2em] active:opacity-50 transition-opacity"
                             >
                                 Scanner un autre produit
                             </button>
