@@ -39,6 +39,8 @@ export default function StockPage() {
             return false;
         });
 
+    const lowStockCount = products.filter(p => (stock[p.id] || 0) < 5).length;
+
     const [isUpdating, setIsUpdating] = useState<string | null>(null);
 
     const handleUpdateStock = async (productId: string, amount: number) => {

@@ -179,6 +179,7 @@ export const HistoryProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 created_at: createdAt
             },
             status: 'PENDING',
+            retry_count: 0,
             created_at: Date.now()
         });
 
@@ -200,6 +201,7 @@ export const HistoryProvider: React.FC<{ children: React.ReactNode }> = ({ child
             action: 'MARK_PAID',
             payload: { id: transactionId },
             status: 'PENDING',
+            retry_count: 0,
             created_at: Date.now()
         });
 
