@@ -1,23 +1,18 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, Package, AlertTriangle, Volume2, Mic, PlusCircle, LayoutGrid, Wheat, CupSoda, Sparkles, MoreHorizontal } from 'lucide-react';
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { ChevronLeft, Package, AlertTriangle, Volume2, Mic, PlusCircle, LayoutGrid, Wheat, CupSoda, Sparkles, MoreHorizontal, Minus, Plus, Eye } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { StockItem } from '@/components/StockItem';
-import { useAssistant } from '@/hooks/useAssistant';
 import { useStock } from '@/hooks/useStock';
-import { useHistory } from '@/hooks/useHistory';
 import { useProductContext } from '@/context/ProductContext';
 import { useAuth } from '@/context/AuthContext';
 
 export default function StockPage() {
     const router = useRouter();
     const { user } = useAuth();
-    const { products, addProduct } = useProductContext();
-    const { speak, handleAction, isSpeaking, isListening } = useAssistant();
+    const { products } = useProductContext();
     const { stock, updateStock } = useStock();
-    const { addTransaction } = useHistory();
     const [activeCategory, setActiveCategory] = useState('TOUS');
 
     const categories = [
@@ -44,18 +39,6 @@ export default function StockPage() {
             return false;
         });
 
-    const speakFullStock = () => {
-        const stockItems = products.map(p => {
-            const qty = stock[p.id] || 0;
-            // On enlève "Le" ou "La" pour dire "Tu as 20 pains"
-            const simpleName = p.audioName.replace(/^[Ll]e\s+/, '').replace(/^[Ll]a\s+/, '').replace(/^[Ll]'\s+/, '');
-            return `${qty} ${simpleName}`;
-        }).join(', ');
-
-        speak(`${user?.name?.split(' ')[0] || 'Marchand'}, tu as : ${stockItems} en stock.`);
-    };
-
-
     const lowStockCount = products.filter(p => (stock[p.id] || 0) < 5).length;
 
     return (
@@ -70,11 +53,7 @@ export default function StockPage() {
                         <h1 className="text-white font-bold text-lg tracking-wide uppercase">Mon Stock</h1>
                         <p className="text-emerald-200 text-[10px] font-bold uppercase tracking-widest mt-0.5">État des réserves</p>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <button onClick={speakFullStock} className="w-10 h-10 bg-white text-primary rounded-full flex items-center justify-center active:scale-95 transition-transform shadow-sm">
-                            <Volume2 size={18} />
-                        </button>
-                    </div>
+                    <div className="w-10 h-10" /> {/* Spacer */}
                 </div>
 
                 {/* Bouton Ajouter (Centré dans le header) */}
@@ -94,23 +73,18 @@ export default function StockPage() {
 
                 {/* Alerte Stock Bas */}
                 {lowStockCount > 0 && (
-                    <motion.div
-                        initial={{ scale: 0.9, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        onClick={() => speak(`${user?.name?.split(' ')[0] || 'Marchand'}, il y a ${lowStockCount} produits presque finis.`)}
-                        className="bg-red-50 dark:bg-red-900/10 border md:border-2 border-red-500 p-2 md:p-4 rounded-xl md:rounded-2xl mb-3 flex items-center gap-2 md:gap-3 text-red-700 dark:text-red-400 shadow-md shadow-red-200 dark:shadow-none cursor-pointer"
-                    >
+                    <div className="bg-red-50 dark:bg-red-900/10 border md:border-2 border-red-500 p-2 md:p-4 rounded-xl md:rounded-2xl mb-3 flex items-center gap-2 md:gap-3 text-red-700 dark:text-red-400 shadow-md shadow-red-200 dark:shadow-none">
                         <div className="bg-red-500 p-1.5 md:p-2 rounded-lg text-white shrink-0">
                             <AlertTriangle size={16} className="md:w-6 md:h-6" />
                         </div>
                         <div>
                             <h2 className="font-black uppercase text-xs md:text-sm leading-none">Attention !</h2>
-                            <p className="font-bold text-[9px] md:text-xs">Des produits sont bientôt finis.</p>
+                            <p className="font-bold text-[9px] md:text-xs">{lowStockCount} produit(s) bientôt fini(s).</p>
                         </div>
-                    </motion.div>
+                    </div>
                 )}
 
-                {/* Filtres Catégories (Sans défilement horizontal avec flex-wrap) */}
+                {/* Filtres Catégories */}
                 <div className="bg-white dark:bg-slate-900 rounded-3xl p-4 shadow-xl border border-slate-100 dark:border-slate-800 mb-6">
                     <div className="flex flex-wrap justify-between gap-y-3 gap-x-1">
                         {categories.map(cat => (
@@ -126,75 +100,70 @@ export default function StockPage() {
                     </div>
                 </div>
 
-                {/* Liste des items de stock */}
+                {/* Liste des items de stock — INLINE pour contrôle total */}
                 <div className="grid grid-cols-1 gap-4">
-                    {filteredProducts.map((product) => (
-                        <StockItem
-                            key={product.id}
-                            name={product.name}
-                            icon={product.icon}
-                            imageUrl={product.imageUrl}
-                            quantity={stock[product.id] || 0}
-                            color={product.color}
-                            iconColor={product.iconColor}
-                            onAdd={() => {
-                                updateStock(product.id, 1);
-                                addTransaction({
-                                    type: 'LIVRAISON',
-                                    productId: product.id,
-                                    productName: product.name,
-                                    quantity: 1,
-                                    price: product.price
-                                });
-                            }}
-                            onRemove={() => {
-                                updateStock(product.id, -1);
-                                addTransaction({
-                                    type: 'RETRAIT',
-                                    productId: product.id,
-                                    productName: product.name,
-                                    quantity: 1,
-                                    price: product.price
-                                });
-                            }}
-                            onViewDetails={() => router.push(`/stock/${product.id}`)}
-                            onSpeak={() => {
-                                const qty = stock[product.id] || 0;
-                                const shortName = product.audioName.replace(/^[Ll]e\s+/, '').replace(/^[Ll]a\s+/, '').replace(/^[Ll]'\s+/, '');
-                                const formatted = qty === 1 ? `un ${shortName}` : `${qty} ${shortName}${shortName.endsWith('s') || shortName.endsWith('x') ? '' : 's'}`;
-                                speak(`Il reste ${formatted}.`);
-                            }}
-                        />
-                    ))}
+                    {filteredProducts.map((product) => {
+                        const qty = stock[product.id] || 0;
+                        const isLow = qty < 5;
+                        return (
+                            <div
+                                key={product.id}
+                                className="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-800 flex items-center justify-between"
+                            >
+                                <div className="flex items-center gap-5 min-w-0">
+                                    <div className={`w-14 h-14 rounded-xl ${product.imageUrl ? 'bg-slate-100' : product.color} flex items-center justify-center shrink-0 border border-slate-50 overflow-hidden relative`}>
+                                        {product.imageUrl ? (
+                                            <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <product.icon className={product.iconColor} size={28} />
+                                        )}
+                                    </div>
+                                    <div className="flex flex-col min-w-0">
+                                        <h3 className="font-bold text-slate-800 dark:text-white text-xs uppercase tracking-wider truncate mb-1">{product.name}</h3>
+                                        <div className="flex items-baseline gap-2">
+                                            <span className={`text-2xl font-bold ${isLow ? 'text-rose-500' : 'text-slate-900 dark:text-white'}`}>
+                                                {qty}
+                                            </span>
+                                            <span className="text-[10px] font-bold text-slate-400">UNITÉS</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-2 shrink-0">
+                                    <button
+                                        onClick={() => updateStock(product.id, -1)}
+                                        className="w-10 h-10 bg-slate-50 dark:bg-slate-800 rounded-xl flex items-center justify-center text-slate-400 hover:text-rose-500 transition-colors active:scale-90"
+                                    >
+                                        <Minus size={18} />
+                                    </button>
+                                    <button
+                                        onClick={() => updateStock(product.id, 1)}
+                                        className="w-10 h-10 bg-slate-50 dark:bg-slate-800 rounded-xl flex items-center justify-center text-slate-400 hover:text-emerald-500 transition-colors active:scale-90"
+                                    >
+                                        <Plus size={18} />
+                                    </button>
+                                    <button
+                                        onClick={() => router.push(`/stock/${product.id}`)}
+                                        className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-lg active:bg-slate-800 transition-colors active:scale-90"
+                                    >
+                                        <Eye size={18} />
+                                    </button>
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
 
-
-
-                {/* Aide Vocale */}
+                {/* Aide */}
                 <div className="mt-6 bg-white dark:bg-slate-900 p-3 md:p-4 rounded-[20px] md:rounded-[24px] border border-slate-100 dark:border-slate-800 flex items-center gap-2 md:gap-4 shadow-sm mb-16 md:mb-20">
                     <div className="w-8 h-8 md:w-10 md:h-10 bg-slate-900 rounded-full flex items-center justify-center text-white shrink-0">
                         <Package size={16} className="md:w-5 md:h-5" />
                     </div>
                     <p className="font-bold text-slate-600 dark:text-slate-300 leading-tight text-[10px] md:text-xs">
-                        Appuie sur le bouton noir pour me parler et gérer ton stock.
+                        Utilise les boutons + et - pour ajuster ton stock.
                     </p>
                 </div>
 
-                {/* Micro Global Fixé (Style Wave) */}
-                <div className="fixed bottom-6 left-0 right-0 flex justify-center px-4 pointer-events-none z-50">
-                    <button
-                        onClick={handleAction}
-                        className={`h-16 px-6 rounded-2xl shadow-xl text-white flex items-center gap-4 w-auto pointer-events-auto transition-all ${isListening ? 'bg-rose-500' : 'bg-slate-900'}`}
-                    >
-                        <div className={`p-2 bg-slate-800 dark:bg-slate-700 text-white rounded-full transition-all shrink-0`}>
-                            <Mic size={20} fill={isSpeaking || isListening ? "currentColor" : "none"} />
-                        </div>
-                        <div className="flex flex-col items-start">
-                            <span className="text-xs font-bold uppercase tracking-widest">{isListening ? "ÉCOUTE..." : "PARLER"}</span>
-                            <span className="text-[9px] font-medium opacity-60 italic">Appuie pour parler</span>
-                        </div>
-                    </button>
-                </div>
             </main>
         </div>
     );
