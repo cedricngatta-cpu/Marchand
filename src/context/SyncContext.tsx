@@ -8,7 +8,8 @@ interface SyncContextType {
     isOnline: boolean;
     isSyncing: boolean;
     syncPendingCount: number;
-    syncAll: () => Promise<void>;
+    lastSyncError: string | null;
+    syncAll: (forceRetry?: boolean) => Promise<void>;
     triggerSync: () => Promise<void>;
 }
 
@@ -19,19 +20,23 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const isSyncingRef = useRef(false);
     const [isSyncing, setIsSyncing] = useState(false);
     const [syncPendingCount, setSyncPendingCount] = useState(0);
+    const [lastSyncError, setLastSyncError] = useState<string | null>(null);
 
     const updatePendingCount = useCallback(async () => {
         const count = await db.syncQueue.count();
         setSyncPendingCount(count);
     }, []);
 
-    const processQueue = useCallback(async () => {
+    const processQueue = useCallback(async (forceRetry: boolean = false) => {
         if (!navigator.onLine || isSyncingRef.current) return;
 
-        // Traiter PENDING et retenter les ERROR (ceux qui n'ont pas encore échoué définitivement)
+        // Traiter PENDING et retenter les ERROR
+        // Si forceRetry est vrai, on inclut aussi les FAILED
+        const statusFilter = forceRetry ? ['PENDING', 'ERROR', 'FAILED'] : ['PENDING', 'ERROR'];
+
         const pending = await db.syncQueue
             .where('status')
-            .anyOf(['PENDING', 'ERROR'])
+            .anyOf(statusFilter)
             .toArray();
 
         if (pending.length === 0) {
@@ -147,8 +152,12 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 if (success) {
                     await db.syncQueue.delete(item.id!);
                     updatePendingCount();
+                    setLastSyncError(null);
                 } else {
-                    console.error(`[Sync] Action ${item.action} failed:`, errorDetails);
+                    const msg = errorDetails?.message || JSON.stringify(errorDetails) || "Erreur inconnue";
+                    console.error(`[Sync] Action ${item.action} failed:`, msg);
+                    setLastSyncError(`[${item.action}] ${msg}`);
+
                     const nextRetry = (item.retry_count || 0) + 1;
                     if (nextRetry >= 3) {
                         await db.syncQueue.update(item.id!, {
@@ -205,8 +214,9 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
             isOnline,
             isSyncing,
             syncPendingCount,
-            syncAll: processQueue,
-            triggerSync: processQueue
+            lastSyncError,
+            syncAll: (retry?: boolean) => processQueue(retry),
+            triggerSync: () => processQueue(false)
         }}>
             {children}
         </SyncContext.Provider>

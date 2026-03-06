@@ -31,7 +31,7 @@ export default function ProfilePage() {
     const { user, logout, updatePin, updateLanguage } = useAuth();
     const { activeProfile } = useProfileContext();
     const { syncGlobalCatalog } = useProductContext();
-    const { syncAll, syncPendingCount, isSyncing, isOnline } = useSync();
+    const { syncAll, syncPendingCount, isSyncing, isOnline, lastSyncError } = useSync();
     const confirm = useConfirm();
     const [isForceSyncing, setIsForceSyncing] = useState(false);
 
@@ -295,7 +295,7 @@ export default function ProfilePage() {
                     <button
                         onClick={async () => {
                             setIsForceSyncing(true);
-                            await syncAll();
+                            await syncAll(true);
                             setTimeout(() => setIsForceSyncing(false), 2000);
                         }}
                         disabled={isForceSyncing || isSyncing}
@@ -345,6 +345,14 @@ export default function ProfilePage() {
                                     {isOnline ? 'En Ligne' : 'Hors Ligne'}
                                 </span>
                             </div>
+
+                            {lastSyncError && (
+                                <div className="mt-2 p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl">
+                                    <p className="text-[8px] font-bold text-rose-400 uppercase tracking-tight leading-tight break-all">
+                                        Blocage: {lastSyncError}
+                                    </p>
+                                </div>
+                            )}
                         </div>
                         <p className="text-[8px] text-slate-500 italic leading-tight">
                             Vérifiez que l'ID Boutique est identique sur vos deux appareils pour partager les mêmes données.
