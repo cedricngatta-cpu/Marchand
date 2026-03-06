@@ -49,34 +49,48 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose 
         let isMounted = true;
 
         const startScanner = async () => {
+            if (!isMounted) return;
             setIsStarting(true);
             setScanError(null);
 
             try {
-                if (scanner.isScanning) {
-                    await scanner.stop().catch(() => { });
-                    scanner.clear();
-                }
+                // S'assurer qu'aucun scanner ne tourne déjà sur cet élément
+                try {
+                    if (scanner.isScanning) {
+                        await scanner.stop();
+                    }
+                } catch (e) { }
 
-                await new Promise(resolve => setTimeout(resolve, 100));
+                await new Promise(resolve => setTimeout(resolve, 300)); // Délai plus long pour la caméra
+
+                if (!isMounted) return;
 
                 await scanner.start(
                     { facingMode },
                     {
-                        fps: 10
+                        fps: 10,
+                        qrbox: (viewfinderWidth, viewfinderHeight) => {
+                            // Optimisation de la zone de scan
+                            return { width: viewfinderWidth * 0.8, height: viewfinderHeight * 0.6 };
+                        }
                     },
                     (decodedText) => {
                         if (isMounted) onScan(decodedText);
                     },
-                    (error: any) => {
-                        // Ignore frame errors, but log others if needed
-                        if (error && typeof error === 'object' && error.message && !error.message.includes("NotFound")) {
-                            console.log("Scanner warning:", error);
-                        } else if (typeof error === 'string' && !error.includes("NotFound")) {
-                            console.log("Scanner warning:", error);
-                        }
+                    (errorMessage) => {
+                        // On ignore les erreurs de frame "NotFound" pour ne pas polluer la console
                     }
-                );
+                ).catch(err => {
+                    // Si le démarrage échoue (ex: caméra déjà utilisée), on attend et on retente une fois
+                    console.warn("Scanner start failed, retrying...", err);
+                    setTimeout(() => {
+                        if (isMounted && !scanner.isScanning) {
+                            scanner.start({ facingMode }, { fps: 10 }, onScan, () => { }).catch(e => {
+                                if (isMounted) setScanError("Impossible d'accéder à la caméra. Veuillez rafraîchir la page.");
+                            });
+                        }
+                    }, 1000);
+                });
             } catch (err: any) {
                 console.error("Erreur de démarrage du scanner", err);
                 if (isMounted) setScanError(err.message || "Erreur d'accès à la caméra.");
@@ -89,19 +103,21 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose 
 
         return () => {
             isMounted = false;
-            if (scannerRef.current) {
-                if (scannerRef.current.isScanning) {
-                    scannerRef.current.stop()
-                        .then(() => {
-                            scannerRef.current?.clear();
-                        })
-                        .catch(console.error);
-                } else {
-                    scannerRef.current.clear();
+            const cleanup = async () => {
+                if (scannerRef.current) {
+                    try {
+                        if (scannerRef.current.isScanning) {
+                            await scannerRef.current.stop();
+                        }
+                        scannerRef.current.clear();
+                    } catch (e) {
+                        console.error("Scanner cleanup error", e);
+                    }
                 }
-            }
+            };
+            cleanup();
         };
-    }, [facingMode, onScan]);
+    }, [facingMode]); // Retiré onScan des dépendances pour éviter les redémarrages inutiles si la prop change
 
     return (
         <motion.div

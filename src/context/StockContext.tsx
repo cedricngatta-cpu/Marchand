@@ -24,7 +24,7 @@ export const StockProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const { triggerSync } = useSync();
     const [stock, setStock] = useState<StockLevels>({});
 
-    const fetchStock = async () => {
+    const fetchStock = useCallback(async () => {
         if (!activeProfile) return;
 
         try {
@@ -37,7 +37,7 @@ export const StockProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             setStock(levels);
 
             // 2. Refresh depuis Supabase si online
-            if (navigator.onLine) {
+            if (typeof navigator !== 'undefined' && navigator.onLine) {
                 const { data, error } = await supabase
                     .from('stock')
                     .select('*')
@@ -64,18 +64,28 @@ export const StockProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         } catch (err) {
             console.error("[StockContext] fetchStock error:", err);
         }
-    };
+    }, [activeProfile]);
 
     useEffect(() => {
         if (activeProfile) {
             fetchStock();
 
-            // Real-time subscription to stock changes
+            // Real-time subscription to stock changes - FILTERED by store_id
             const subscription = supabase
-                .channel('stock_changes')
-                .on('postgres_changes' as any, { event: '*', table: 'stock', schema: 'public' }, () => {
-                    fetchStock();
-                })
+                .channel(`stock_changes_${activeProfile.id}`)
+                .on(
+                    'postgres_changes' as any,
+                    {
+                        event: '*',
+                        table: 'stock',
+                        schema: 'public',
+                        filter: `store_id=eq.${activeProfile.id}`
+                    },
+                    (payload) => {
+                        console.log("[StockContext] Realtime update recived:", payload);
+                        fetchStock();
+                    }
+                )
                 .subscribe();
 
             return () => {
@@ -84,7 +94,7 @@ export const StockProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         } else {
             setStock({});
         }
-    }, [activeProfile]);
+    }, [activeProfile, fetchStock]);
 
     const updateStock = useCallback(async (productId: string, amount: number) => {
         if (!activeProfile) return;

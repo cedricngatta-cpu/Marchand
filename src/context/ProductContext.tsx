@@ -173,6 +173,40 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
     useEffect(() => {
         if (activeProfile) {
             fetchProducts();
+
+            // Real-time subscription to product changes - FILTERED by store_id
+            const subscription = supabase
+                .channel(`product_changes_${activeProfile.id}`)
+                .on(
+                    'postgres_changes' as any,
+                    {
+                        event: '*',
+                        table: 'products',
+                        schema: 'public',
+                        filter: `store_id=eq.${activeProfile.id}`
+                    },
+                    () => {
+                        console.log("[ProductContext] Realtime update received");
+                        fetchProducts();
+                    }
+                )
+                .on(
+                    'postgres_changes' as any,
+                    {
+                        event: '*',
+                        table: 'products',
+                        schema: 'public',
+                        filter: `store_id=eq.GLOBAL`
+                    },
+                    () => {
+                        fetchProducts();
+                    }
+                )
+                .subscribe();
+
+            return () => {
+                supabase.removeChannel(subscription);
+            };
         } else {
             setProducts([]);
         }

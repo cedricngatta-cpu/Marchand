@@ -300,10 +300,10 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
             processQueue();
         }
 
-        // More frequent periodic sync (every 10s)
+        // More frequent periodic sync (every 30s) - reduced from 10s to improve battery/CPU
         const interval = setInterval(() => {
             if (typeof navigator !== 'undefined' && navigator.onLine) processQueue();
-        }, 10000);
+        }, 30000);
 
         return () => {
             window.removeEventListener('online', handleOnline);

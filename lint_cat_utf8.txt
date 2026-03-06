@@ -3,18 +3,6 @@
 > eslint
 
 
-C:\Users\Cerco\Music\inclusion-marchand\extract_errors.js
-  1:12  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
-
-C:\Users\Cerco\Music\inclusion-marchand\get_lint_details.js
-  1:12  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
-
-C:\Users\Cerco\Music\inclusion-marchand\get_lint_details_v2.js
-  1:12  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
-
-C:\Users\Cerco\Music\inclusion-marchand\parse_lint.js
-  1:12  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
-
 C:\Users\Cerco\Music\inclusion-marchand\public\sw.js
   1:335    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
   1:857    warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
@@ -508,8 +496,9 @@ C:\Users\Cerco\Music\inclusion-marchand\src\context\StockContext.tsx:71:13
   87:8   warning  React Hook useEffect has a missing dependency: 'fetchStock'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           react-hooks/exhaustive-deps
 
 C:\Users\Cerco\Music\inclusion-marchand\src\context\SyncContext.tsx
-  222:46  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  @typescript-eslint/no-explicit-any
-  295:9   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  130:52  warning  'retryError' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           @typescript-eslint/no-unused-vars
+  225:46  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  298:9   error    Error: Calling setState synchronously within an effect can trigger cascading renders
 
 Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
 * Update external systems with the latest state from React.
@@ -517,14 +506,14 @@ Effects are intended to synchronize state between React and external systems suc
 
 Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
 
-C:\Users\Cerco\Music\inclusion-marchand\src\context\SyncContext.tsx:295:9
-  293 |
-  294 |         // Initial sync: process queue immediately on startup
-> 295 |         updatePendingCount();
+C:\Users\Cerco\Music\inclusion-marchand\src\context\SyncContext.tsx:298:9
+  296 |
+  297 |         // Initial sync: process queue immediately on startup
+> 298 |         updatePendingCount();
       |         ^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
-  296 |         if (typeof navigator !== 'undefined' && navigator.onLine) {
-  297 |             processQueue();
-  298 |         }  react-hooks/set-state-in-effect
+  299 |         if (typeof navigator !== 'undefined' && navigator.onLine) {
+  300 |             processQueue();
+  301 |         }  react-hooks/set-state-in-effect
 
 C:\Users\Cerco\Music\inclusion-marchand\src\context\VoiceContext.tsx
    21:35  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      @typescript-eslint/no-explicit-any
@@ -575,6 +564,6 @@ C:\Users\Cerco\Music\inclusion-marchand\test_db_2.js
   1:26  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
   2:12  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
 
-Γ£û 307 problems (119 errors, 188 warnings)
+Γ£û 304 problems (115 errors, 189 warnings)
   1 error and 1 warning potentially fixable with the `--fix` option.
 
