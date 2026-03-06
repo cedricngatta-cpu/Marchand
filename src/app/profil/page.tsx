@@ -317,6 +317,38 @@ export default function ProfilePage() {
                             </p>
                         </div>
                     </button>
+
+                    {/* Section Diagnostic Avancé */}
+                    <div className="bg-slate-900 text-white p-6 rounded-[32px] shadow-2xl space-y-4">
+                        <div className="flex items-center gap-2 border-b border-white/10 pb-3">
+                            <AlertTriangle size={16} className="text-amber-400" />
+                            <h3 className="text-[10px] font-black uppercase tracking-widest">Diagnostic Système</h3>
+                        </div>
+
+                        <div className="space-y-3">
+                            <div className="flex justify-between items-center">
+                                <span className="text-[9px] font-bold text-slate-400 uppercase">ID Boutique</span>
+                                <span className="text-[10px] font-mono bg-white/5 px-2 py-1 rounded truncate max-w-[150px]">
+                                    {activeProfile?.id || 'Inconnu'}
+                                </span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-[9px] font-bold text-slate-400 uppercase">Sync Status</span>
+                                <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${syncPendingCount > 0 ? 'bg-amber-500/20 text-amber-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
+                                    {syncPendingCount > 0 ? 'En attente' : 'À jour'}
+                                </span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-[9px] font-bold text-slate-400 uppercase">Réseau</span>
+                                <span className={`text-[9px] font-black uppercase ${isOnline ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                    {isOnline ? 'En Ligne' : 'Hors Ligne'}
+                                </span>
+                            </div>
+                        </div>
+                        <p className="text-[8px] text-slate-500 italic leading-tight">
+                            Vérifiez que l'ID Boutique est identique sur vos deux appareils pour partager les mêmes données.
+                        </p>
+                    </div>
                 </section>
 
                 {/* Sign Out Section */}

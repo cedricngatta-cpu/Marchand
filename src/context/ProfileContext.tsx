@@ -42,13 +42,19 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
         const { data, error } = await query;
 
-        if (data && data.length === 0 && user.role === 'MERCHANT') {
+        if (data && data.length === 0 && user.role === 'MERCHANT' && navigator.onLine) {
             // Rétrocompatibilité : auto-création pour les anciens comptes
-            const { data: newStore } = await supabase.from('stores').insert([{
+            console.log('[ProfileContext] No store found, creating default store for merchant...');
+            const { data: newStore, error: insertError } = await supabase.from('stores').insert([{
                 owner_id: user.id,
                 name: 'Ma Boutique',
                 status: 'ACTIVE'
             }]).select().single();
+
+            if (insertError) {
+                console.error('[ProfileContext] Failed to create default store:', insertError.message);
+                return;
+            }
 
             if (newStore) {
                 await refreshProfiles();

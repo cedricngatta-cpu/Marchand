@@ -49,7 +49,7 @@ export default function AddProductPage() {
                 icon: Package
             });
             speak(`${name} a été ajouté à votre catalogue.`);
-            router.push('/stock');
+            router.replace('/stock');
         } catch (error) {
             console.error("Erreur, impossible d'ajouter", error);
         } finally {

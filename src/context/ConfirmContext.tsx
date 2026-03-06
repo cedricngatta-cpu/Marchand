@@ -39,48 +39,64 @@ export const ConfirmProvider: React.FC<{ children: React.ReactNode }> = ({ child
             {children}
             <AnimatePresence>
                 {dialog && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-slate-950/70 backdrop-blur-sm"
-                    >
+                    <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-slate-950/80 backdrop-blur-sm p-0 sm:p-6">
+                        {/* Overlay pour fermer en cliquant à côté */}
                         <motion.div
-                            initial={{ scale: 0.85, y: 30 }}
-                            animate={{ scale: 1, y: 0 }}
-                            exit={{ scale: 0.85, y: 30 }}
-                            className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-[32px] p-8 shadow-2xl border-2 border-slate-100 dark:border-slate-800"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => handleResponse(false)}
+                            className="absolute inset-0 cursor-pointer"
+                        />
+
+                        <motion.div
+                            initial={{ y: "100%", opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ y: "100%", opacity: 0 }}
+                            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                            className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-t-[40px] sm:rounded-[48px] p-8 sm:p-12 shadow-[0_-20px_50px_rgba(0,0,0,0.2)] sm:shadow-2xl border-t sm:border-2 border-slate-100 dark:border-slate-800 relative z-10"
                         >
-                            {/* Icon */}
-                            <div className={`w-16 h-16 rounded-[20px] flex items-center justify-center mx-auto mb-6 ${dialog.dangerMode ? 'bg-rose-100 text-rose-600' : 'bg-amber-100 text-amber-600'}`}>
-                                <AlertTriangle size={32} />
-                            </div>
+                            {/* Handle pour mobile */}
+                            <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto mb-8 sm:hidden" />
 
-                            {/* Content */}
-                            <h3 className="text-xl font-black text-slate-900 dark:text-white text-center uppercase tracking-tight mb-3">
-                                {dialog.title}
-                            </h3>
-                            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium text-center leading-relaxed mb-8">
-                                {dialog.message}
-                            </p>
+                            <div className="flex flex-col items-center">
+                                {/* Icon Section */}
+                                <div className={`w-24 h-24 rounded-[32px] flex items-center justify-center mb-8 shadow-xl ${dialog.dangerMode
+                                        ? 'bg-rose-50 text-rose-600 shadow-rose-100 dark:bg-rose-900/20'
+                                        : 'bg-emerald-50 text-emerald-600 shadow-emerald-100 dark:bg-emerald-900/20'
+                                    }`}>
+                                    <AlertTriangle size={48} strokeWidth={1.5} />
+                                </div>
 
-                            {/* Buttons */}
-                            <div className="flex gap-3">
-                                <button
-                                    onClick={() => handleResponse(false)}
-                                    className="flex-1 flex items-center justify-center gap-2 py-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-black uppercase text-xs tracking-widest active:scale-95 transition-all"
-                                >
-                                    <X size={16} /> Annuler
-                                </button>
-                                <button
-                                    onClick={() => handleResponse(true)}
-                                    className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-2xl font-black uppercase text-xs tracking-widest active:scale-95 transition-all text-white shadow-lg ${dialog.dangerMode ? 'bg-rose-600 shadow-rose-200' : 'bg-emerald-600 shadow-emerald-200'}`}
-                                >
-                                    <Check size={16} /> {dialog.confirmLabel || 'Confirmer'}
-                                </button>
+                                {/* Text Section */}
+                                <h3 className="text-3xl font-black text-slate-900 dark:text-white text-center uppercase tracking-tighter leading-none mb-4">
+                                    {dialog.title}
+                                </h3>
+                                <p className="text-slate-500 dark:text-slate-400 font-bold text-center leading-relaxed mb-10 max-w-xs">
+                                    {dialog.message}
+                                </p>
+
+                                {/* Buttons Section */}
+                                <div className="flex flex-col sm:flex-row gap-4 w-full">
+                                    <button
+                                        onClick={() => handleResponse(true)}
+                                        className={`flex-1 flex items-center justify-center gap-3 py-6 rounded-[28px] font-black uppercase text-xs tracking-widest active:scale-[0.98] transition-all text-white shadow-xl order-1 sm:order-2 ${dialog.dangerMode
+                                                ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-200 dark:shadow-none'
+                                                : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200 dark:shadow-none'
+                                            }`}
+                                    >
+                                        <Check size={20} /> {dialog.confirmLabel || 'Confirmer'}
+                                    </button>
+                                    <button
+                                        onClick={() => handleResponse(false)}
+                                        className="flex-1 flex items-center justify-center gap-3 py-6 rounded-[28px] bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 font-black uppercase text-xs tracking-widest active:scale-[0.98] transition-all border-2 border-transparent hover:border-slate-200 order-2 sm:order-1"
+                                    >
+                                        <X size={20} /> Annuler
+                                    </button>
+                                </div>
                             </div>
                         </motion.div>
-                    </motion.div>
+                    </div>
                 )}
             </AnimatePresence>
         </ConfirmContext.Provider>

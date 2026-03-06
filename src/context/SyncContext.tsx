@@ -92,18 +92,41 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         break;
                     }
                     case 'ADD_PRODUCT': {
+                        const { id, store_id, name, price, color, icon_color, audio_name, image_url, barcode, category } = item.payload;
                         const { error: apError } = await supabase
                             .from('products')
-                            .insert([item.payload]);
+                            .insert([{
+                                id,
+                                store_id,
+                                name,
+                                price,
+                                color,
+                                icon_color,
+                                audio_name,
+                                image_url,
+                                barcode,
+                                category
+                            }]);
                         if (!apError || apError.code === '23505') success = true;
                         else errorDetails = apError;
                         break;
                     }
                     case 'UPDATE_PRODUCT': {
-                        const { id: upid, ...productUpdates } = item.payload;
+                        const { id: upid, ...updates } = item.payload;
+                        // Mapper camelCase vers snake_case pour les mises à jour
+                        const mappedUpdates: any = {};
+                        if (updates.name) mappedUpdates.name = updates.name;
+                        if (updates.price) mappedUpdates.price = updates.price;
+                        if (updates.audioName) mappedUpdates.audio_name = updates.audioName;
+                        if (updates.imageUrl) mappedUpdates.image_url = updates.imageUrl;
+                        if (updates.barcode) mappedUpdates.barcode = updates.barcode;
+                        if (updates.color) mappedUpdates.color = updates.color;
+                        if (updates.iconColor) mappedUpdates.icon_color = updates.iconColor;
+                        if (updates.category) mappedUpdates.category = updates.category;
+
                         const { error: upError } = await supabase
                             .from('products')
-                            .update(productUpdates)
+                            .update(mappedUpdates)
                             .eq('id', upid);
                         if (!upError) success = true;
                         else errorDetails = upError;
