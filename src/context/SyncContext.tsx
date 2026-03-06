@@ -131,12 +131,14 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
                                         .from('stock')
                                         .upsert({ product_id, quantity: newQty });
 
-                                    if (!retryError) success = true;
-                                    else errorDetails = retryError;
-                                } else if (prodError.message.includes('barcode')) {
-                                    // Deuxième tentative sans barcode si la colonne manque vraiment
+                                    if (!retryStock) success = true;
+                                    else errorDetails = retryStock;
+                                } else if (prodError.message.includes('barcode') || prodError.message.includes('category') || prodError.message.includes('image_url')) {
+                                    // Deuxième tentative sans les colonnes optionnelles si elles manquent dans le schéma cloud
                                     const retryPayload = { ...payload };
                                     delete retryPayload.barcode;
+                                    delete retryPayload.category;
+                                    delete retryPayload.image_url;
                                     const { error: retryProd } = await supabase.from('products').insert([retryPayload]);
                                     if (!retryProd || retryProd.code === '23505') {
                                         const { error: retryStock } = await supabase.from('stock').upsert({ product_id, quantity: newQty });
@@ -202,12 +204,13 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
                             .insert([payload]);
 
                         if (!apError || apError.code === '23505') success = true;
-                        else if (apError.message.includes('barcode') || apError.message.includes('image_url')) {
-                            // Si l'erreur mentionne spécifiquement barcode ou image_url, on retente sans eux
+                        else if (apError.message.includes('barcode') || apError.message.includes('image_url') || apError.message.includes('category')) {
+                            // Si l'erreur mentionne spécifiquement une colonne manquante, on retente sans les colonnes optionnelles
                             console.warn(`[Sync] Retrying ADD_PRODUCT without optional columns due to schema mismatch...`);
                             const retryPayload = { ...payload };
                             delete retryPayload.barcode;
                             delete retryPayload.image_url;
+                            delete retryPayload.category;
                             const { error: retryError } = await supabase.from('products').insert([retryPayload]);
                             if (!retryError || retryError.code === '23505') success = true;
                             else errorDetails = retryError;
