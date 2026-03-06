@@ -23,12 +23,15 @@ import { useProfileContext } from '@/context/ProfileContext';
 import { SupportCenter } from '@/components/SupportCenter';
 import { useConfirm } from '@/context/ConfirmContext';
 import { useProductContext } from '@/context/ProductContext';
+import { useSync } from '@/context/SyncContext';
 
 export default function ProfilePage() {
     const router = useRouter();
     const { user, logout, updatePin, updateLanguage } = useAuth();
     const { syncGlobalCatalog } = useProductContext();
+    const { syncAll, syncPendingCount, isSyncing } = useSync();
     const confirm = useConfirm();
+    const [isForceSyncing, setIsForceSyncing] = useState(false);
 
     // UI States
     const [isSupportOpen, setIsSupportOpen] = useState(false);
@@ -260,6 +263,34 @@ export default function ProfilePage() {
                             alert("Catalogue mis à jour avec les nouveaux produits !");
                         }}
                     />
+
+                    {/* Bouton Sync des données */}
+                    <button
+                        onClick={async () => {
+                            setIsForceSyncing(true);
+                            await syncAll();
+                            setTimeout(() => setIsForceSyncing(false), 2000);
+                        }}
+                        disabled={isForceSyncing || isSyncing}
+                        className={`w-full p-5 rounded-[28px] border flex items-center gap-4 transition-all active:scale-[0.98] shadow-sm ${isForceSyncing || isSyncing
+                                ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800'
+                                : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 hover:bg-slate-50'
+                            }`}
+                    >
+                        <div className={`p-3 rounded-2xl ${isForceSyncing || isSyncing ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600' : 'bg-slate-50 dark:bg-slate-800 text-slate-400'
+                            }`}>
+                            <RefreshCw size={20} className={isForceSyncing || isSyncing ? 'animate-spin' : ''} />
+                        </div>
+                        <div className="flex flex-col items-start">
+                            <span className={`font-black text-xs uppercase tracking-wider ${isForceSyncing || isSyncing ? 'text-emerald-600' : 'text-slate-900 dark:text-white'
+                                }`}>
+                                {isForceSyncing ? 'Synchronisation...' : 'Forcer la synchronisation'}
+                            </span>
+                            <p className="text-[9px] font-bold text-slate-400 mt-0.5 uppercase tracking-widest">
+                                {syncPendingCount > 0 ? `${syncPendingCount} opération(s) en attente` : 'Envoyer les données vers le cloud'}
+                            </p>
+                        </div>
+                    </button>
                 </section>
 
                 {/* Sign Out Section */}

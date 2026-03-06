@@ -115,11 +115,29 @@ export const HistoryProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
 
     useEffect(() => {
-        if (activeProfile) {
-            fetchHistory();
-        } else {
+        if (!activeProfile) {
             setHistory([]);
+            return;
         }
+
+        fetchHistory();
+
+        // Subscription temps-réel pour recevoir les changements depuis n'importe quel appareil
+        const subscription = supabase
+            .channel('transactions_changes')
+            .on('postgres_changes' as any, {
+                event: '*',
+                schema: 'public',
+                table: 'transactions',
+                filter: `store_id=eq.${activeProfile.id}`
+            }, () => {
+                fetchHistory();
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(subscription);
+        };
     }, [activeProfile]);
 
     const addTransaction = async (transaction: Omit<Transaction, 'id' | 'timestamp'>) => {

@@ -27,26 +27,31 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const processQueue = useCallback(async () => {
         if (!navigator.onLine || isSyncingRef.current) return;
 
-        const pending = await db.syncQueue.where('status').equals('PENDING').toArray();
+        // Traiter PENDING et retenter les ERROR (max 3 tentatives implicites)
+        const pending = await db.syncQueue
+            .where('status')
+            .anyOf(['PENDING', 'ERROR'])
+            .toArray();
         if (pending.length === 0) return;
 
         isSyncingRef.current = true;
         setIsSyncing(true);
-        console.log(`[Sync] Processing ${pending.length} pending actions...`);
+        console.log(`[Sync] Processing ${pending.length} pending/error actions...`);
 
         for (const item of pending) {
             try {
                 let success = false;
 
                 switch (item.action) {
-                    case 'ADD_TRANSACTION':
+                    case 'ADD_TRANSACTION': {
                         const { error: tError } = await supabase.from('transactions').insert([item.payload]);
-                        if (!tError) success = true;
+                        // Erreur 23505 = doublon déjà présent → considérons ça comme un succès
+                        if (!tError || tError.code === '23505') success = true;
+                        else console.warn('[Sync] ADD_TRANSACTION error:', tError.message);
                         break;
-                    case 'UPDATE_STOCK':
+                    }
+                    case 'UPDATE_STOCK': {
                         const { product_id, quantity, store_id } = item.payload;
-                        // For stock updates, we might need a more complex strategy (summing up)
-                        // but for now, we just push the increment/decrement
                         const { data: currentStock } = await supabase
                             .from('stock')
                             .select('quantity')
@@ -54,14 +59,16 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
                             .eq('store_id', store_id)
                             .single();
 
-                        const newQty = (currentStock?.quantity || 0) + quantity;
+                        const newQty = Math.max(0, (currentStock?.quantity || 0) + quantity);
                         const { error: sError } = await supabase
                             .from('stock')
                             .upsert({ product_id, store_id, quantity: newQty });
 
                         if (!sError) success = true;
+                        else console.warn('[Sync] UPDATE_STOCK error:', sError.message);
                         break;
-                    case 'MARK_PAID':
+                    }
+                    case 'MARK_PAID': {
                         const { id: tid } = item.payload;
                         const { error: pError } = await supabase
                             .from('transactions')
@@ -69,13 +76,16 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
                             .eq('id', tid);
                         if (!pError) success = true;
                         break;
-                    case 'ADD_PRODUCT':
+                    }
+                    case 'ADD_PRODUCT': {
                         const { error: apError } = await supabase
                             .from('products')
                             .insert([item.payload]);
-                        if (!apError) success = true;
+                        if (!apError || apError.code === '23505') success = true;
+                        else console.warn('[Sync] ADD_PRODUCT error:', apError.message);
                         break;
-                    case 'UPDATE_PRODUCT':
+                    }
+                    case 'UPDATE_PRODUCT': {
                         const { id: upid, ...productUpdates } = item.payload;
                         const { error: upError } = await supabase
                             .from('products')
@@ -83,7 +93,8 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
                             .eq('id', upid);
                         if (!upError) success = true;
                         break;
-                    case 'DELETE_PRODUCT':
+                    }
+                    case 'DELETE_PRODUCT': {
                         const { id: dpid } = item.payload;
                         const { error: dpError } = await supabase
                             .from('products')
@@ -91,6 +102,7 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
                             .eq('id', dpid);
                         if (!dpError) success = true;
                         break;
+                    }
                 }
 
                 if (success) {
