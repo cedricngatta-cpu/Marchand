@@ -27,12 +27,16 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const processQueue = useCallback(async () => {
         if (!navigator.onLine || isSyncingRef.current) return;
 
-        // Traiter PENDING et retenter les ERROR (max 3 tentatives implicites)
+        // Traiter PENDING et retenter les ERROR (ceux qui n'ont pas encore échoué définitivement)
         const pending = await db.syncQueue
             .where('status')
             .anyOf(['PENDING', 'ERROR'])
             .toArray();
-        if (pending.length === 0) return;
+
+        if (pending.length === 0) {
+            updatePendingCount();
+            return;
+        }
 
         isSyncingRef.current = true;
         setIsSyncing(true);
@@ -45,19 +49,20 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 switch (item.action) {
                     case 'ADD_TRANSACTION': {
                         const { error: tError } = await supabase.from('transactions').insert([item.payload]);
-                        // Erreur 23505 = doublon déjà présent → considérons ça comme un succès
                         if (!tError || tError.code === '23505') success = true;
                         else console.warn('[Sync] ADD_TRANSACTION error:', tError.message);
                         break;
                     }
                     case 'UPDATE_STOCK': {
                         const { product_id, quantity, store_id } = item.payload;
-                        const { data: currentStock } = await supabase
+
+                        // Utiliser upsert avec increment si possible, ou fetch-then-upsert
+                        const { data: currentStock, error: fetchError } = await supabase
                             .from('stock')
                             .select('quantity')
                             .eq('product_id', product_id)
                             .eq('store_id', store_id)
-                            .single();
+                            .maybeSingle(); // maybeSingle pour éviter l'erreur si vide
 
                         const newQty = Math.max(0, (currentStock?.quantity || 0) + quantity);
                         const { error: sError } = await supabase
@@ -107,8 +112,21 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
                 if (success) {
                     await db.syncQueue.delete(item.id!);
+                    // Mettre à jour le compteur en temps réel pour l'utilisateur
+                    updatePendingCount();
                 } else {
-                    await db.syncQueue.update(item.id!, { status: 'ERROR' });
+                    const nextRetry = (item.retry_count || 0) + 1;
+                    if (nextRetry >= 3) {
+                        await db.syncQueue.update(item.id!, {
+                            status: 'FAILED',
+                            retry_count: nextRetry
+                        });
+                    } else {
+                        await db.syncQueue.update(item.id!, {
+                            status: 'ERROR',
+                            retry_count: nextRetry
+                        });
+                    }
                 }
             } catch (err) {
                 console.error("[Sync] Error processing item:", err);

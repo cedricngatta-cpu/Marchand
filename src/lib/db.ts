@@ -40,7 +40,8 @@ export interface SyncQueue {
     id?: number;
     action: string;
     payload: any;
-    status: 'PENDING' | 'ERROR';
+    status: 'PENDING' | 'ERROR' | 'FAILED';
+    retry_count: number;
     created_at: number;
 }
 
