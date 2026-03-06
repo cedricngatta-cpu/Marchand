@@ -29,6 +29,7 @@ import { supabase } from '@/lib/supabase';
 export default function ProfilePage() {
     const router = useRouter();
     const { user, logout, updatePin, updateLanguage } = useAuth();
+    const { activeProfile } = useProfileContext();
     const { syncGlobalCatalog } = useProductContext();
     const { syncAll, syncPendingCount, isSyncing, isOnline } = useSync();
     const confirm = useConfirm();
