@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from './AuthContext';
 
@@ -31,7 +31,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const [profiles, setProfiles] = useState<StoreProfile[]>([]);
     const [activeProfileId, setActiveProfileId] = useState<string | null>(null);
 
-    const refreshProfiles = async () => {
+    const refreshProfiles = useCallback(async () => {
         if (!user) return;
 
         let query = supabase.from('stores').select('*, profiles:owner_id(full_name, role)');
@@ -81,16 +81,18 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 setActiveProfileId(mapped[0].id);
             }
         }
-    };
+    }, [user]);
 
     useEffect(() => {
         if (isAuthenticated && user) {
             refreshProfiles();
         } else {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setProfiles([]);
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setActiveProfileId(null);
         }
-    }, [isAuthenticated, user]);
+    }, [isAuthenticated, user, refreshProfiles]);
 
     const addProfile = async (profileData: Omit<StoreProfile, 'id' | 'createdAt'>) => {
         if (!user) return;

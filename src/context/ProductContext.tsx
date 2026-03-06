@@ -1,11 +1,12 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { products as initialProducts } from '../data/products';
 import { Package, LucideIcon } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useProfileContext } from './ProfileContext';
-import { db, LocalProduct } from '@/lib/db';
+import { useError } from './ErrorContext';
+import * as ProductService from '@/services/product.service';
 
 export interface Product {
     id: string;
@@ -23,338 +24,146 @@ export interface Product {
 
 interface ProductContextType {
     products: Product[];
-    addProduct: (product: Omit<Product, 'id'>, storeId?: string) => Promise<void>;
-    syncGlobalCatalog: () => Promise<void>;
-    updateProduct: (id: string, updates: Partial<Product>) => Promise<void>;
-    deleteProduct: (id: string) => Promise<void>;
-    resetProducts: () => Promise<void>;
+    isLoading: boolean;
+    addProduct: (product: Omit<Product, 'id'>, storeId?: string) => Promise<boolean>;
+    updateProduct: (id: string, updates: Partial<Product>) => Promise<boolean>;
+    deleteProduct: (id: string) => Promise<boolean>;
+    resetProducts: () => Promise<boolean>;
 }
 
 const ProductContext = createContext<ProductContextType | undefined>(undefined);
 
-export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const { activeProfile } = useProfileContext();
     const [products, setProducts] = useState<Product[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const { addError } = useError();
+
+    const mapRecordToProduct = useCallback((record: any): Product => ({
+        id: record.id,
+        name: record.name,
+        price: record.price,
+        imageUrl: record.image_url,
+        barcode: record.barcode,
+        color: record.color,
+        iconColor: record.icon_color,
+        audioName: record.audio_name,
+        category: record.category,
+        icon: initialProducts.find(ip => ip.name === record.name)?.icon || Package
+    }), []);
 
     const fetchProducts = useCallback(async () => {
         if (!activeProfile) return;
-
-        // 1. Lire d'abord depuis IndexedDB (store-specific + GLOBAL)
-        const localProducts = await db.products
-            .where('store_id')
-            .anyOf([activeProfile.id, 'GLOBAL'])
-            .toArray();
-
-        if (localProducts.length > 0) {
-            const mapped: Product[] = localProducts.map(p => ({
-                id: p.id,
-                name: p.name,
-                price: p.price,
-                imageUrl: p.image_url,
-                barcode: p.barcode,
-                color: p.color,
-                iconColor: p.icon_color,
-                audioName: p.audio_name,
-                category: p.category,
-                icon: initialProducts.find(ip => ip.name === p.name)?.icon || Package
-            }));
-            setProducts(mapped);
+        setIsLoading(true);
+        try {
+            const productsFromService = await ProductService.getProductsForProfile(activeProfile.id);
+            setProducts(productsFromService);
+        } catch (error: any) {
+            addError("Impossible de charger les produits.");
+        } finally {
+            setIsLoading(false);
         }
-
-        // 2. Refresh depuis Supabase si online
-        if (navigator.onLine) {
-            try {
-                // Récupérer les produits du store + les produits GLOBAL
-                const { data, error } = await supabase
-                    .from('products')
-                    .select('*')
-                    .or(`store_id.eq.${activeProfile.id},store_id.eq.GLOBAL`);
-
-                if (error) {
-                    console.warn('[ProductContext] Supabase fetch error:', error.message);
-                    return;
-                }
-
-                if (data && data.length > 0) {
-                    for (const p of data) {
-                        await db.products.put({
-                            id: p.id,
-                            name: p.name,
-                            price: p.price,
-                            image_url: p.image_url,
-                            barcode: p.barcode,
-                            color: p.color || '#F1F5F9',
-                            icon_color: p.icon_color || '#64748B',
-                            audio_name: p.audio_name || p.name,
-                            store_id: p.store_id,
-                            category: p.category || 'OTHER',
-                            synced: 1
-                        });
-                    }
-
-                    // Re-fetch local data after update (store + GLOBAL)
-                    const updatedLocal = await db.products
-                        .where('store_id')
-                        .anyOf([activeProfile.id, 'GLOBAL'])
-                        .toArray();
-
-                    const mapped: Product[] = updatedLocal.map(p => ({
-                        id: p.id,
-                        name: p.name,
-                        price: p.price,
-                        imageUrl: p.image_url,
-                        barcode: p.barcode,
-                        color: p.color,
-                        iconColor: p.icon_color,
-                        audioName: p.audio_name,
-                        category: p.category,
-                        icon: initialProducts.find(ip => ip.name === p.name)?.icon || Package
-                    }));
-                    setProducts(mapped);
-                } else if (data && data.length === 0 && localProducts.length === 0) {
-                    await seedCatalog();
-                }
-            } catch (err) {
-                console.error('[ProductContext] Fetch error:', err);
-            }
-        }
-    }, [activeProfile]);
-
-    // Déclaration retardée de seedCatalog pour éviter les dépendances circulaires
-    // seedCatalog appelle fetchProducts, et on l'appelle dans fetchProducts si vide.
-    const seedCatalog = useCallback(async () => {
-        if (!activeProfile) return;
-
-        console.log('[ProductContext] Seeding initial catalog via sync queue...');
-
-        // Au lieu d'un insert direct, on passe par la file de synchro pour chaque produit
-        for (const p of initialProducts) {
-            if (p.id === 'other') continue;
-
-            const id = crypto.randomUUID();
-            const localRecord: LocalProduct = {
-                id,
-                name: p.name,
-                price: p.price,
-                audio_name: p.audioName,
-                category: 'OTHER',
-                image_url: p.imageUrl,
-                color: p.color,
-                icon_color: 'text-slate-600',
-                store_id: activeProfile.id,
-                synced: 0
-            };
-
-            // 1. Sauvegarde locale
-            await db.products.put(localRecord);
-
-            // 2. Queue sync
-            await db.syncQueue.add({
-                action: 'ADD_PRODUCT',
-                payload: {
-                    id,
-                    store_id: activeProfile.id,
-                    name: p.name,
-                    price: p.price,
-                    color: p.color,
-                    icon_color: 'text-slate-600',
-                    audio_name: p.audioName,
-                    image_url: p.imageUrl,
-                    category: 'OTHER'
-                },
-                status: 'PENDING',
-                retry_count: 0,
-                created_at: Date.now()
-            });
-        }
-
-        console.log('[ProductContext] Global seed queued!');
-        await fetchProducts(); // fetchProducts est maintenant stable via useCallback
-    }, [activeProfile, fetchProducts]); // Dépend de activeProfile et fetchProducts
+    }, [activeProfile, addError]);
 
     useEffect(() => {
-        let isMounted = true;
-        let subscription: ReturnType<typeof supabase.channel> | null = null;
-
-        if (activeProfile) {
-            fetchProducts();
-
-            // Real-time subscription to product changes - FILTERED by store_id
-            subscription = supabase
-                .channel(`product_changes_${activeProfile.id}`)
-                .on(
-                    'postgres_changes' as any,
-                    {
-                        event: '*',
-                        table: 'products',
-                        schema: 'public',
-                        filter: `store_id=eq.${activeProfile.id}`
-                    },
-                    () => {
-                        if (isMounted) {
-                            console.log("[ProductContext] Realtime update received");
-                            fetchProducts();
-                        }
-                    }
-                )
-                .on(
-                    'postgres_changes' as any,
-                    {
-                        event: '*',
-                        table: 'products',
-                        schema: 'public',
-                        filter: `store_id=eq.GLOBAL`
-                    },
-                    () => {
-                        if (isMounted) fetchProducts();
-                    }
-                )
-                .subscribe();
-        } else {
+        if (!activeProfile) {
             setProducts([]);
+            return;
         }
+
+        fetchProducts();
+
+        const handleRealtimeUpdate = async (payload: any) => {
+            await ProductService.processRealtimeEvent(payload);
+            const { eventType, new: newRecord, old: oldRecord } = payload;
+            switch (eventType) {
+                case 'INSERT':
+                    setProducts(prev => [...prev.filter(p => p.id !== newRecord.id), mapRecordToProduct(newRecord)]);
+                    break;
+                case 'UPDATE':
+                    setProducts(prev => prev.map(p => p.id === newRecord.id ? mapRecordToProduct(newRecord) : p));
+                    break;
+                case 'DELETE':
+                     if (oldRecord && oldRecord.id) {
+                        setProducts(prev => prev.filter(p => p.id !== oldRecord.id));
+                    }
+                    break;
+                default:
+                    fetchProducts();
+                    break;
+            }
+        };
+        
+        const subscription = supabase
+            .channel(`product_changes_${activeProfile.id}`)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'products', filter: `store_id=in.(${activeProfile.id},GLOBAL)` }, handleRealtimeUpdate)
+            .subscribe();
 
         return () => {
-            isMounted = false;
-            if (subscription) {
-                // Remove channel to prevent memory leaks / max connection errors
-                supabase.removeChannel(subscription).catch(console.error);
-            }
+            supabase.removeChannel(subscription).catch(console.error);
         };
-    }, [activeProfile, fetchProducts]); // Désormais fetchProducts est TRES stable via useCallback
+    }, [activeProfile, fetchProducts, mapRecordToProduct]);
 
-    const syncGlobalCatalog = async () => {
-        if (!navigator.onLine) return;
-
-        // On récupère les IDs déjà présents en GLOBAL pour éviter les doublons
-        const { data: existingGlobal } = await supabase
-            .from('products')
-            .select('name')
-            .eq('store_id', 'GLOBAL');
-
-        const existingNames = new Set(existingGlobal?.map(p => p.name) || []);
-
-        const globalProducts = initialProducts
-            .filter(p => p.id !== 'other' && !existingNames.has(p.name))
-            .map(p => ({
-                store_id: 'GLOBAL',
-                name: p.name,
-                price: p.price,
-                image_url: p.imageUrl,
-                color: p.color,
-                icon_color: 'text-slate-600',
-                audio_name: p.audioName
-            }));
-
-        if (globalProducts.length > 0) {
-            const { error } = await supabase.from('products').insert(globalProducts);
-            if (!error) {
-                console.log("Global catalog updated!");
-                await fetchProducts();
-            }
-        }
-    };
-
-    const addProduct = async (product: Omit<Product, 'id'>, storeId?: string) => {
-        if (!activeProfile && !storeId) return;
-
+    const addProduct = async (product: Omit<Product, 'id'>, storeId?: string): Promise<boolean> => {
+        if (!activeProfile && !storeId) return false;
         const targetStoreId = storeId || activeProfile!.id;
-        const id = crypto.randomUUID();
-        const localRecord: LocalProduct = {
-            id,
-            name: product.name,
-            price: product.price,
-            audio_name: product.audioName,
-            category: 'OTHER',
-            barcode: product.barcode,
-            image_url: product.imageUrl,
-            color: product.color,
-            icon_color: product.iconColor,
-            store_id: targetStoreId,
-            synced: 0
-        };
-
-        // 1. Sauvegarde locale
-        await db.products.add(localRecord);
-
-        // 2. Queue sync
-        await db.syncQueue.add({
-            action: 'ADD_PRODUCT',
-            payload: {
-                id,
-                store_id: targetStoreId,
-                name: product.name,
-                price: product.price,
-                color: product.color,
-                icon_color: product.iconColor,
-                audio_name: product.audioName,
-                image_url: product.imageUrl,
-                barcode: product.barcode,
-                category: product.category || 'OTHER'
-            },
-            status: 'PENDING',
-            retry_count: 0,
-            created_at: Date.now()
-        });
-
-        await fetchProducts();
-
-        if (navigator.onLine) {
-            window.dispatchEvent(new Event('online'));
+        const tempId = crypto.randomUUID();
+        const newProductForUI: Product = { id: tempId, ...product, icon: initialProducts.find(ip => ip.name === product.name)?.icon || Package };
+        setProducts(prev => [...prev, newProductForUI]);
+        try {
+            await ProductService.addProduct(product, targetStoreId);
+            return true;
+        } catch (error: any) {
+            addError(error.message || "Impossible d'ajouter le produit.");
+            setProducts(prev => prev.filter(p => p.id !== tempId));
+            return false;
         }
     };
 
-    const updateProduct = async (id: string, updates: Partial<Product>) => {
-        // En vrai: update local + queue
-        await db.products.update(id, {
-            name: updates.name,
-            price: updates.price,
-            audio_name: updates.audioName,
-            barcode: updates.barcode,
-            image_url: updates.imageUrl,
-            color: updates.color,
-            icon_color: updates.iconColor,
-            synced: 0
-        });
-
-        await db.syncQueue.add({
-            action: 'UPDATE_PRODUCT',
-            payload: { id, ...updates },
-            status: 'PENDING',
-            retry_count: 0,
-            created_at: Date.now()
-        });
-
-        await fetchProducts();
+    const updateProduct = async (id: string, updates: Partial<Product>): Promise<boolean> => {
+        const originalProducts = products;
+        const productToUpdate = originalProducts.find(p => p.id === id);
+        if (!productToUpdate) return false;
+        setProducts(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
+        try {
+            await ProductService.updateProduct(id, updates);
+            return true;
+        } catch (error: any) {
+            addError(error.message || "Impossible de mettre à jour le produit.");
+            setProducts(originalProducts);
+            return false;
+        }
     };
 
-    const deleteProduct = async (id: string) => {
-        await db.products.delete(id);
-        await db.syncQueue.add({
-            action: 'DELETE_PRODUCT',
-            payload: { id },
-            status: 'PENDING',
-            retry_count: 0,
-            created_at: Date.now()
-        });
-        await fetchProducts();
+    const deleteProduct = async (id: string): Promise<boolean> => {
+        const originalProducts = products;
+        setProducts(prev => prev.filter(p => p.id !== id));
+        try {
+            await ProductService.deleteProduct(id);
+            return true;
+        } catch (error: any) {
+            addError(error.message || "Impossible de supprimer le produit.");
+            setProducts(originalProducts);
+            return false;
+        }
     };
 
-    const resetProducts = async () => {
-        if (!activeProfile) return;
-        await db.products.where('store_id').equals(activeProfile.id).delete();
-        await fetchProducts();
+    const resetProducts = async (): Promise<boolean> => {
+        if (!activeProfile) return false;
+        const originalProducts = products;
+        setProducts(products.filter(p => p.category === 'GLOBAL'));
+        try {
+            await ProductService.resetProductsStore(activeProfile.id);
+            return true;
+        } catch (error: any) {
+            addError(error.message || "La réinitialisation a échoué.");
+            setProducts(originalProducts);
+            return false;
+        }
     };
-
+    
     return (
-        <ProductContext.Provider value={{
-            products,
-            addProduct,
-            syncGlobalCatalog,
-            updateProduct,
-            deleteProduct,
-            resetProducts
-        }}>
+        <ProductContext.Provider value={{ products, isLoading, addProduct, updateProduct, deleteProduct, resetProducts }}>
             {children}
         </ProductContext.Provider>
     );
@@ -362,7 +171,7 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
 export const useProductContext = () => {
     const context = useContext(ProductContext);
-    if (!context) {
+    if (context === undefined) {
         throw new Error('useProductContext must be used within a ProductProvider');
     }
     return context;

@@ -39,6 +39,7 @@ export interface LocalStock {
 export interface SyncQueue {
     id?: number;
     action: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     payload: any;
     status: 'PENDING' | 'ERROR' | 'FAILED';
     retry_count: number;

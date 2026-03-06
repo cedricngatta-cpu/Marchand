@@ -26,10 +26,16 @@ export default function StockPage() {
     const filteredProducts = activeCategory === 'TOUS'
         ? products
         : products.filter(p => {
+            // Priorité 1: Utiliser la catégorie stricte si elle est définie
+            if (p.category && p.category !== 'OTHER' && p.category !== '') {
+                return p.category === activeCategory;
+            }
+
+            // Priorité 2: Fallback textuel pour les produits legacy
             const name = p.name.toUpperCase();
-            const isVivres = name.includes('RIZ') || name.includes('HUILE') || name.includes('LAIT') || name.includes('ATTIÉKÉ') || name.includes('PAIN') || name.includes('SUCRE') || name.includes('VIVRE');
-            const isBoisson = name.includes('EAU') || name.includes('CAFÉ') || name.includes('JUS') || name.includes('BOISSON') || name.includes('BIÈRE') || name.includes('VIN');
-            const isEntretien = name.includes('SAVON') || name.includes('JAVEL') || name.includes('PAPIER') || name.includes('ENTRETIEN') || name.includes('LESSIVE');
+            const isVivres = name.includes('RIZ') || name.includes('HUILE') || name.includes('LAIT') || name.includes('ATTIÉKÉ') || name.includes('PAIN') || name.includes('SUCRE') || name.includes('VIVRE') || name.includes('MAGGI') || name.includes('TOMATE') || name.includes('OIGNON');
+            const isBoisson = name.includes('EAU') || name.includes('CAFÉ') || name.includes('JUS') || name.includes('BOISSON') || name.includes('BIÈRE') || name.includes('VIN') || name.includes('SUCRERIE') || name.includes('SODA');
+            const isEntretien = name.includes('SAVON') || name.includes('JAVEL') || name.includes('PAPIER') || name.includes('ENTRETIEN') || name.includes('LESSIVE') || name.includes('OMO') || name.includes('ÉPONGE');
 
             if (activeCategory === 'VIVRES') return isVivres;
             if (activeCategory === 'BOISSON') return isBoisson;

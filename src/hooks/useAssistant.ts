@@ -13,7 +13,7 @@ export const useAssistant = () => {
     const { products } = useProductContext();
     const { speak, listen, isSpeaking, isListening, transcript, clearTranscript, stopSpeaking } = useVoice();
     const { updateStock, getStockLevel } = useStock();
-    const { history, addTransaction, markAsPaid, markAllAsPaid } = useHistory();
+    const { history, addTransaction, markAllAsPaid } = useHistory();
     const { items, addItem, removeItem } = useCart();
 
     // Refs stables pour éviter les cycles de re-renders dans l'effet de salutation
@@ -23,7 +23,6 @@ export const useAssistant = () => {
     useEffect(() => { stopSpeakingRef.current = stopSpeaking; }, [stopSpeaking]);
 
     const userName = user?.name?.split(' ')[0] || 'Marchand';
-    const userRole = user?.role || 'MERCHANT';
 
     const getGreeting = () => {
         const hour = new Date().getHours();
@@ -52,7 +51,7 @@ export const useAssistant = () => {
         // Pre-processing : Corriger les erreurs de transcription courantes (French quirks)
         const normalize = (str: string) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
-        let processedText = lowerText
+        const processedText = lowerText
             .replace(/\bvingt[\s-]deux\s+rue\b/g, 'vend 2 riz')
             .replace(/\bvingt[\s-]deux\b/g, 'vend 2')
             .replace(/\bvingt[\s-]trois\b/g, 'vend 3')
@@ -63,8 +62,7 @@ export const useAssistant = () => {
             .replace(/\brue\b/g, 'riz')
             .replace(/\bvent\b/g, 'vend'); // Correction cruciale pour l'utilisateur
 
-        const lowerTextProcessed = processedText;
-        const normText = normalize(lowerTextProcessed);
+        const normText = normalize(processedText);
 
         if (products.length === 0) {
             speak(`Mon catalogue est encore vide ${userName}. Va dans ton profil pour le mettre à jour.`);
@@ -100,9 +98,9 @@ export const useAssistant = () => {
         if (normText.includes('paye') || normText.includes('payer') || normText.includes('regle') || normText.includes('donne')) {
             // Uniquement si le contexte est une dette (contient "dette" ou "credit") ou un nom de client
             if (normText.includes('dette') || normText.includes('credit')) {
-                let clientMatch = lowerTextProcessed.match(/([a-zA-Záàâäãåçéèêëíìîïñóòôöõúùûüýÿ]+)\s+(?:a|me)\s+(?:tout\s+|enfin\s+)?(?:payé|payer|paye|réglé)/i);
+                let clientMatch = processedText.match(/([a-zA-Záàâäãåçéèêëíìîïñóòôöõúùûüýÿ]+)\s+(?:a|me)\s+(?:tout\s+|enfin\s+)?(?:payé|payer|paye|réglé)/i);
                 if (!clientMatch) {
-                    clientMatch = lowerTextProcessed.match(/(?:payé|payer|paye|réglé|donne)\s+(?:sa\s+dette\s+)?(?:à|pour|a)\s+([a-zA-Záàâäãåçéèêëíìîïñóòôöõúùûüýÿ]+)/i);
+                    clientMatch = processedText.match(/(?:payé|payer|paye|réglé|donne)\s+(?:sa\s+dette\s+)?(?:à|pour|a)\s+([a-zA-Záàâäãåçéèêëíìîïñóòôöõúùûüýÿ]+)/i);
                 }
 
                 const clientName = clientMatch ? (clientMatch[1]).trim() : undefined;
@@ -204,7 +202,7 @@ export const useAssistant = () => {
             quantity = letterNumber;
         }
 
-        const priceMatch = lowerTextProcessed.match(/(?:à|pour|f|francs|cfa|prix)?\s*(\d{2,}(?:[.,]\d+)?)\s*(?:francs|f|cfa|balle|mille)?/i);
+        const priceMatch = processedText.match(/(?:à|pour|f|francs|cfa|prix)?\s*(\d{2,}(?:[.,]\d+)?)\s*(?:francs|f|cfa|balle|mille)?/i);
         if (priceMatch) {
             const parsedPrice = parseInt(priceMatch[1].replace(/[,.]/g, ''));
             if (parsedPrice >= 50) customPrice = parsedPrice;
@@ -219,22 +217,22 @@ export const useAssistant = () => {
             price: finalProduct.price,
             isVendrePage: pathname === '/vendre'
         });
-        const isSaleIntent = lowerTextProcessed.includes('vendu') ||
-            lowerTextProcessed.includes('vend') ||
-            lowerTextProcessed.includes('vends') ||
-            lowerTextProcessed.includes('vent') ||
-            lowerTextProcessed.includes('vens') ||
-            lowerTextProcessed.includes('donne') ||
-            lowerTextProcessed.includes('donnes');
+        const isSaleIntent = processedText.includes('vendu') ||
+            processedText.includes('vend') ||
+            processedText.includes('vends') ||
+            processedText.includes('vent') ||
+            processedText.includes('vens') ||
+            processedText.includes('donne') ||
+            processedText.includes('donnes');
 
-        const isAddIntent = lowerTextProcessed.includes('ajoute') ||
-            lowerTextProcessed.includes('reçu') ||
-            lowerTextProcessed.includes('livré') ||
-            lowerTextProcessed.includes('prend');
+        const isAddIntent = processedText.includes('ajoute') ||
+            processedText.includes('reçu') ||
+            processedText.includes('livré') ||
+            processedText.includes('prend');
 
-        const isRemoveIntent = lowerTextProcessed.includes('retire') ||
-            lowerTextProcessed.includes('enlève') ||
-            lowerTextProcessed.includes('supprime');
+        const isRemoveIntent = processedText.includes('retire') ||
+            processedText.includes('enlève') ||
+            processedText.includes('supprime');
 
         if (isAddIntent) {
             if (pathname === '/vendre') {
@@ -253,10 +251,10 @@ export const useAssistant = () => {
             }
         }
         else if (isSaleIntent) {
-            const isDebtCommand = lowerTextProcessed.includes('crédit') || lowerTextProcessed.includes('dette');
+            const isDebtCommand = processedText.includes('crédit') || processedText.includes('dette');
 
             // Regex plus costaude pour le client (capte jusqu'à la fin de la phrase ou un mot clé)
-            const clientMatch = lowerTextProcessed.match(/(?:à|pour|a)\s+([a-zA-Z\s]+?)(?:\s+(?:en|sur|avec|pour|à|a|termine|fini|confirme)|$)/i);
+            const clientMatch = processedText.match(/(?:à|pour|a)\s+([a-zA-Z\s]+?)(?:\s+(?:en|sur|avec|pour|à|a|termine|fini|confirme)|$)/i);
             let clientName = undefined;
 
             if (clientMatch) {
@@ -287,7 +285,7 @@ export const useAssistant = () => {
                 }));
 
                 // SI intention de vente ET client précisé -> On valide automatiquement
-                if (clientName || lowerTextProcessed.includes('termine') || lowerTextProcessed.includes('fini') || lowerTextProcessed.includes('confirme')) {
+                if (clientName || processedText.includes('termine') || processedText.includes('fini') || processedText.includes('confirme')) {
                     setTimeout(() => window.dispatchEvent(new Event('assistant-finish-sale')), 1500);
                 }
             } else {

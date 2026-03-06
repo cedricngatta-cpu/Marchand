@@ -37,6 +37,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useNotifications } from '@/context/NotificationContext';
 import { useConfirm } from '@/context/ConfirmContext';
 import { supabase } from '@/lib/supabase';
+import { syncGlobalCatalog } from '@/services/product.service';
 import { AddProductModal } from '@/components/AddProductModal';
 
 type AdminTab = 'OVERVIEW' | 'PROFILES' | 'PRODUCTS' | 'HISTORY' | 'SYSTEM' | 'NOTIFICATIONS' | 'USERS';
@@ -44,7 +45,7 @@ type AdminTab = 'OVERVIEW' | 'PROFILES' | 'PRODUCTS' | 'HISTORY' | 'SYSTEM' | 'N
 export default function ProfessionalAdminPage() {
     const router = useRouter();
     const { user, isAuthenticated } = useAuth();
-    const { products, addProduct, deleteProduct, syncGlobalCatalog } = useProductContext();
+    const { products, addProduct, deleteProduct } = useProductContext();
     const { history, clearHistory } = useHistory();
     const { stock } = useStock();
     const { profiles, activeProfile, addProfile, deleteProfile, setActiveProfile } = useProfileContext();

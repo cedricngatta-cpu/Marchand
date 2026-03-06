@@ -71,6 +71,7 @@ export const StockProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         let subscription: ReturnType<typeof supabase.channel> | null = null;
 
         if (activeProfile) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             fetchStock();
 
             // Real-time subscription to stock changes - FILTERED by store_id

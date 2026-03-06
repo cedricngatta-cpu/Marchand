@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 
 interface VoiceContextType {
     isSpeaking: boolean;
@@ -18,6 +18,7 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const [isSpeaking, setIsSpeaking] = useState(false);
     const [isListening, setIsListening] = useState(false);
     const [transcript, setTranscript] = useState('');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const recognitionRef = useRef<any>(null);
 
     // Refs to break circular dependency
@@ -35,12 +36,12 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
             if (recognitionRef.current) {
                 try {
-                    recognitionRef.current.abort();
-                } catch (e) { }
+                    recognitionRef.current?.abort();
+                } catch { }
             }
 
-            const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-            const recognition = new SpeechRecognition();
+            const SpeechRecognitionConstructor = (window as unknown as { webkitSpeechRecognition: any; SpeechRecognition: any }).webkitSpeechRecognition || (window as unknown as { SpeechRecognition: any }).SpeechRecognition;
+            const recognition = new SpeechRecognitionConstructor();
             recognitionRef.current = recognition;
 
             recognition.lang = 'fr-FR';
@@ -50,7 +51,7 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             recognition.onstart = () => setIsListening(true);
             recognition.onend = () => setIsListening(false);
 
-            recognition.onerror = (event: any) => {
+            recognition.onerror = (event: { error: string }) => {
                 setIsListening(false);
                 if (event.error === 'not-allowed') {
                     speakRef.current?.("Je ne peux pas t'entendre, tu dois autoriser le microphone.");
@@ -61,7 +62,7 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 }
             };
 
-            recognition.onresult = (event: any) => {
+            recognition.onresult = (event: { results: { transcript: string }[][] }) => {
                 const text = event.results[0][0].transcript;
                 setTranscript(text);
                 speakRef.current?.(`J'ai entendu : ${text}`);
@@ -73,7 +74,9 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
     }, []);
 
-    listenRef.current = listen;
+    useEffect(() => {
+        listenRef.current = listen;
+    }, [listen]);
 
     const speak = useCallback((text: string, autoListen: boolean = false) => {
         if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
@@ -99,7 +102,9 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
     }, []);
 
-    speakRef.current = speak;
+    useEffect(() => {
+        speakRef.current = speak;
+    }, [speak]);
 
     const clearTranscript = useCallback(() => {
         setTranscript('');

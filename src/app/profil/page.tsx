@@ -25,12 +25,13 @@ import { useConfirm } from '@/context/ConfirmContext';
 import { useProductContext } from '@/context/ProductContext';
 import { useSync } from '@/context/SyncContext';
 import { supabase } from '@/lib/supabase';
+import { syncGlobalCatalog } from '@/services/product.service';
 
 export default function ProfilePage() {
     const router = useRouter();
     const { user, logout, updatePin, updateLanguage } = useAuth();
     const { activeProfile } = useProfileContext();
-    const { syncGlobalCatalog } = useProductContext();
+    // syncGlobalCatalog is now imported directly
     const { syncAll, syncPendingCount, isSyncing, isOnline, lastSyncError } = useSync();
     const confirm = useConfirm();
     const [isForceSyncing, setIsForceSyncing] = useState(false);

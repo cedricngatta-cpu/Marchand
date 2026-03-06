@@ -222,7 +222,7 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     case 'UPDATE_PRODUCT': {
                         const { id: upid, ...updates } = item.payload;
                         // Mapper camelCase vers snake_case pour les mises à jour
-                        const mappedUpdates: any = {};
+                        const mappedUpdates: Record<string, unknown> = {};
                         if (updates.name) mappedUpdates.name = updates.name;
                         if (updates.price) mappedUpdates.price = updates.price;
                         if (updates.audioName) mappedUpdates.audio_name = updates.audioName;
@@ -295,8 +295,10 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
         window.addEventListener('offline', handleOffline);
 
         // Initial sync: process queue immediately on startup
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         updatePendingCount();
         if (typeof navigator !== 'undefined' && navigator.onLine) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             processQueue();
         }
 

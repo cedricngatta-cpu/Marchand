@@ -13,32 +13,37 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { NotificationProvider } from "@/context/NotificationContext";
 import { SyncProvider } from "@/context/SyncContext";
 import { ConfirmProvider } from '@/context/ConfirmContext';
+import { ErrorProvider } from '@/context/ErrorContext';
+import { ErrorToast } from './ErrorToast';
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
     return (
-        <AuthProvider>
-            <ConfirmProvider>
-                <ProtectedRoute>
-                    <ProfileProvider>
-                        <ProductProvider>
-                            <VoiceProvider>
-                                <NotificationProvider>
-                                    <SyncProvider>
-                                        <ConnectivityIndicator />
-                                        <StockProvider>
-                                            <HistoryProvider>
-                                                <CartProvider>
-                                                    {children}
-                                                </CartProvider>
-                                            </HistoryProvider>
-                                        </StockProvider>
-                                    </SyncProvider>
-                                </NotificationProvider>
-                            </VoiceProvider>
-                        </ProductProvider>
-                    </ProfileProvider>
-                </ProtectedRoute>
-            </ConfirmProvider>
-        </AuthProvider>
+        <ErrorProvider>
+            <AuthProvider>
+                <ConfirmProvider>
+                    <ProtectedRoute>
+                        <ProfileProvider>
+                            <ProductProvider>
+                                <VoiceProvider>
+                                    <NotificationProvider>
+                                        <SyncProvider>
+                                            <ConnectivityIndicator />
+                                            <StockProvider>
+                                                <HistoryProvider>
+                                                    <CartProvider>
+                                                        <ErrorToast />
+                                                        {children}
+                                                    </CartProvider>
+                                                </HistoryProvider>
+                                            </StockProvider>
+                                        </SyncProvider>
+                                    </NotificationProvider>
+                                </VoiceProvider>
+                            </ProductProvider>
+                        </ProfileProvider>
+                    </ProtectedRoute>
+                </ConfirmProvider>
+            </AuthProvider>
+        </ErrorProvider>
     );
 }
