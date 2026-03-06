@@ -59,7 +59,8 @@ export const useAssistant = () => {
             .replace(/\b23\s+riz\b/g, 'vend 3 riz')
             .replace(/\b22\b/g, 'vend 2')
             .replace(/\b23\b/g, 'vend 3')
-            .replace(/\brue\b/g, 'riz'); // Par précaution, rue est souvent entendu pour riz
+            .replace(/\brue\b/g, 'riz')
+            .replace(/\bvent\b/g, 'vend'); // Correction cruciale pour l'utilisateur
 
         const lowerTextProcessed = processedText;
         const normText = normalize(lowerTextProcessed);
@@ -96,46 +97,40 @@ export const useAssistant = () => {
 
         // --- SECTION 2: GESTION DES DETTES ---
         if (normText.includes('paye') || normText.includes('payer') || normText.includes('regle') || normText.includes('donne')) {
-            // "Fatou a payé" ou "Fatou a tout payé" ou "Fatou a réglé"
-            let clientMatch = lowerTextProcessed.match(/([a-zA-Záàâäãåçéèêëíìîïñóòôöõúùûüýÿ]+)\s+(?:a|me)\s+(?:tout\s+|enfin\s+)?(?:payé|payer|paye|réglé)/i);
-
-            // "Payé sa dette pour Fatou" ou "Payé à Fatou"
-            if (!clientMatch) {
-                clientMatch = lowerTextProcessed.match(/(?:payé|payer|paye|réglé|donne)\s+(?:sa\s+dette\s+)?(?:à|pour|a)\s+([a-zA-Záàâäãåçéèêëíìîïñóòôöõúùûüýÿ]+)/i);
-            }
-
-            const clientName = clientMatch ? (clientMatch[1]).trim() : undefined;
-
-            if (clientName && clientName.toLowerCase() !== 'dette' && clientName.toLowerCase() !== 'sa') {
-                const clientDebts = history.filter(t => t.status === 'DETTE' && t.clientName?.toLowerCase() === clientName.toLowerCase());
-                if (clientDebts.length > 0) {
-                    const totalPaid = clientDebts.reduce((acc, t) => acc + t.price, 0);
-                    markAllAsPaid(clientName);
-                    speak(`C'est fait ${userName}. J'ai marqué que ${clientName} a tout payé, soit ${totalPaid} francs.`);
-                    return;
-                } else {
-                    speak(`${userName}, je ne trouve pas de dette pour ${clientName}.`);
-                    return;
+            // Uniquement si le contexte est une dette (contient "dette" ou "credit") ou un nom de client
+            if (normText.includes('dette') || normText.includes('credit')) {
+                let clientMatch = lowerTextProcessed.match(/([a-zA-Záàâäãåçéèêëíìîïñóòôöõúùûüýÿ]+)\s+(?:a|me)\s+(?:tout\s+|enfin\s+)?(?:payé|payer|paye|réglé)/i);
+                if (!clientMatch) {
+                    clientMatch = lowerTextProcessed.match(/(?:payé|payer|paye|réglé|donne)\s+(?:sa\s+dette\s+)?(?:à|pour|a)\s+([a-zA-Záàâäãåçéèêëíìîïñóòôöõúùûüýÿ]+)/i);
                 }
-            } else if (lowerTextProcessed.includes('payé') || lowerTextProcessed.includes('paye')) {
-                speak("Je n'ai pas compris qui a payé sa dette.");
-                return;
+
+                const clientName = clientMatch ? (clientMatch[1]).trim() : undefined;
+
+                if (clientName && clientName.toLowerCase() !== 'dette' && clientName.toLowerCase() !== 'sa') {
+                    const clientDebts = history.filter(t => t.status === 'DETTE' && t.clientName?.toLowerCase() === clientName.toLowerCase());
+                    if (clientDebts.length > 0) {
+                        const totalPaid = clientDebts.reduce((acc, t) => acc + t.price, 0);
+                        markAllAsPaid(clientName);
+                        speak(`C'est fait ${userName}. J'ai marqué que ${clientName} a tout payé, soit ${totalPaid} francs.`);
+                        return;
+                    }
+                }
             }
         }
 
-        if (products.length === 0) {
-            speak(`Mon catalogue est encore vide ${userName}. Va dans ton profil pour le mettre à jour.`);
-            return;
-        }
+        // --- SECTION 3: ACTIONS SUR LES PRODUITS ---
 
         // 2. Identifier le produit (Détection ultra-flexible avec phonétique)
         const genericWords = ['sac', 'paquet', 'boite', 'boîte', 'bidon', 'litre', 'unité', 'morceau', 'kilo', 'gramme', 'de', 'le', 'la', 'les', 'des', 'un', 'une'];
         const phonetics: Record<string, string[]> = {
-            'riz': ['rz', 'ri', 'ry', 'rise', 'ris', 'rue', 'roue'],
-            'huile': ['uil', 'oile', 'huil'],
-            'sucre': ['suc', 'suk', 'sucre'],
-            'biscuit': ['biscui', 'biscuite', 'biski'],
-            'attieke': ['atieke', 'adjeke', 'ateke']
+            'riz': ['rz', 'ri', 'ry', 'rise', 'ris', 'rue', 'roue', 'rize'],
+            'huile': ['uil', 'oile', 'huil', 'wil'],
+            'sucre': ['suc', 'suk', 'sucre', 'suker'],
+            'biscuit': ['biscui', 'biscuite', 'biski', 'biscu'],
+            'attieke': ['atieke', 'adjeke', 'ateke', 'adjé'],
+            'savon': ['savo', 'saven', 'sabou', 'sabun'],
+            'eau': ['o', 'eaux'],
+            'lait': ['le', 'lay']
         };
 
         const sortedProducts = [...products].sort((a, b) => b.name.length - a.name.length);
@@ -152,16 +147,12 @@ export const useAssistant = () => {
             // 1. Match Direct ou Complet
             if (normText.includes(nName) || normText.includes(nAudio)) return true;
 
-            // 2. Match par mots-clés et racines (Gestion des pluriels et fautes)
+            // 2. Match par mots-clés et racines
             return wordsInText.some(word => {
-                // Check direct match or startsWith
                 if (allKeywords.some(kw => word.startsWith(kw) || kw.startsWith(word))) return true;
-
-                // Gestion générique des terminaisons (s, x, t, e muets)
                 const cleanWord = word.replace(/[sxte]$/, '');
                 if (cleanWord.length >= 3 && allKeywords.some(kw => kw.startsWith(cleanWord) || cleanWord.startsWith(kw.replace(/[sxte]$/, '')))) return true;
 
-                // Check phonetic aliases
                 return allKeywords.some(kw => {
                     const aliases = phonetics[kw] || [];
                     return aliases.some(alias => word.includes(alias) || alias.includes(word));
@@ -170,11 +161,14 @@ export const useAssistant = () => {
         });
 
         if (!product) {
-            speak(`Désolé ${userName}, je n'ai pas trouvé ce produit dans ton catalogue. J'ai entendu "${text}".`, true);
+            // Si le texte contient "vends" ou "ajoute" mais pas de produit, on demande précision
+            if (normText.includes('vend') || normText.includes('vendre') || normText.includes('ajoute')) {
+                speak(`Je n'ai pas trouvé le produit dans ton catalogue ${userName}. J'ai entendu "${text}". Peux-tu répéter ?`, true);
+            }
             return;
         }
 
-        // 3. Identifier la quantité et le prix
+        // 3. Identifier la quantité
         const numberMap: Record<string, number> = {
             'un': 1, 'une': 1, 'deux': 2, 'duex': 2, 'trois': 3, 'quatre': 4, 'cinq': 5,
             'six': 6, 'sept': 7, 'huit': 8, 'neuf': 9, 'dix': 10
@@ -183,19 +177,16 @@ export const useAssistant = () => {
         let quantity = 1;
         let customPrice: number | undefined = undefined;
 
-        // Tenter de trouver des chiffres
         const allDigits = Array.from(normText.matchAll(/(\d+)/g)).map(m => parseInt(m[1]));
-
-        // Tenter de trouver des nombres en lettres
         const words = normText.split(/[\s']+/);
-        const letterNumber = words.find(w => numberMap[w]) ? numberMap[words.find(w => numberMap[w])!] : null;
+        const letterNumberKey = words.find(w => numberMap[w]);
+        const letterNumber = letterNumberKey ? numberMap[letterNumberKey] : null;
 
         if (allDigits.length > 0) {
             if (allDigits.length === 1) {
                 if (allDigits[0] >= 50) customPrice = allDigits[0];
                 else quantity = allDigits[0];
             } else {
-                // Si on a 2 nombres, le premier est souvent la quantité, le 2ème le prix (ou inversement si 1er > 50)
                 if (allDigits[0] < 50) {
                     quantity = allDigits[0];
                     if (allDigits[1] >= 50) customPrice = allDigits[1];
@@ -215,12 +206,27 @@ export const useAssistant = () => {
         }
 
         const finalProduct = { ...product };
-        if (customPrice !== undefined) {
-            finalProduct.price = customPrice;
-        }
+        if (customPrice !== undefined) finalProduct.price = customPrice;
 
         // 4. Identifier l'action produit
-        if (lowerTextProcessed.includes('ajoute') || lowerTextProcessed.includes('reçu') || lowerTextProcessed.includes('livré') || lowerTextProcessed.includes('prend')) {
+        const isSaleIntent = lowerTextProcessed.includes('vendu') ||
+            lowerTextProcessed.includes('vend') ||
+            lowerTextProcessed.includes('vends') ||
+            lowerTextProcessed.includes('vent') ||
+            lowerTextProcessed.includes('vens') ||
+            lowerTextProcessed.includes('donne') ||
+            lowerTextProcessed.includes('donnes');
+
+        const isAddIntent = lowerTextProcessed.includes('ajoute') ||
+            lowerTextProcessed.includes('reçu') ||
+            lowerTextProcessed.includes('livré') ||
+            lowerTextProcessed.includes('prend');
+
+        const isRemoveIntent = lowerTextProcessed.includes('retire') ||
+            lowerTextProcessed.includes('enlève') ||
+            lowerTextProcessed.includes('supprime');
+
+        if (isAddIntent) {
             if (pathname === '/vendre') {
                 addItem(finalProduct, quantity);
                 speak(`${formatSpeech(finalProduct.audioName, quantity)} ajouté au panier.`);
@@ -236,17 +242,15 @@ export const useAssistant = () => {
                 speak(`${formatSpeech(finalProduct.audioName, quantity)} ajouté au stock.`);
             }
         }
-        else if (lowerTextProcessed.includes('vendu') || lowerTextProcessed.includes('vend') || lowerTextProcessed.includes('vends')) {
+        else if (isSaleIntent) {
             const isDebtCommand = lowerTextProcessed.includes('crédit') || lowerTextProcessed.includes('dette');
-
-            // Extraire le nom du client (après à, a, pour) en ignorant "crédit" et "dette"
             const clientMatches = Array.from(lowerTextProcessed.matchAll(/(?:à|pour|a)\s+([a-zA-Záàâäãåçéèêëíìîïñóòôöõúùûüýÿ]+)/gi));
             let clientName = undefined;
 
             for (const match of clientMatches) {
                 const name = match[1].trim();
-                const lowerName = name.toLowerCase();
-                if (lowerName !== 'crédit' && lowerName !== 'dette' && lowerName !== 'panier') {
+                const ln = name.toLowerCase();
+                if (ln !== 'crédit' && ln !== 'dette' && ln !== 'panier' && ln !== 'mon') {
                     clientName = name;
                     break;
                 }
@@ -254,7 +258,6 @@ export const useAssistant = () => {
 
             if (pathname === '/vendre') {
                 addItem(finalProduct, quantity);
-
                 let feedback = formatSpeech(finalProduct.audioName, quantity);
                 if (customPrice !== undefined) feedback += ` à ${customPrice} francs`;
                 if (clientName) feedback += ` pour ${clientName}`;
@@ -262,22 +265,16 @@ export const useAssistant = () => {
                 speak(`${feedback} ajouté au panier.`);
 
                 window.dispatchEvent(new CustomEvent('assistant-set-client', {
-                    detail: {
-                        name: clientName,
-                        status: isDebtCommand ? 'DETTE' : 'PAYÉ'
-                    }
+                    detail: { name: clientName, status: isDebtCommand ? 'DETTE' : 'PAYÉ' }
                 }));
 
-                // Déclencher la validation automatique UNIQUEMENT sur ordre explicite de fin
                 if (lowerTextProcessed.includes('termine') || lowerTextProcessed.includes('fini') || lowerTextProcessed.includes('confirme')) {
-                    setTimeout(() => {
-                        window.dispatchEvent(new Event('assistant-finish-sale'));
-                    }, 1500);
+                    setTimeout(() => window.dispatchEvent(new Event('assistant-finish-sale')), 1500);
                 }
             } else {
                 const currentStock = getStockLevel(finalProduct.id);
                 if (currentStock < quantity) {
-                    speak(`Attention ${userName}, tu n'as pas assez de ${finalProduct.audioName} en stock pour en vendre autant.`);
+                    speak(`Attention ${userName}, tu n'as pas assez de ${finalProduct.audioName} en stock. Il t'en reste seulement ${currentStock}.`, true);
                     return;
                 }
                 updateStock(finalProduct.id, -quantity);
@@ -291,14 +288,14 @@ export const useAssistant = () => {
                     status: isDebtCommand ? 'DETTE' : 'PAYÉ'
                 });
 
-                if (clientName) {
-                    speak(`${formatSpeech(finalProduct.audioName, quantity)} vendu ${customPrice !== undefined ? `à ${customPrice} francs ` : ''}${isDebtCommand ? 'à crédit ' : ''}à ${clientName} !`);
-                } else {
-                    speak(`${formatSpeech(finalProduct.audioName, quantity)} vendu ${customPrice !== undefined ? `à ${customPrice} francs ` : ''}${isDebtCommand ? 'à crédit ' : ''}!`);
-                }
+                let feedback = `${formatSpeech(finalProduct.audioName, quantity)} vendu`;
+                if (customPrice !== undefined) feedback += ` à ${customPrice} francs`;
+                if (isDebtCommand) feedback += ` à crédit`;
+                if (clientName) feedback += ` à ${clientName}`;
+                speak(`${feedback} !`);
             }
         }
-        else if (lowerTextProcessed.includes('retire') || lowerTextProcessed.includes('enlève') || lowerTextProcessed.includes('supprime')) {
+        else if (isRemoveIntent) {
             if (pathname === '/vendre') {
                 removeItem(finalProduct.id);
                 speak(`${finalProduct.audioName} retiré du panier.`);
@@ -315,11 +312,10 @@ export const useAssistant = () => {
             }
         }
         else {
-            // Par défaut : Information sur le produit (Stock et Prix)
             const currentStock = getStockLevel(finalProduct.id);
             speak(`Pour le ${finalProduct.audioName}, tu en as ${currentStock} en stock et le prix est de ${finalProduct.price} francs.`);
         }
-    }, [speak, updateStock, getStockLevel, addTransaction, markAsPaid, addItem, removeItem, pathname, history, products, userName, items]);
+    }, [speak, updateStock, getStockLevel, addTransaction, markAllAsPaid, addItem, removeItem, pathname, history, products, userName, items]);
 
     useEffect(() => {
         stopSpeakingRef.current();
@@ -329,11 +325,11 @@ export const useAssistant = () => {
             '/commercant': `${getGreeting()} ${userName}. Prêt pour tes ventes de la journée ?`,
             '/producteur': `${getGreeting()} ${userName}. Voici l'état de ta production et de tes stocks.`,
             '/cooperative': `${getGreeting()} ${userName}. Prêt pour piloter ta coopérative ?`,
-            '/vendre': `Enregistre tes ventes ici, ${userName}. Choisis tes produits.`,
-            '/stock': `C'est ton stock, ${userName}. Regarde ce qu'il te reste en boutique.`,
-            '/bilan': `Voici ton bilan, ${userName}. Regarde ton argent et tes ventes.`,
-            '/acheter': `Ici ${userName}, tu peux noter ce que les livreurs t'apportent.`,
-            '/carnet': `C'est ton carnet de dettes, ${userName}. Voici ceux qui ne t'ont pas encore payé.`
+            '/vendre': `${getGreeting()}, enregistre tes ventes ici ${userName}. Choisis tes produits.`,
+            '/stock': `${getGreeting()}, c'est ton stock ${userName}. Regarde ce qu'il te reste.`,
+            '/bilan': `${getGreeting()}, voici ton bilan ${userName}. Regarde ton argent.`,
+            '/acheter': `${getGreeting()}, ici ${userName} tu peux noter les livraisons.`,
+            '/carnet': `${getGreeting()}, c'est ton carnet de dettes ${userName}.`
         } as Record<string, string>;
 
         const timer = setTimeout(() => {
