@@ -36,7 +36,7 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const { activeProfile } = useProfileContext();
     const [products, setProducts] = useState<Product[]>([]);
 
-    const fetchProducts = async () => {
+    const fetchProducts = useCallback(async () => {
         if (!activeProfile) return;
 
         // 1. Lire d'abord depuis IndexedDB (store-specific + GLOBAL)
@@ -118,9 +118,11 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 console.error('[ProductContext] Fetch error:', err);
             }
         }
-    };
+    }, [activeProfile]);
 
-    const seedCatalog = async () => {
+    // Déclaration retardée de seedCatalog pour éviter les dépendances circulaires
+    // seedCatalog appelle fetchProducts, et on l'appelle dans fetchProducts si vide.
+    const seedCatalog = useCallback(async () => {
         if (!activeProfile) return;
 
         console.log('[ProductContext] Seeding initial catalog via sync queue...');
@@ -167,15 +169,18 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }
 
         console.log('[ProductContext] Global seed queued!');
-        await fetchProducts();
-    };
+        await fetchProducts(); // fetchProducts est maintenant stable via useCallback
+    }, [activeProfile, fetchProducts]); // Dépend de activeProfile et fetchProducts
 
     useEffect(() => {
+        let isMounted = true;
+        let subscription: ReturnType<typeof supabase.channel> | null = null;
+
         if (activeProfile) {
             fetchProducts();
 
             // Real-time subscription to product changes - FILTERED by store_id
-            const subscription = supabase
+            subscription = supabase
                 .channel(`product_changes_${activeProfile.id}`)
                 .on(
                     'postgres_changes' as any,
@@ -186,8 +191,10 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
                         filter: `store_id=eq.${activeProfile.id}`
                     },
                     () => {
-                        console.log("[ProductContext] Realtime update received");
-                        fetchProducts();
+                        if (isMounted) {
+                            console.log("[ProductContext] Realtime update received");
+                            fetchProducts();
+                        }
                     }
                 )
                 .on(
@@ -199,18 +206,22 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
                         filter: `store_id=eq.GLOBAL`
                     },
                     () => {
-                        fetchProducts();
+                        if (isMounted) fetchProducts();
                     }
                 )
                 .subscribe();
-
-            return () => {
-                supabase.removeChannel(subscription);
-            };
         } else {
             setProducts([]);
         }
-    }, [activeProfile, fetchProducts]);
+
+        return () => {
+            isMounted = false;
+            if (subscription) {
+                // Remove channel to prevent memory leaks / max connection errors
+                supabase.removeChannel(subscription).catch(console.error);
+            }
+        };
+    }, [activeProfile, fetchProducts]); // Désormais fetchProducts est TRES stable via useCallback
 
     const syncGlobalCatalog = async () => {
         if (!navigator.onLine) return;

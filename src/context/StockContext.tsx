@@ -67,11 +67,14 @@ export const StockProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }, [activeProfile]);
 
     useEffect(() => {
+        let isMounted = true;
+        let subscription: ReturnType<typeof supabase.channel> | null = null;
+
         if (activeProfile) {
             fetchStock();
 
             // Real-time subscription to stock changes - FILTERED by store_id
-            const subscription = supabase
+            subscription = supabase
                 .channel(`stock_changes_${activeProfile.id}`)
                 .on(
                     'postgres_changes' as any,
@@ -82,18 +85,25 @@ export const StockProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                         filter: `store_id=eq.${activeProfile.id}`
                     },
                     (payload) => {
-                        console.log("[StockContext] Realtime update recived:", payload);
-                        fetchStock();
+                        if (isMounted) {
+                            console.log("[StockContext] Realtime update recived:", payload);
+                            fetchStock();
+                        }
                     }
                 )
                 .subscribe();
 
-            return () => {
-                supabase.removeChannel(subscription);
-            };
         } else {
             setStock({});
         }
+
+        return () => {
+            isMounted = false;
+            if (subscription) {
+                // Async cleanup to prevent UI blocking and ensure socket is properly destroyed
+                supabase.removeChannel(subscription).catch(console.error);
+            }
+        };
     }, [activeProfile, fetchStock]);
 
     const updateStock = useCallback(async (productId: string, amount: number) => {
