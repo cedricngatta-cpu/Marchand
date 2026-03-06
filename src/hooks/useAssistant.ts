@@ -272,15 +272,22 @@ export const useAssistant = () => {
                 addItem(finalProduct, quantity);
                 let feedback = formatSpeech(finalProduct.audioName, quantity);
                 if (customPrice !== undefined) feedback += ` à ${customPrice} francs`;
-                if (clientName) feedback += ` pour ${clientName}`;
+
+                if (clientName) {
+                    feedback += ` pour ${clientName}`;
+                    speak(`${feedback}. C'est vendu !`);
+                } else {
+                    speak(`${feedback} ajouté au panier.`);
+                }
+
                 if (isDebtCommand) feedback += ` en dette`;
-                speak(`${feedback} ajouté au panier.`);
 
                 window.dispatchEvent(new CustomEvent('assistant-set-client', {
                     detail: { name: clientName, status: isDebtCommand ? 'DETTE' : 'PAYÉ' }
                 }));
 
-                if (lowerTextProcessed.includes('termine') || lowerTextProcessed.includes('fini') || lowerTextProcessed.includes('confirme')) {
+                // SI intention de vente ET client précisé -> On valide automatiquement
+                if (clientName || lowerTextProcessed.includes('termine') || lowerTextProcessed.includes('fini') || lowerTextProcessed.includes('confirme')) {
                     setTimeout(() => window.dispatchEvent(new Event('assistant-finish-sale')), 1500);
                 }
             } else {
