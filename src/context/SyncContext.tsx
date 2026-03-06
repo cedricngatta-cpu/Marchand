@@ -130,13 +130,16 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
         window.addEventListener('online', handleOnline);
         window.addEventListener('offline', handleOffline);
 
-        // Initial check
+        // Initial sync: process queue immediately on startup
         updatePendingCount();
+        if (navigator.onLine) {
+            processQueue();
+        }
 
-        // periodic sync if online
+        // More frequent periodic sync (every 10s)
         const interval = setInterval(() => {
             if (navigator.onLine) processQueue();
-        }, 30000);
+        }, 10000);
 
         return () => {
             window.removeEventListener('online', handleOnline);

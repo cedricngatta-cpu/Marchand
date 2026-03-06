@@ -39,8 +39,12 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const fetchProducts = async () => {
         if (!activeProfile) return;
 
-        // 1. Lire d'abord depuis IndexedDB
-        const localProducts = await db.products.where('store_id').equals(activeProfile.id).toArray();
+        // 1. Lire d'abord depuis IndexedDB (store-specific + GLOBAL)
+        const localProducts = await db.products
+            .where('store_id')
+            .anyOf([activeProfile.id, 'GLOBAL'])
+            .toArray();
+
         if (localProducts.length > 0) {
             const mapped: Product[] = localProducts.map(p => ({
                 id: p.id,
@@ -59,50 +63,59 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
         // 2. Refresh depuis Supabase si online
         if (navigator.onLine) {
-            const { data: userData } = await supabase.auth.getUser();
-            const { data: profile } = await supabase.from('profiles').select('role').eq('id', userData.user?.id).single();
+            try {
+                // Récupérer les produits du store + les produits GLOBAL
+                const { data, error } = await supabase
+                    .from('products')
+                    .select('*')
+                    .or(`store_id.eq.${activeProfile.id},store_id.eq.GLOBAL`);
 
-            let query = supabase.from('products').select('*');
-            if (profile?.role !== 'SUPERVISOR') {
-                query = query.or(`store_id.eq.${activeProfile.id},store_id.eq.GLOBAL`);
-            }
+                if (error) {
+                    console.warn('[ProductContext] Supabase fetch error:', error.message);
+                    return;
+                }
 
-            const { data, error } = await query;
+                if (data && data.length > 0) {
+                    for (const p of data) {
+                        await db.products.put({
+                            id: p.id,
+                            name: p.name,
+                            price: p.price,
+                            image_url: p.image_url,
+                            barcode: p.barcode,
+                            color: p.color || '#F1F5F9',
+                            icon_color: p.icon_color || '#64748B',
+                            audio_name: p.audio_name || p.name,
+                            store_id: p.store_id,
+                            category: p.category || 'OTHER',
+                            synced: 1
+                        });
+                    }
 
-            if (data && data.length > 0) {
-                for (const p of data) {
-                    await db.products.put({
+                    // Re-fetch local data after update (store + GLOBAL)
+                    const updatedLocal = await db.products
+                        .where('store_id')
+                        .anyOf([activeProfile.id, 'GLOBAL'])
+                        .toArray();
+
+                    const mapped: Product[] = updatedLocal.map(p => ({
                         id: p.id,
                         name: p.name,
                         price: p.price,
-                        image_url: p.image_url,
+                        imageUrl: p.image_url,
                         barcode: p.barcode,
-                        color: p.color || '#F1F5F9',
-                        icon_color: p.icon_color || '#64748B',
-                        audio_name: p.audio_name || p.name,
-                        store_id: p.store_id,
-                        category: 'OTHER',
-                        synced: 1
-                    });
+                        color: p.color,
+                        iconColor: p.icon_color,
+                        audioName: p.audio_name,
+                        category: p.category,
+                        icon: initialProducts.find(ip => ip.name === p.name)?.icon || Package
+                    }));
+                    setProducts(mapped);
+                } else if (data && data.length === 0 && localProducts.length === 0) {
+                    await seedCatalog();
                 }
-
-                // Re-fetch local data after update
-                const updatedLocal = await db.products.where('store_id').equals(activeProfile.id).toArray();
-                const mapped: Product[] = updatedLocal.map(p => ({
-                    id: p.id,
-                    name: p.name,
-                    price: p.price,
-                    imageUrl: p.image_url,
-                    barcode: p.barcode,
-                    color: p.color,
-                    iconColor: p.icon_color,
-                    audioName: p.audio_name,
-                    category: p.category,
-                    icon: initialProducts.find(ip => ip.name === p.name)?.icon || Package
-                }));
-                setProducts(mapped);
-            } else if (data && data.length === 0 && localProducts.length === 0) {
-                await seedCatalog();
+            } catch (err) {
+                console.error('[ProductContext] Fetch error:', err);
             }
         }
     };
