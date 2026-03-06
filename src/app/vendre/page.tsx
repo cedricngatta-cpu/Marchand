@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, Mic, ShoppingBag, Trash2, CheckCircle2, ShoppingCart, Smartphone, Landmark, Banknote, Barcode } from 'lucide-react';
+import { ChevronLeft, Mic, ShoppingBag, Trash2, CheckCircle2, ShoppingCart, Smartphone, Landmark, Banknote, Barcode, Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ProductGrid } from '@/components/ProductGrid';
 import { BarcodeScanner } from '@/components/BarcodeScanner';
@@ -173,28 +173,44 @@ export default function VendrePage() {
                     ) : (
                         <div className="max-h-[35vh] overflow-y-auto space-y-4 pr-1 scrollbar-none mb-6">
                             {items.map(item => (
-                                <div key={item.id} className="flex justify-between items-center group">
-                                    <div className="flex items-center gap-4 min-w-0">
-                                        <div className="relative w-12 h-12 bg-slate-50 dark:bg-slate-800 rounded-xl flex items-center justify-center shrink-0">
+                                <div key={item.id} className="flex justify-between items-center group bg-slate-50/50 dark:bg-slate-800/50 p-3 rounded-2xl border border-transparent hover:border-slate-100 dark:hover:border-slate-700 transition-all">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div className="relative w-10 h-10 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center shrink-0 shadow-sm">
                                             {item.imageUrl ? (
-                                                <img src={item.imageUrl} className="w-full h-full object-contain p-2" alt="" />
+                                                <img src={item.imageUrl} className="w-full h-full object-cover rounded-xl" alt="" />
                                             ) : (
-                                                <ShoppingBag size={20} className="text-slate-400" />
+                                                <ShoppingBag size={18} className="text-slate-400" />
                                             )}
-                                            <div className="absolute -top-1.5 -right-1.5 bg-slate-900 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full shadow-sm">
-                                                {item.quantity}
-                                            </div>
                                         </div>
                                         <div className="flex flex-col min-w-0">
-                                            <span className="font-bold text-slate-900 dark:text-white text-xs leading-tight truncate">{item.name}</span>
-                                            <span className="text-[10px] font-bold text-slate-400 mt-0.5">{item.price} F / u</span>
+                                            <span className="font-bold text-slate-900 dark:text-white text-[11px] leading-tight truncate uppercase tracking-tight">{item.name}</span>
+                                            <span className="text-[9px] font-bold text-slate-400 mt-0.5">{item.price} F</span>
                                         </div>
                                     </div>
+
                                     <div className="flex items-center gap-3 shrink-0">
-                                        <span className="font-bold text-slate-900 dark:text-white text-xs">{item.price * item.quantity} F</span>
-                                        <button onClick={() => removeItem(item.id)} className="w-8 h-8 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 active:bg-rose-50 active:text-rose-500 transition-colors">
-                                            <Trash2 size={14} />
-                                        </button>
+                                        {/* Contrôles de quantité */}
+                                        <div className="flex items-center bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 p-1">
+                                            <button
+                                                onClick={() => item.quantity > 1 ? addItem(item, -1) : removeItem(item.id)}
+                                                className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-rose-500 active:scale-90 transition-all"
+                                            >
+                                                <Trash2 size={12} />
+                                            </button>
+                                            <span className="w-8 text-center font-black text-xs text-slate-900 dark:text-white">
+                                                {item.quantity}
+                                            </span>
+                                            <button
+                                                onClick={() => addItem(item, 1)}
+                                                className="w-7 h-7 flex items-center justify-center text-primary hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg active:scale-90 transition-all"
+                                            >
+                                                <Plus size={12} />
+                                            </button>
+                                        </div>
+
+                                        <div className="text-right min-w-[60px]">
+                                            <p className="font-black text-slate-900 dark:text-white text-xs leading-none">{item.price * item.quantity} F</p>
+                                        </div>
                                     </div>
                                 </div>
                             ))}

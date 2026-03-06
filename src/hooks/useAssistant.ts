@@ -256,10 +256,12 @@ export const useAssistant = () => {
                     }
                 }));
 
-                // Déclencher la validation automatique après un court délai
-                setTimeout(() => {
-                    window.dispatchEvent(new Event('assistant-finish-sale'));
-                }, 2000);
+                // Déclencher la validation automatique UNIQUEMENT sur ordre explicite de fin
+                if (lowerTextProcessed.includes('termine') || lowerTextProcessed.includes('fini') || lowerTextProcessed.includes('confirme')) {
+                    setTimeout(() => {
+                        window.dispatchEvent(new Event('assistant-finish-sale'));
+                    }, 1500);
+                }
             } else {
                 const currentStock = getStockLevel(finalProduct.id);
                 if (currentStock < quantity) {

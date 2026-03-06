@@ -48,7 +48,7 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         // For stock updates, we might need a more complex strategy (summing up)
                         // but for now, we just push the increment/decrement
                         const { data: currentStock } = await supabase
-                            .from('stocks')
+                            .from('stock')
                             .select('quantity')
                             .eq('product_id', product_id)
                             .eq('store_id', store_id)
@@ -56,7 +56,7 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
                         const newQty = (currentStock?.quantity || 0) + quantity;
                         const { error: sError } = await supabase
-                            .from('stocks')
+                            .from('stock')
                             .upsert({ product_id, store_id, quantity: newQty });
 
                         if (!sError) success = true;
