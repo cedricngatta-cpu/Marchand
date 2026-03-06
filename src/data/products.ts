@@ -12,7 +12,8 @@ export const products = [
         price: 17500,
         color: 'bg-orange-50',
         iconColor: 'text-orange-600',
-        audioName: 'Le sac de riz'
+        audioName: 'Le sac de riz',
+        category: 'VIVRES'
     },
     {
         id: 'huile',
@@ -22,7 +23,8 @@ export const products = [
         price: 1500,
         color: 'bg-yellow-50',
         iconColor: 'text-yellow-600',
-        audioName: "L'huile"
+        audioName: "L'huile",
+        category: 'BOISSON'
     },
     {
         id: 'sucre',
@@ -32,7 +34,8 @@ export const products = [
         price: 900,
         color: 'bg-emerald-50',
         iconColor: 'text-emerald-600',
-        audioName: 'Le sucre'
+        audioName: 'Le sucre',
+        category: 'VIVRES'
     },
     {
         id: 'attieke',
@@ -42,7 +45,8 @@ export const products = [
         price: 500,
         color: 'bg-amber-50',
         iconColor: 'text-amber-600',
-        audioName: "l'attieké"
+        audioName: "l'attieké",
+        category: 'VIVRES'
     },
     {
         id: 'lait',
@@ -52,7 +56,8 @@ export const products = [
         price: 2500,
         color: 'bg-blue-50',
         iconColor: 'text-blue-600',
-        audioName: 'Le lait'
+        audioName: 'Le lait',
+        category: 'VIVRES'
     },
     {
         id: 'savon',
@@ -62,7 +67,8 @@ export const products = [
         price: 400,
         color: 'bg-slate-50',
         iconColor: 'text-slate-600',
-        audioName: 'Le savon'
+        audioName: 'Le savon',
+        category: 'ENTRETIEN'
     },
     {
         id: 'eau',
@@ -72,7 +78,8 @@ export const products = [
         price: 500,
         color: 'bg-cyan-50',
         iconColor: 'text-cyan-600',
-        audioName: "L'eau"
+        audioName: "L'eau",
+        category: 'BOISSON'
     },
     {
         id: 'cafe',
@@ -82,7 +89,8 @@ export const products = [
         price: 100,
         color: 'bg-orange-100',
         iconColor: 'text-orange-800',
-        audioName: 'Le café'
+        audioName: 'Le café',
+        category: 'VIVRES'
     },
     {
         id: 'tomate',
@@ -92,7 +100,8 @@ export const products = [
         price: 800,
         color: 'bg-red-50',
         iconColor: 'text-red-600',
-        audioName: 'La tomate'
+        audioName: 'La tomate',
+        category: 'VIVRES'
     },
     {
         id: 'banane',
@@ -102,7 +111,8 @@ export const products = [
         price: 1500,
         color: 'bg-yellow-50',
         iconColor: 'text-yellow-600',
-        audioName: 'La banane'
+        audioName: 'La banane',
+        category: 'VIVRES'
     },
     {
         id: 'igname',
@@ -112,7 +122,8 @@ export const products = [
         price: 500,
         color: 'bg-orange-50',
         iconColor: 'text-orange-900',
-        audioName: "L'igname"
+        audioName: "L'igname",
+        category: 'VIVRES'
     },
     {
         id: 'oignon',
@@ -122,7 +133,8 @@ export const products = [
         price: 600,
         color: 'bg-purple-50',
         iconColor: 'text-purple-600',
-        audioName: "L'oignon"
+        audioName: "L'oignon",
+        category: 'VIVRES'
     },
     {
         id: 'carotte',
@@ -132,7 +144,8 @@ export const products = [
         price: 2000,
         color: 'bg-orange-50',
         iconColor: 'text-orange-500',
-        audioName: 'La carotte'
+        audioName: 'La carotte',
+        category: 'VIVRES'
     },
     {
         id: 'ananas',
@@ -142,7 +155,8 @@ export const products = [
         price: 400,
         color: 'bg-yellow-50',
         iconColor: 'text-yellow-700',
-        audioName: "L'ananas"
+        audioName: "L'ananas",
+        category: 'VIVRES'
     },
     {
         id: 'manioc',
@@ -152,7 +166,8 @@ export const products = [
         price: 300,
         color: 'bg-slate-100',
         iconColor: 'text-slate-700',
-        audioName: 'Le manioc'
+        audioName: 'Le manioc',
+        category: 'VIVRES'
     },
     {
         id: 'pomme_de_terre',
@@ -162,7 +177,8 @@ export const products = [
         price: 800,
         color: 'bg-amber-50',
         iconColor: 'text-amber-800',
-        audioName: 'La pomme de terre'
+        audioName: 'La pomme de terre',
+        category: 'VIVRES'
     },
     {
         id: 'biscuit',
@@ -173,7 +189,8 @@ export const products = [
         barcode: '3061990141315',
         color: 'bg-indigo-50',
         iconColor: 'text-indigo-600',
-        audioName: 'Le biscuit'
+        audioName: 'Le biscuit',
+        category: 'VIVRES'
     },
     {
         id: 'other',
@@ -182,6 +199,7 @@ export const products = [
         price: 0,
         color: 'bg-slate-100',
         iconColor: 'text-slate-500',
-        audioName: "Autre chose"
+        audioName: "Autre chose",
+        category: 'OTHER'
     }
 ];

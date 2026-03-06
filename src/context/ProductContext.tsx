@@ -18,6 +18,7 @@ export interface Product {
     iconColor: string;
     status?: string;
     audioName: string;
+    category?: string;
 }
 
 interface ProductContextType {
@@ -50,6 +51,7 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 color: p.color,
                 iconColor: p.icon_color,
                 audioName: p.audio_name,
+                category: p.category,
                 icon: initialProducts.find(ip => ip.name === p.name)?.icon || Package
             }));
             setProducts(mapped);
@@ -95,6 +97,7 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
                     color: p.color,
                     iconColor: p.icon_color,
                     audioName: p.audio_name,
+                    category: p.category,
                     icon: initialProducts.find(ip => ip.name === p.name)?.icon || Package
                 }));
                 setProducts(mapped);
@@ -140,6 +143,7 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
                     color: p.color || '#F1F5F9',
                     iconColor: p.icon_color || '#64748B',
                     audioName: p.audio_name || p.name,
+                    category: p.category || 'OTHER',
                     icon: initialProducts.find(ip => ip.name === p.name)?.icon || Package
                 }));
                 setProducts(mapped);
@@ -221,7 +225,8 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 icon_color: product.iconColor,
                 audio_name: product.audioName,
                 image_url: product.imageUrl,
-                barcode: product.barcode
+                barcode: product.barcode,
+                category: product.category || 'OTHER'
             },
             status: 'PENDING',
             created_at: Date.now()

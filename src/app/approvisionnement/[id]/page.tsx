@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, PhoneCall, ShoppingCart, CheckCircle2, MapPin, Truck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useVoice } from '@/hooks/useVoice';
-import { SUPPLIERS } from '../page';
+import { SUPPLIERS } from '@/data/suppliers';
 
 export default function OrderSupplierPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = React.use(params);
