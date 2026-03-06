@@ -32,8 +32,7 @@ export const StockItem = ({
 
     return (
         <div
-            onClick={onSpeak}
-            className="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-800 flex items-center justify-between group cursor-pointer transition-colors active:bg-slate-50"
+            className="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-800 flex items-center justify-between group"
         >
             <div className="flex items-center gap-5 min-w-0">
                 <div className={`w-14 h-14 rounded-xl ${imageUrl ? 'bg-slate-100' : color} flex items-center justify-center shrink-0 border border-slate-50 overflow-hidden relative`}>

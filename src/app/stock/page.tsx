@@ -63,7 +63,7 @@ export default function StockPage() {
             {/* Header Coloré (Card Overlap Style) */}
             <div className="bg-primary pt-8 pb-32 px-4 rounded-b-[2.5rem] relative shadow-lg">
                 <div className="flex justify-between items-center mb-6 max-w-lg mx-auto">
-                    <button onClick={() => router.push('/')} className="w-10 h-10 bg-white text-primary rounded-full flex items-center justify-center active:scale-95 transition-transform shadow-sm">
+                    <button onClick={() => router.push('/commercant')} className="w-10 h-10 bg-white text-primary rounded-full flex items-center justify-center active:scale-95 transition-transform shadow-sm">
                         <ChevronLeft size={20} />
                     </button>
                     <div className="text-center">
