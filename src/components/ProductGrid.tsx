@@ -71,7 +71,7 @@ export const ProductGrid = ({ onAdd, onSpeak }: ProductGridProps) => {
                             }}
                             className="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 cursor-pointer active:scale-95 transition-all group relative"
                         >
-                            <div className="absolute top-2 right-2 bg-slate-50 dark:bg-slate-800 px-1.5 py-0.5 rounded-md text-[10px] font-bold text-slate-400 border border-slate-100 dark:border-slate-700">
+                            <div className="absolute top-2 right-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-2 py-1 rounded-lg text-[11px] font-black shadow-lg z-10 border border-white/20 dark:border-slate-200">
                                 {stockLevel}
                             </div>
                             <div className="relative aspect-square bg-slate-50 dark:bg-slate-800 rounded-xl overflow-hidden mb-4 border border-slate-50 dark:border-slate-700">
