@@ -129,6 +129,22 @@ export default function ProfilePage() {
         window.open(`https://wa.me/2250000000000?text=${text}`, '_blank');
     };
 
+    const [supabaseStatus, setSupabaseStatus] = useState<'LOADING' | 'CONNECTED' | 'DISCONNECTED'>('LOADING');
+
+    useEffect(() => {
+        const checkSupabase = async () => {
+            try {
+                const { error } = await supabase.from('products').select('count', { count: 'exact', head: true });
+                if (!error) setSupabaseStatus('CONNECTED');
+                else setSupabaseStatus('DISCONNECTED');
+            } catch (err) {
+                setSupabaseStatus('DISCONNECTED');
+            }
+        };
+        if (isOnline) checkSupabase(); // Changed navigator.onLine to isOnline
+        else setSupabaseStatus('DISCONNECTED');
+    }, [isOnline]); // Added isOnline to dependency array
+
     return (
         <main className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-32">
             <SupportCenter
@@ -146,10 +162,19 @@ export default function ProfilePage() {
                     >
                         <ChevronLeft size={20} />
                     </button>
-                    <div className="text-center flex-1 pr-10">
+                    <div className="text-center flex-1">
                         <h1 className="text-white font-bold text-lg tracking-wide uppercase">Mon Profil</h1>
-                        <p className="text-emerald-100/60 text-[10px] font-bold uppercase tracking-widest mt-0.5">Paramètres & Compte</p>
+                        <div className="flex items-center justify-center gap-1.5 mt-0.5">
+                            <div className={`w-2 h-2 rounded-full ${supabaseStatus === 'CONNECTED' ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]' :
+                                    supabaseStatus === 'LOADING' ? 'bg-amber-400 animate-pulse' : 'bg-rose-400'
+                                }`} />
+                            <p className="text-white/70 text-[10px] font-bold uppercase tracking-widest">
+                                {supabaseStatus === 'CONNECTED' ? 'Connecté au Cloud' :
+                                    supabaseStatus === 'LOADING' ? 'Vérification...' : 'Mode Hors-Ligne'}
+                            </p>
+                        </div>
                     </div>
+                    <div className="w-10 h-10" /> {/* Spacer */}
                 </div>
             </div>
 
@@ -273,8 +298,8 @@ export default function ProfilePage() {
                         }}
                         disabled={isForceSyncing || isSyncing}
                         className={`w-full p-5 rounded-[28px] border flex items-center gap-4 transition-all active:scale-[0.98] shadow-sm ${isForceSyncing || isSyncing
-                                ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800'
-                                : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 hover:bg-slate-50'
+                            ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800'
+                            : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 hover:bg-slate-50'
                             }`}
                     >
                         <div className={`p-3 rounded-2xl ${isForceSyncing || isSyncing ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600' : 'bg-slate-50 dark:bg-slate-800 text-slate-400'

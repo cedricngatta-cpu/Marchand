@@ -46,32 +46,39 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
         for (const item of pending) {
             try {
                 let success = false;
+                let errorDetails = null;
 
                 switch (item.action) {
                     case 'ADD_TRANSACTION': {
                         const { error: tError } = await supabase.from('transactions').insert([item.payload]);
                         if (!tError || tError.code === '23505') success = true;
-                        else console.warn('[Sync] ADD_TRANSACTION error:', tError.message);
+                        else errorDetails = tError;
                         break;
                     }
                     case 'UPDATE_STOCK': {
                         const { product_id, quantity, store_id } = item.payload;
-
-                        // Utiliser upsert avec increment si possible, ou fetch-then-upsert
                         const { data: currentStock, error: fetchError } = await supabase
                             .from('stock')
                             .select('quantity')
                             .eq('product_id', product_id)
                             .eq('store_id', store_id)
-                            .maybeSingle(); // maybeSingle pour éviter l'erreur si vide
+                            .maybeSingle();
+
+                        if (fetchError) {
+                            errorDetails = fetchError;
+                            break;
+                        }
 
                         const newQty = Math.max(0, (currentStock?.quantity || 0) + quantity);
                         const { error: sError } = await supabase
                             .from('stock')
-                            .upsert({ product_id, store_id, quantity: newQty });
+                            .upsert(
+                                { product_id, store_id, quantity: newQty },
+                                { onConflict: 'product_id,store_id' }
+                            );
 
                         if (!sError) success = true;
-                        else console.warn('[Sync] UPDATE_STOCK error:', sError.message);
+                        else errorDetails = sError;
                         break;
                     }
                     case 'MARK_PAID': {
@@ -81,6 +88,7 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
                             .update({ status: 'PAYÉ' })
                             .eq('id', tid);
                         if (!pError) success = true;
+                        else errorDetails = pError;
                         break;
                     }
                     case 'ADD_PRODUCT': {
@@ -88,7 +96,7 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
                             .from('products')
                             .insert([item.payload]);
                         if (!apError || apError.code === '23505') success = true;
-                        else console.warn('[Sync] ADD_PRODUCT error:', apError.message);
+                        else errorDetails = apError;
                         break;
                     }
                     case 'UPDATE_PRODUCT': {
@@ -98,6 +106,7 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
                             .update(productUpdates)
                             .eq('id', upid);
                         if (!upError) success = true;
+                        else errorDetails = upError;
                         break;
                     }
                     case 'DELETE_PRODUCT': {
@@ -107,15 +116,16 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
                             .delete()
                             .eq('id', dpid);
                         if (!dpError) success = true;
+                        else errorDetails = dpError;
                         break;
                     }
                 }
 
                 if (success) {
                     await db.syncQueue.delete(item.id!);
-                    // Mettre à jour le compteur en temps réel pour l'utilisateur
                     updatePendingCount();
                 } else {
+                    console.error(`[Sync] Action ${item.action} failed:`, errorDetails);
                     const nextRetry = (item.retry_count || 0) + 1;
                     if (nextRetry >= 3) {
                         await db.syncQueue.update(item.id!, {
@@ -130,7 +140,7 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     }
                 }
             } catch (err) {
-                console.error("[Sync] Error processing item:", err);
+                console.error("[Sync] Fatal error processing item:", err);
             }
         }
 
