@@ -68,14 +68,26 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose 
                 await scanner.start(
                     { facingMode },
                     {
-                        fps: 10,
-                        qrbox: (viewfinderWidth, viewfinderHeight) => {
-                            // Optimisation de la zone de scan
-                            return { width: viewfinderWidth * 0.8, height: viewfinderHeight * 0.6 };
-                        }
+                        fps: 10
                     },
                     (decodedText) => {
-                        if (isMounted) onScan(decodedText);
+                        if (isMounted) {
+                            // Jouer un petit bip natif via Web Audio API en cas de succès
+                            try {
+                                const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+                                const osc = ctx.createOscillator();
+                                const gain = ctx.createGain();
+                                osc.connect(gain);
+                                gain.connect(ctx.destination);
+                                osc.type = 'sine';
+                                osc.frequency.setValueAtTime(800, ctx.currentTime);
+                                gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                                osc.start(ctx.currentTime);
+                                osc.stop(ctx.currentTime + 0.15); // Bip très court de 150ms
+                            } catch (e) { }
+
+                            onScan(decodedText);
+                        }
                     },
                     (errorMessage) => {
                         // On ignore les erreurs de frame "NotFound" pour ne pas polluer la console
@@ -157,27 +169,18 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose 
                         {/* Le conteneur vidéo HMTL5 QR Code rendu 100% de la div */}
                         <div id="reader" className="w-full h-full object-cover"></div>
 
-                        {/* Scanner UI Overlay (Targeting Frame) */}
+                        {/* Scanner UI Overlay plus léger pour éviter les crashs GPU de type "Aïe Aïe Aïe" (retrait de la shadow 4000px) */}
                         {!isStarting && !scanError && (
                             <div className="absolute inset-0 pointer-events-none z-10 flex flex-col items-center justify-center">
-                                {/* Zone transparente centrale style POS Scanner (Horizontal avec coins) */}
-                                <div className="relative w-80 h-48 sm:w-[400px] sm:h-56 shadow-[0_0_0_4000px_rgba(0,0,0,0.65)] rounded-2xl">
-                                    {/* Les 4 coins (Brackets blancs épais) */}
-                                    <div className="absolute -top-1 -left-1 w-10 h-10 border-t-[6px] border-l-[6px] border-white rounded-tl-2xl"></div>
-                                    <div className="absolute -top-1 -right-1 w-10 h-10 border-t-[6px] border-r-[6px] border-white rounded-tr-2xl"></div>
-                                    <div className="absolute -bottom-1 -left-1 w-10 h-10 border-b-[6px] border-l-[6px] border-white rounded-bl-2xl"></div>
-                                    <div className="absolute -bottom-1 -right-1 w-10 h-10 border-b-[6px] border-r-[6px] border-white rounded-br-2xl"></div>
-
-                                    {/* Conteneur pour clipser l'animation */}
-                                    <div className="absolute inset-0 overflow-hidden rounded-2xl">
-                                        {/* Ligne animée de Scan (Haut en bas) */}
-                                        <div className="absolute top-0 left-0 right-0 h-1 bg-rose-500 shadow-[0_0_20px_#f43f5e] animate-scan-line"></div>
-                                    </div>
+                                {/* Zone de scan centrale simplifiée */}
+                                <div className="relative w-full max-w-sm aspect-[4/3] rounded-2xl border-2 border-dashed border-white/50 overflow-hidden mx-6">
+                                    {/* Ligne animée de Scan (Haut en bas) */}
+                                    <div className="absolute top-0 left-0 right-0 h-1 bg-amber-500 shadow-[0_0_15px_#f59e0b] animate-scan-line"></div>
                                 </div>
                                 {/* Le texte en dessous */}
-                                <div className="w-80 mt-6 text-center">
-                                    <p className="text-white text-[17px] font-medium leading-tight">
-                                        Scanner un code-barres pour ajouter le produit
+                                <div className="w-80 mt-6 text-center bg-black/50 px-4 py-2 rounded-full backdrop-blur-sm">
+                                    <p className="text-white text-sm font-bold uppercase tracking-widest leading-tight">
+                                        Placez le code-barres au centre
                                     </p>
                                 </div>
                             </div>
