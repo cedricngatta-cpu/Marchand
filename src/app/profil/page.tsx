@@ -24,12 +24,13 @@ import { SupportCenter } from '@/components/SupportCenter';
 import { useConfirm } from '@/context/ConfirmContext';
 import { useProductContext } from '@/context/ProductContext';
 import { useSync } from '@/context/SyncContext';
+import { supabase } from '@/lib/supabase';
 
 export default function ProfilePage() {
     const router = useRouter();
     const { user, logout, updatePin, updateLanguage } = useAuth();
     const { syncGlobalCatalog } = useProductContext();
-    const { syncAll, syncPendingCount, isSyncing } = useSync();
+    const { syncAll, syncPendingCount, isSyncing, isOnline } = useSync();
     const confirm = useConfirm();
     const [isForceSyncing, setIsForceSyncing] = useState(false);
 
@@ -166,7 +167,7 @@ export default function ProfilePage() {
                         <h1 className="text-white font-bold text-lg tracking-wide uppercase">Mon Profil</h1>
                         <div className="flex items-center justify-center gap-1.5 mt-0.5">
                             <div className={`w-2 h-2 rounded-full ${supabaseStatus === 'CONNECTED' ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]' :
-                                    supabaseStatus === 'LOADING' ? 'bg-amber-400 animate-pulse' : 'bg-rose-400'
+                                supabaseStatus === 'LOADING' ? 'bg-amber-400 animate-pulse' : 'bg-rose-400'
                                 }`} />
                             <p className="text-white/70 text-[10px] font-bold uppercase tracking-widest">
                                 {supabaseStatus === 'CONNECTED' ? 'Connecté au Cloud' :
