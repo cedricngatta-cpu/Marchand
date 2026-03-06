@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { useVoice } from './useVoice';
 import { useStock } from './useStock';
@@ -15,6 +15,12 @@ export const useAssistant = () => {
     const { updateStock, getStockLevel } = useStock();
     const { history, addTransaction, markAsPaid, markAllAsPaid } = useHistory();
     const { items, addItem, removeItem } = useCart();
+
+    // Refs stables pour éviter les cycles de re-renders dans l'effet de salutation
+    const speakRef = useRef(speak);
+    const stopSpeakingRef = useRef(stopSpeaking);
+    useEffect(() => { speakRef.current = speak; }, [speak]);
+    useEffect(() => { stopSpeakingRef.current = stopSpeaking; }, [stopSpeaking]);
 
     const userName = user?.name?.split(' ')[0] || 'Marchand';
     const userRole = user?.role || 'MERCHANT';
@@ -316,9 +322,9 @@ export const useAssistant = () => {
     }, [speak, updateStock, getStockLevel, addTransaction, markAsPaid, addItem, removeItem, pathname, history, products, userName, items]);
 
     useEffect(() => {
-        stopSpeaking();
+        stopSpeakingRef.current();
 
-        const greetings: Record<string, string> = {
+        const greeting = {
             '/': `Bienvenue ${userName}. Appuie sur le gros bouton en bas pour me parler.`,
             '/commercant': `${getGreeting()} ${userName}. Prêt pour tes ventes de la journée ?`,
             '/producteur': `${getGreeting()} ${userName}. Voici l'état de ta production et de tes stocks.`,
@@ -328,19 +334,21 @@ export const useAssistant = () => {
             '/bilan': `Voici ton bilan, ${userName}. Regarde ton argent et tes ventes.`,
             '/acheter': `Ici ${userName}, tu peux noter ce que les livreurs t'apportent.`,
             '/carnet': `C'est ton carnet de dettes, ${userName}. Voici ceux qui ne t'ont pas encore payé.`
-        };
+        } as Record<string, string>;
 
         const timer = setTimeout(() => {
-            if (greetings[pathname]) {
-                speak(greetings[pathname]);
+            if (greeting[pathname]) {
+                speakRef.current(greeting[pathname]);
             }
         }, 800);
 
         return () => {
             clearTimeout(timer);
-            stopSpeaking();
+            stopSpeakingRef.current();
         };
-    }, [pathname, speak, stopSpeaking]);
+        // Intentionnellement: speak et stopSpeaking exclus pour éviter le cycle de re-renders
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [pathname, userName]);
 
     useEffect(() => {
         if (transcript && !isListening) {

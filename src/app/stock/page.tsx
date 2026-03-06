@@ -138,7 +138,6 @@ export default function StockPage() {
                             color={product.color}
                             iconColor={product.iconColor}
                             onAdd={() => {
-                                const shortName = product.audioName.replace(/^[Ll]e\s+/, '').replace(/^[Ll]a\s+/, '').replace(/^[Ll]'\s+/, '');
                                 updateStock(product.id, 1);
                                 addTransaction({
                                     type: 'LIVRAISON',
@@ -147,10 +146,8 @@ export default function StockPage() {
                                     quantity: 1,
                                     price: product.price
                                 });
-                                speak(`un ${shortName} ajouté au stock.`);
                             }}
                             onRemove={() => {
-                                const shortName = product.audioName.replace(/^[Ll]e\s+/, '').replace(/^[Ll]a\s+/, '').replace(/^[Ll]'\s+/, '');
                                 updateStock(product.id, -1);
                                 addTransaction({
                                     type: 'RETRAIT',
@@ -159,7 +156,6 @@ export default function StockPage() {
                                     quantity: 1,
                                     price: product.price
                                 });
-                                speak(`un ${shortName} retiré du stock.`);
                             }}
                             onViewDetails={() => router.push(`/stock/${product.id}`)}
                             onSpeak={() => {
