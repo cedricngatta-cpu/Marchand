@@ -88,8 +88,47 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
                                 }
                             );
 
-                        if (!sError) success = true;
-                        else errorDetails = sError;
+                        if (!sError) {
+                            success = true;
+                        } else if (sError.code === '23503') {
+                            // Violation de clé étrangère ! Le produit manque probablement dans Supabase.
+                            console.warn(`[Sync] Product ${product_id} missing in Supabase. Attempting auto-fix...`);
+
+                            const localProd = await db.products.get(product_id);
+                            if (localProd) {
+                                // Tenter d'insérer le produit manquant
+                                const { error: prodError } = await supabase
+                                    .from('products')
+                                    .insert([{
+                                        id: localProd.id,
+                                        store_id: localProd.store_id,
+                                        name: localProd.name,
+                                        price: localProd.price,
+                                        color: localProd.color,
+                                        icon_color: localProd.icon_color,
+                                        audio_name: localProd.audio_name,
+                                        image_url: localProd.image_url,
+                                        barcode: localProd.barcode,
+                                        category: localProd.category || 'OTHER'
+                                    }]);
+
+                                if (!prodError || prodError.code === '23505') {
+                                    // Succès ou déjà présent, on retente l'upsert du stock
+                                    const { error: retryError } = await supabase
+                                        .from('stock')
+                                        .upsert({ product_id, quantity: newQty });
+
+                                    if (!retryError) success = true;
+                                    else errorDetails = retryError;
+                                } else {
+                                    errorDetails = prodError;
+                                }
+                            } else {
+                                errorDetails = sError;
+                            }
+                        } else {
+                            errorDetails = sError;
+                        }
                         break;
                     }
                     case 'MARK_PAID': {

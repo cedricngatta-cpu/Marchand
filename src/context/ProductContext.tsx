@@ -123,45 +123,51 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const seedCatalog = async () => {
         if (!activeProfile) return;
 
-        const standardProducts = initialProducts
-            .filter(p => p.id !== 'other') // On ignore l'item 'autre' pour le catalogue réel
-            .map(p => ({
-                store_id: activeProfile.id,
+        console.log('[ProductContext] Seeding initial catalog via sync queue...');
+
+        // Au lieu d'un insert direct, on passe par la file de synchro pour chaque produit
+        for (const p of initialProducts) {
+            if (p.id === 'other') continue;
+
+            const id = crypto.randomUUID();
+            const localRecord: LocalProduct = {
+                id,
                 name: p.name,
                 price: p.price,
+                audio_name: p.audioName,
+                category: 'OTHER',
                 image_url: p.imageUrl,
                 color: p.color,
-                icon_color: 'text-slate-600', // valeur par défaut
-                audio_name: p.audioName
-            }));
+                icon_color: 'text-slate-600',
+                store_id: activeProfile.id,
+                synced: 0
+            };
 
-        const { error } = await supabase.from('products').insert(standardProducts);
+            // 1. Sauvegarde locale
+            await db.products.put(localRecord);
 
-        if (error) {
-            console.error("seedCatalog error details:", error);
-            // Si l'erreur est liée à une colonne manquante (comme image_url ou barcode),
-            // on pourrait essayer une version dégradée, mais le SQL doit être à jour.
-        } else {
-            console.log("seedCatalog success!");
-
-            // Refetch une seule fois pour mettre à jour l'UI
-            const { data } = await supabase.from('products').select('*').or(`store_id.eq.${activeProfile.id},store_id.eq.GLOBAL`);
-            if (data && data.length > 0) {
-                const mapped = data.map((p: any) => ({
-                    id: p.id,
+            // 2. Queue sync
+            await db.syncQueue.add({
+                action: 'ADD_PRODUCT',
+                payload: {
+                    id,
+                    store_id: activeProfile.id,
                     name: p.name,
                     price: p.price,
-                    imageUrl: p.image_url,
-                    barcode: p.barcode,
-                    color: p.color || '#F1F5F9',
-                    iconColor: p.icon_color || '#64748B',
-                    audioName: p.audio_name || p.name,
-                    category: p.category || 'OTHER',
-                    icon: initialProducts.find(ip => ip.name === p.name)?.icon || Package
-                }));
-                setProducts(mapped);
-            }
+                    color: p.color,
+                    icon_color: 'text-slate-600',
+                    audio_name: p.audioName,
+                    image_url: p.imageUrl,
+                    category: 'OTHER'
+                },
+                status: 'PENDING',
+                retry_count: 0,
+                created_at: Date.now()
+            });
         }
+
+        console.log('[ProductContext] Global seed queued!');
+        await fetchProducts();
     };
 
     useEffect(() => {
