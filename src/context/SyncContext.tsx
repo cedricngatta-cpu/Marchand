@@ -96,21 +96,23 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
                             const localProd = await db.products.get(product_id);
                             if (localProd) {
-                                // Tenter d'insérer le produit manquant
+                                // Tenter d'insérer le produit manquant proprement
+                                const payload: any = {
+                                    id: localProd.id,
+                                    store_id: localProd.store_id,
+                                    name: localProd.name,
+                                    price: localProd.price,
+                                    color: localProd.color,
+                                    icon_color: localProd.icon_color,
+                                    audio_name: localProd.audio_name
+                                };
+                                if (localProd.image_url) payload.image_url = localProd.image_url;
+                                if (localProd.barcode) payload.barcode = localProd.barcode;
+                                if (localProd.category) payload.category = localProd.category;
+
                                 const { error: prodError } = await supabase
                                     .from('products')
-                                    .insert([{
-                                        id: localProd.id,
-                                        store_id: localProd.store_id,
-                                        name: localProd.name,
-                                        price: localProd.price,
-                                        color: localProd.color,
-                                        icon_color: localProd.icon_color,
-                                        audio_name: localProd.audio_name,
-                                        image_url: localProd.image_url,
-                                        barcode: localProd.barcode,
-                                        category: localProd.category || 'OTHER'
-                                    }]);
+                                    .insert([payload]);
 
                                 if (!prodError || prodError.code === '23505') {
                                     // Succès ou déjà présent, on retente l'upsert du stock
@@ -120,6 +122,17 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
                                     if (!retryError) success = true;
                                     else errorDetails = retryError;
+                                } else if (prodError.message.includes('barcode')) {
+                                    // Deuxième tentative sans barcode si la colonne manque vraiment
+                                    delete payload.barcode;
+                                    const { error: retryProd } = await supabase.from('products').insert([payload]);
+                                    if (!retryProd || retryProd.code === '23505') {
+                                        const { error: retryStock } = await supabase.from('stock').upsert({ product_id, quantity: newQty });
+                                        if (!retryStock) success = true;
+                                        else errorDetails = retryStock;
+                                    } else {
+                                        errorDetails = retryProd;
+                                    }
                                 } else {
                                     errorDetails = prodError;
                                 }
@@ -143,22 +156,40 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     }
                     case 'ADD_PRODUCT': {
                         const { id, store_id, name, price, color, icon_color, audio_name, image_url, barcode, category } = item.payload;
+
+                        // Construire le payload de manière robuste
+                        const payload: any = {
+                            id,
+                            store_id,
+                            name,
+                            price,
+                            color: color || '#F1F5F9',
+                            icon_color: icon_color || '#64748B',
+                            audio_name: audio_name || name
+                        };
+
+                        // Ajouter les colonnes optionnelles seulement si elles existent dans le payload
+                        // et on va les protéger pour éviter les erreurs de schéma cloud
+                        if (category) payload.category = category;
+                        if (image_url) payload.image_url = image_url;
+                        if (barcode) payload.barcode = barcode;
+
                         const { error: apError } = await supabase
                             .from('products')
-                            .insert([{
-                                id,
-                                store_id,
-                                name,
-                                price,
-                                color,
-                                icon_color,
-                                audio_name,
-                                image_url,
-                                barcode,
-                                category
-                            }]);
+                            .insert([payload]);
+
                         if (!apError || apError.code === '23505') success = true;
-                        else errorDetails = apError;
+                        else if (apError.message.includes('barcode') || apError.message.includes('image_url')) {
+                            // Si l'erreur mentionne spécifiquement barcode ou image_url, on retente sans eux
+                            console.warn(`[Sync] Retrying ADD_PRODUCT without optional columns due to schema mismatch...`);
+                            delete payload.barcode;
+                            delete payload.image_url;
+                            const { error: retryError } = await supabase.from('products').insert([payload]);
+                            if (!retryError || retryError.code === '23505') success = true;
+                            else errorDetails = retryError;
+                        } else {
+                            errorDetails = apError;
+                        }
                         break;
                     }
                     case 'UPDATE_PRODUCT': {
