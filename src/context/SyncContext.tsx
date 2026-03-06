@@ -97,7 +97,18 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
                             const localProd = await db.products.get(product_id);
                             if (localProd) {
                                 // Tenter d'insérer le produit manquant proprement
-                                const payload: any = {
+                                const payload: {
+                                    id: string;
+                                    store_id: string;
+                                    name: string;
+                                    price: number;
+                                    color: string;
+                                    icon_color: string;
+                                    audio_name: string;
+                                    image_url?: string;
+                                    barcode?: string;
+                                    category?: string;
+                                } = {
                                     id: localProd.id,
                                     store_id: localProd.store_id,
                                     name: localProd.name,
@@ -124,8 +135,9 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
                                     else errorDetails = retryError;
                                 } else if (prodError.message.includes('barcode')) {
                                     // Deuxième tentative sans barcode si la colonne manque vraiment
-                                    delete payload.barcode;
-                                    const { error: retryProd } = await supabase.from('products').insert([payload]);
+                                    const retryPayload = { ...payload };
+                                    delete retryPayload.barcode;
+                                    const { error: retryProd } = await supabase.from('products').insert([retryPayload]);
                                     if (!retryProd || retryProd.code === '23505') {
                                         const { error: retryStock } = await supabase.from('stock').upsert({ product_id, quantity: newQty });
                                         if (!retryStock) success = true;
@@ -158,7 +170,18 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         const { id, store_id, name, price, color, icon_color, audio_name, image_url, barcode, category } = item.payload;
 
                         // Construire le payload de manière robuste
-                        const payload: any = {
+                        const payload: {
+                            id: string;
+                            store_id: string;
+                            name: string;
+                            price: number;
+                            color: string;
+                            icon_color: string;
+                            audio_name: string;
+                            category?: string;
+                            image_url?: string;
+                            barcode?: string;
+                        } = {
                             id,
                             store_id,
                             name,
@@ -182,9 +205,10 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         else if (apError.message.includes('barcode') || apError.message.includes('image_url')) {
                             // Si l'erreur mentionne spécifiquement barcode ou image_url, on retente sans eux
                             console.warn(`[Sync] Retrying ADD_PRODUCT without optional columns due to schema mismatch...`);
-                            delete payload.barcode;
-                            delete payload.image_url;
-                            const { error: retryError } = await supabase.from('products').insert([payload]);
+                            const retryPayload = { ...payload };
+                            delete retryPayload.barcode;
+                            delete retryPayload.image_url;
+                            const { error: retryError } = await supabase.from('products').insert([retryPayload]);
                             if (!retryError || retryError.code === '23505') success = true;
                             else errorDetails = retryError;
                         } else {
@@ -269,13 +293,13 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // Initial sync: process queue immediately on startup
         updatePendingCount();
-        if (navigator.onLine) {
+        if (typeof navigator !== 'undefined' && navigator.onLine) {
             processQueue();
         }
 
         // More frequent periodic sync (every 10s)
         const interval = setInterval(() => {
-            if (navigator.onLine) processQueue();
+            if (typeof navigator !== 'undefined' && navigator.onLine) processQueue();
         }, 10000);
 
         return () => {

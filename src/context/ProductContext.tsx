@@ -176,7 +176,7 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
         } else {
             setProducts([]);
         }
-    }, [activeProfile]);
+    }, [activeProfile, fetchProducts]);
 
     const syncGlobalCatalog = async () => {
         if (!navigator.onLine) return;
