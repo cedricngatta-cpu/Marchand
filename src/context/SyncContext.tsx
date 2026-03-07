@@ -44,29 +44,28 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return;
         }
 
-        // --- TRI DE LA FILE : C'est ici qu'on gère la priorité ---
-        // Les créations de produits doivent partir avant tout mouvement de stock
+        // --- TRI DE LA FILE : Priorité absolue à la création des produits ---
         pending.sort((a, b) => {
-            const priorityActions = ['ADD_PRODUCT']; // On peut rajouter d'autres if needed
+            // ADD_PRODUCT doit passer avant TOUTE autre opération pour respecter les contraintes SQL
+            if (a.action === 'ADD_PRODUCT' && b.action !== 'ADD_PRODUCT') return -1;
+            if (a.action !== 'ADD_PRODUCT' && b.action === 'ADD_PRODUCT') return 1;
 
-            const aIsPriority = priorityActions.includes(a.action);
-            const bIsPriority = priorityActions.includes(b.action);
-
-            if (aIsPriority && !bIsPriority) return -1;
-            if (!aIsPriority && bIsPriority) return 1;
-
-            // En cas d'égalité sur la priorité, on garde l'ordre chronologique
+            // Pour toutes les autres actions (UPDATE_STOCK, ADD_TRANSACTION, etc.), 
+            // on respecte l'ordre chronologique de création
             return (a.created_at || 0) - (b.created_at || 0);
         });
 
         isSyncingRef.current = true;
         setIsSyncing(true);
-        console.log(`[Sync] Processing ${pending.length} pending/error actions...`);
+        console.log(`[Sync] Processing ${pending.length} actions with ADD_PRODUCT priority...`);
 
         for (const item of pending) {
             try {
                 let success = false;
                 let errorDetails = null;
+
+                // Stop processing if another sync process claimed the queue during loop
+                if (!navigator.onLine) break;
 
                 switch (item.action) {
                     case 'ADD_TRANSACTION': {
@@ -277,16 +276,17 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     setLastSyncError(`[${item.action}] ${msg}`);
 
                     const nextRetry = (item.retry_count || 0) + 1;
-                    if (nextRetry >= 3) {
-                        await db.syncQueue.update(item.id!, {
-                            status: 'FAILED',
-                            retry_count: nextRetry
-                        });
-                    } else {
-                        await db.syncQueue.update(item.id!, {
-                            status: 'ERROR',
-                            retry_count: nextRetry
-                        });
+                    await db.syncQueue.update(item.id!, {
+                        status: nextRetry >= 3 ? 'FAILED' : 'ERROR',
+                        retry_count: nextRetry
+                    });
+
+                    // CRITICAL: If an ADD_PRODUCT fails, stop the loop.
+                    // Subsequent stock updates or transactions for this product 
+                    // will inevitably fail with FK constraints.
+                    if (item.action === 'ADD_PRODUCT') {
+                        console.warn("[Sync] ADD_PRODUCT failed. Stopping queue to prevent cascading FK errors.");
+                        break;
                     }
                 }
             } catch (err) {
