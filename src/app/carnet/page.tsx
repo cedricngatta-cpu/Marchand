@@ -17,6 +17,7 @@ export default function CarnetPage() {
     const name = user?.name?.split(' ')[0] || 'Marchand';
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedClient, setSelectedClient] = useState<string | null>(null);
+    const [isProcessing, setIsProcessing] = useState<string | null>(null);
 
     // Grouper les dettes par client
     const debtsByClient = history.reduce((acc, t) => {
@@ -37,8 +38,31 @@ export default function CarnetPage() {
     );
 
     const handleSettle = async (transactionId: string, clientName: string, amount: number) => {
-        await markAsPaid(transactionId);
-        speakIfNecessary(`C'est noté ${name}. ${clientName} a payé ${amount} francs. C'est ajouté à ta caisse.`, 'LOW');
+        if (isProcessing) return;
+        setIsProcessing(transactionId);
+        try {
+            await markAsPaid(transactionId);
+            speakIfNecessary(`C'est noté ${name}. ${clientName} a payé ${amount} francs. C'est ajouté à ta caisse.`, 'LOW');
+        } catch (error) {
+            console.error(error);
+            alert("Oups ! L'encaissement a échoué. Vérifie ta connexion.");
+        } finally {
+            setIsProcessing(null);
+        }
+    };
+
+    const handleSettleAll = async (clientName: string, total: number) => {
+        if (isProcessing) return;
+        setIsProcessing(clientName);
+        try {
+            await markAllAsPaid(clientName);
+            speakIfNecessary(`Parfait ${name}. ${clientName} a tout réglé, soit ${total} francs.`, 'LOW');
+        } catch (error) {
+            console.error(error);
+            alert("Erreur lors de l'encaissement groupé. Réessaie.");
+        } finally {
+            setIsProcessing(null);
+        }
     };
 
     const totalGlobalDette = Object.values(debtsByClient).reduce((acc, c) => acc + c.total, 0);
@@ -119,13 +143,11 @@ export default function CarnetPage() {
 
                                         <div className="flex gap-2">
                                             <button
-                                                onClick={async () => {
-                                                    await markAllAsPaid(client.name);
-                                                    speakIfNecessary(`Parfait ${name}. ${client.name} a tout réglé, soit ${client.total} francs.`, 'LOW');
-                                                }}
-                                                className="flex-1 bg-emerald-600 text-white px-2 py-3 rounded-xl font-bold text-[10px] uppercase shadow-md active:scale-[0.98] transition-all text-center"
+                                                disabled={!!isProcessing}
+                                                onClick={() => handleSettleAll(client.name, client.total)}
+                                                className={`flex-1 bg-emerald-600 text-white px-2 py-3 rounded-xl font-bold text-[10px] uppercase shadow-md active:scale-[0.98] transition-all text-center ${isProcessing === client.name ? 'opacity-50' : ''}`}
                                             >
-                                                Tout Régler
+                                                {isProcessing === client.name ? 'En cours...' : 'Tout Régler'}
                                             </button>
                                             <button
                                                 onClick={() => setSelectedClient(selectedClient === key ? null : key)}
@@ -155,10 +177,11 @@ export default function CarnetPage() {
                                                                 <div className="flex items-center gap-4 shrink-0">
                                                                     <span className="font-bold text-rose-600 text-base whitespace-nowrap">{t.price} F</span>
                                                                     <button
+                                                                        disabled={!!isProcessing}
                                                                         onClick={() => handleSettle(t.id, client.name, t.price)}
-                                                                        className="bg-emerald-500 text-white p-2.5 rounded-xl shadow-md active:scale-90 transition-transform"
+                                                                        className={`bg-emerald-500 text-white p-2.5 rounded-xl shadow-md active:scale-90 transition-transform ${isProcessing === t.id ? 'opacity-50' : ''}`}
                                                                     >
-                                                                        <CheckCircle2 size={18} />
+                                                                        {isProcessing === t.id ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <CheckCircle2 size={18} />}
                                                                     </button>
                                                                 </div>
                                                             </div>
