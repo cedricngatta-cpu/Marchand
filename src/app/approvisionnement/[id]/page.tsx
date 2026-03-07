@@ -1,124 +1,347 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, PhoneCall, ShoppingCart, CheckCircle2, MapPin, Truck } from 'lucide-react';
+import { CheckCircle2, ChevronLeft, Minus, Package, Plus, ShoppingCart } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useVoice } from '@/hooks/useVoice';
-import { SUPPLIERS } from '@/data/suppliers';
+import { supabase } from '@/lib/supabase';
+import { db } from '@/lib/db';
+import { useProfileContext } from '@/context/ProfileContext';
+import { useSync } from '@/context/SyncContext';
 
-export default function OrderSupplierPage({ params }: { params: Promise<{ id: string }> }) {
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface ProductDetail {
+    id: string;
+    name: string;
+    price: number;
+    category: string;
+    store_id: string;
+    storeName: string;
+    stockQty: number;
+}
+
+const formatCFA = (n: number) => new Intl.NumberFormat('fr-FR').format(n) + '\u00A0F';
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
+export default function CommanderProduitPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = React.use(params);
     const router = useRouter();
-    const { speak } = useVoice();
-    const [orderQuantity, setOrderQuantity] = useState(1);
-    const [orderSuccess, setOrderSuccess] = useState(false);
+    const { activeProfile } = useProfileContext();
+    const { triggerSync } = useSync();
 
-    const supplier = SUPPLIERS.find(s => s.id.toString() === id);
+    const [product, setProduct]   = useState<ProductDetail | null>(null);
+    const [loading, setLoading]   = useState(true);
+    const [quantity, setQuantity] = useState(1);
+    const [notes, setNotes]       = useState('');
+    const [submitting, setSubmitting] = useState(false);
+    const [done, setDone]         = useState(false);
 
-    if (!supplier) {
-        return (
-            <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-6">
-                <p className="text-xl font-bold text-slate-500">Fournisseur introuvable.</p>
-                <button onClick={() => router.back()} className="mt-4 px-6 py-3 bg-primary text-white rounded-full font-bold shadow-lg">Retour</button>
-            </div>
-        );
-    }
+    // ── Fetch produit depuis Supabase ─────────────────────────────────────────
 
-    const handleOrder = () => {
-        // speak(`Commande...`); - SILENCED Mission 1
-        setOrderSuccess(true);
-        setTimeout(() => {
-            router.push('/approvisionnement');
-        }, 4000);
+    useEffect(() => {
+        const fetchProduct = async () => {
+            setLoading(true);
+            try {
+                const { data: prod, error } = await supabase
+                    .from('products')
+                    .select('id, name, price, category, store_id')
+                    .eq('id', id)
+                    .single();
+
+                if (error || !prod) { setLoading(false); return; }
+
+                const { data: storeData } = await supabase
+                    .from('stores')
+                    .select('id, name')
+                    .eq('id', prod.store_id)
+                    .single();
+
+                const { data: stockData } = await supabase
+                    .from('stock')
+                    .select('quantity')
+                    .eq('product_id', id)
+                    .maybeSingle();
+
+                setProduct({
+                    id:        prod.id,
+                    name:      prod.name,
+                    price:     prod.price,
+                    category:  prod.category,
+                    store_id:  prod.store_id,
+                    storeName: storeData?.name ?? 'Producteur',
+                    stockQty:  stockData?.quantity ?? 0,
+                });
+            } catch (err) {
+                console.error('[Commander] fetch error:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchProduct();
+    }, [id]);
+
+    // ── CREATE_ORDER offline-first ────────────────────────────────────────────
+
+    const handleOrder = async () => {
+        if (!product || !activeProfile || submitting) return;
+        setSubmitting(true);
+        try {
+            const orderId = crypto.randomUUID();
+            const now     = new Date().toISOString();
+            const total   = product.price * quantity;
+
+            // 1. Écriture locale Dexie
+            await db.orders.add({
+                id:               orderId,
+                buyer_store_id:   activeProfile.id,
+                seller_store_id:  product.store_id,
+                product_id:       product.id,
+                product_name:     product.name,
+                quantity,
+                unit_price:       product.price,
+                total_amount:     total,
+                status:           'PENDING',
+                buyer_name:       activeProfile.name,
+                seller_name:      product.storeName,
+                notes:            notes.trim() || undefined,
+                created_at:       now,
+                updated_at:       now,
+                synced:           0,
+            });
+
+            // 2. SyncQueue → Supabase
+            await db.syncQueue.add({
+                action: 'CREATE_ORDER',
+                payload: {
+                    id:              orderId,
+                    buyer_store_id:  activeProfile.id,
+                    seller_store_id: product.store_id,
+                    product_id:      product.id,
+                    product_name:    product.name,
+                    quantity,
+                    unit_price:      product.price,
+                    total_amount:    total,
+                    buyer_name:      activeProfile.name,
+                    seller_name:     product.storeName,
+                    notes:           notes.trim() || null,
+                    created_at:      now,
+                    updated_at:      now,
+                },
+                status:      'PENDING',
+                retry_count: 0,
+                created_at:  Date.now(),
+            });
+
+            triggerSync();
+            setDone(true);
+        } catch (err) {
+            console.error('[Commander] order error:', err);
+        } finally {
+            setSubmitting(false);
+        }
     };
 
-    if (orderSuccess) {
+    // ── Success screen ────────────────────────────────────────────────────────
+
+    if (done && product) {
         return (
-            <main className="min-h-screen bg-blue-600 flex flex-col items-center justify-center text-white p-8 text-center">
+            <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center px-6 pb-24">
                 <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: "spring", damping: 12 }}
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 22 }}
+                    className="flex flex-col items-center text-center gap-5"
                 >
-                    <CheckCircle2 size={120} strokeWidth={3} />
+                    <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center">
+                        <CheckCircle2 size={52} className="text-emerald-600" />
+                    </div>
+                    <div>
+                        <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                            Commande Envoyée !
+                        </h2>
+                        <p className="text-slate-400 text-sm mt-1">
+                            {product.storeName} recevra votre demande et la validera.
+                        </p>
+                    </div>
+                    <div className="bg-white dark:bg-slate-900 rounded-[20px] p-4 border border-slate-100 dark:border-slate-800 w-full text-left">
+                        <p className="font-bold text-xs text-slate-500 uppercase tracking-wider mb-1">Récapitulatif</p>
+                        <p className="font-bold text-sm text-slate-800 dark:text-white">{product.name}</p>
+                        <p className="text-[10px] text-slate-400 font-bold mt-0.5">
+                            {quantity} u · {formatCFA(product.price)} / u = {formatCFA(product.price * quantity)}
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => router.push('/commercant/livraisons')}
+                        className="w-full bg-primary text-white py-4 rounded-[20px] font-bold text-sm uppercase tracking-widest shadow-lg shadow-emerald-200 dark:shadow-none active:scale-95 transition-all"
+                    >
+                        Voir mes commandes
+                    </button>
+                    <button
+                        onClick={() => router.push('/approvisionnement')}
+                        className="text-slate-400 text-xs font-bold uppercase tracking-wider"
+                    >
+                        Retour au catalogue
+                    </button>
                 </motion.div>
-                <h2 className="text-5xl font-black mt-8 mb-4 uppercase leading-none">Commandé !</h2>
-                <p className="text-xl font-bold opacity-80 uppercase tracking-widest">Le fournisseur vous contactera pour la livraison.</p>
-            </main>
+            </div>
         );
     }
 
+    // ── Loading ───────────────────────────────────────────────────────────────
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-24 overflow-x-hidden">
+                <div className="bg-primary pt-8 pb-28 px-4 rounded-b-[2.5rem] shadow-lg">
+                    <div className="flex items-center gap-4 max-w-lg mx-auto">
+                        <button onClick={() => router.back()} className="w-10 h-10 bg-white text-primary rounded-full flex items-center justify-center active:scale-95 transition-transform shadow-sm shrink-0">
+                            <ChevronLeft size={20} />
+                        </button>
+                        <div className="h-5 w-40 bg-white/20 rounded-lg animate-pulse" />
+                    </div>
+                </div>
+                <div className="px-4 max-w-lg mx-auto mt-[-40px] z-10 relative space-y-4">
+                    <div className="bg-white dark:bg-slate-900 rounded-[24px] h-64 border border-slate-100 dark:border-slate-800 animate-pulse" />
+                </div>
+            </div>
+        );
+    }
+
+    if (!product) {
+        return (
+            <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-6">
+                <Package size={40} className="text-slate-200 mb-4" />
+                <p className="font-bold text-slate-400 uppercase text-xs tracking-widest mb-4">Produit introuvable</p>
+                <button onClick={() => router.back()} className="bg-primary text-white px-6 py-3 rounded-[16px] font-bold text-sm">
+                    Retour
+                </button>
+            </div>
+        );
+    }
+
+    const maxQty = product.stockQty > 0 ? product.stockQty : 999;
+
+    // ── Form ─────────────────────────────────────────────────────────────────
+
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-32">
-            {/* Header Coloré (Card Overlap Style) */}
-            <div className="bg-primary pt-8 pb-32 px-4 rounded-b-[2.5rem] relative shadow-lg">
-                <div className="flex justify-between items-center max-w-lg mx-auto mb-6">
-                    <button onClick={() => router.back()} className="w-10 h-10 bg-white text-primary rounded-full flex items-center justify-center active:scale-95 transition-transform shadow-sm">
-                        <ArrowLeft size={20} />
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-24 overflow-x-hidden">
+
+            {/* ── Header wave ── */}
+            <div className="bg-primary pt-8 pb-28 px-4 rounded-b-[2.5rem] shadow-lg">
+                <div className="flex items-center gap-4 max-w-lg mx-auto">
+                    <button
+                        onClick={() => router.back()}
+                        className="w-10 h-10 bg-white text-primary rounded-full flex items-center justify-center active:scale-95 transition-transform shadow-sm shrink-0"
+                    >
+                        <ChevronLeft size={20} />
                     </button>
-                    <div className="text-center flex-1 pr-10">
-                        <h1 className="text-white font-bold text-lg tracking-wide uppercase">Détails Commande</h1>
-                        <p className="text-emerald-200 text-[10px] font-bold uppercase tracking-widest mt-0.5">Marché Virtuel / Acheter</p>
+                    <div className="min-w-0">
+                        <h1 className="text-white font-bold text-lg tracking-wide uppercase leading-none truncate">
+                            {product.name}
+                        </h1>
+                        <p className="text-emerald-200 text-[10px] font-bold uppercase tracking-widest mt-0.5">
+                            {product.storeName}
+                        </p>
                     </div>
                 </div>
             </div>
 
-            {/* Main Content Overlap */}
-            <main className="mt-[-60px] relative z-10 px-4 max-w-lg mx-auto space-y-4">
-                <div className="bg-white dark:bg-slate-900 w-full max-w-lg mx-auto rounded-[32px] p-6 shadow-xl relative border border-slate-100 dark:border-slate-800">
-                    <div className="flex items-start gap-4 mb-6">
-                        <div className="w-20 h-20 bg-blue-50 dark:bg-slate-800 text-blue-600 dark:text-blue-400 rounded-[20px] flex items-center justify-center shrink-0 overflow-hidden border border-blue-100 dark:border-slate-700 shadow-sm">
-                            {supplier.imageUrl ? (
-                                <img src={supplier.imageUrl} alt={supplier.product} className="w-full h-full object-contain p-1" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
-                            ) : null}
-                            <div className={supplier.imageUrl ? "hidden" : ""}>
-                                <Truck size={32} />
-                            </div>
+            {/* ── Form overlap ── */}
+            <div className="px-4 max-w-lg mx-auto relative mt-[-40px] z-10 space-y-4">
+
+                {/* Infos produit */}
+                <div className="bg-white dark:bg-slate-900 rounded-[24px] p-5 shadow-xl border border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center gap-4 mb-4">
+                        <div className="w-14 h-14 rounded-[14px] bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center shrink-0">
+                            <Package size={24} className="text-indigo-600" />
                         </div>
-                        <div className="flex-1 min-w-0 pt-1">
-                            <h2 className="text-2xl font-black uppercase text-slate-900 dark:text-white mb-1 leading-tight">{supplier.product}</h2>
-                            <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mb-2 flex items-center gap-1"><MapPin size={12} /> {supplier.name} • {supplier.distance}</p>
-                            <span className="inline-block px-3 py-1 bg-blue-50 dark:bg-slate-800 text-blue-600 border border-blue-200 dark:border-slate-700 rounded-full text-xs font-black uppercase tracking-widest">Stock dispo: {supplier.stock}</span>
+                        <div className="min-w-0">
+                            <h2 className="font-bold text-base text-slate-800 dark:text-white leading-tight truncate">
+                                {product.name}
+                            </h2>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase mt-0.5">
+                                {product.storeName}
+                            </p>
+                        </div>
+                        <div className="text-right shrink-0 ml-auto">
+                            <p className="font-bold text-lg text-slate-800 dark:text-white">
+                                {formatCFA(product.price)}
+                            </p>
+                            <p className="text-[10px] text-slate-400 font-bold">/ unité</p>
                         </div>
                     </div>
 
-                    <div className="flex items-center justify-between gap-4 mb-6 bg-slate-50 dark:bg-slate-800 p-5 rounded-[24px] border border-slate-100 dark:border-slate-700">
-                        <span className="font-black text-slate-400 text-xs uppercase tracking-widest">Quantité <br />({supplier.unit})</span>
-                        <div className="flex items-center justify-center gap-4">
-                            <button
-                                onClick={() => setOrderQuantity(Math.max(1, orderQuantity - 1))}
-                                className="w-12 h-12 bg-white dark:bg-slate-700 rounded-full shadow-sm flex items-center justify-center text-xl font-black text-slate-900 dark:text-white active:scale-95 border border-slate-100 dark:border-slate-600"
-                            >-</button>
-                            <span className="text-3xl font-black text-slate-900 dark:text-white w-12 text-center">{orderQuantity}</span>
-                            <button
-                                onClick={() => setOrderQuantity(Math.min(supplier.stock, orderQuantity + 1))}
-                                className="w-12 h-12 bg-white dark:bg-slate-700 rounded-full shadow-sm flex items-center justify-center text-xl font-black text-slate-900 dark:text-white active:scale-95 border border-slate-100 dark:border-slate-600"
-                            >+</button>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center justify-between mb-8 px-2">
-                        <span className="text-sm font-black text-slate-400 uppercase tracking-widest">Total à payer :</span>
-                        <div className="text-right">
-                            <span className="text-4xl font-black text-emerald-600 leading-none block">{supplier.price * orderQuantity} F</span>
-                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{supplier.price} F / {supplier.unit}</span>
-                        </div>
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row gap-3">
-                        <button className="flex-1 py-4 sm:py-5 rounded-[20px] sm:rounded-[24px] border-[3px] sm:border-4 border-slate-100 dark:border-slate-700 font-bold text-xs uppercase tracking-widest text-slate-500 flex items-center justify-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 active:scale-95 transition-all">
-                            <PhoneCall size={18} /> Appeler
-                        </button>
-                        <button
-                            onClick={handleOrder}
-                            className="flex-[2] py-4 sm:py-5 bg-primary text-white rounded-[20px] sm:rounded-[24px] shadow-xl font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-transform"
-                        >
-                            <ShoppingCart size={18} /> Confirmer
-                        </button>
+                    {/* Stock disponible */}
+                    <div className={`inline-block text-[10px] font-bold px-3 py-1 rounded-full ${
+                        product.stockQty > 0
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : 'bg-slate-100 text-slate-500'
+                    }`}>
+                        {product.stockQty > 0 ? `${product.stockQty} unités disponibles` : 'Stock non renseigné'}
                     </div>
                 </div>
-            </main>
+
+                {/* Quantité */}
+                <div className="bg-white dark:bg-slate-900 rounded-[24px] p-5 shadow-sm border border-slate-100 dark:border-slate-800">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-4">Quantité</p>
+                    <div className="flex items-center justify-between gap-4">
+                        <button
+                            onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                            className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center active:scale-90 transition-transform"
+                        >
+                            <Minus size={18} className="text-slate-600 dark:text-slate-300" />
+                        </button>
+                        <span className="text-4xl font-black text-slate-800 dark:text-white tracking-tighter">
+                            {quantity}
+                        </span>
+                        <button
+                            onClick={() => setQuantity(q => Math.min(maxQty, q + 1))}
+                            className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center active:scale-90 transition-transform"
+                        >
+                            <Plus size={18} className="text-slate-600 dark:text-slate-300" />
+                        </button>
+                    </div>
+                    <div className="mt-4 pt-4 border-t border-slate-50 dark:border-slate-800 flex justify-between items-baseline">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total estimé</span>
+                        <span className="text-2xl font-black text-slate-800 dark:text-white">
+                            {formatCFA(product.price * quantity)}
+                        </span>
+                    </div>
+                </div>
+
+                {/* Notes */}
+                <div className="bg-white dark:bg-slate-900 rounded-[24px] p-5 shadow-sm border border-slate-100 dark:border-slate-800">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
+                        Note pour le producteur (optionnel)
+                    </p>
+                    <textarea
+                        value={notes}
+                        onChange={e => setNotes(e.target.value)}
+                        placeholder="Livraison avant jeudi, conditionnement spécifique..."
+                        rows={2}
+                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl px-4 py-3 text-sm text-slate-700 dark:text-slate-200 font-medium outline-none focus:border-primary transition-all placeholder:text-slate-300 resize-none"
+                    />
+                </div>
+
+                {/* CTA */}
+                <motion.button
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handleOrder}
+                    disabled={submitting || !activeProfile}
+                    className="w-full bg-primary disabled:bg-slate-200 dark:disabled:bg-slate-800 text-white disabled:text-slate-400 py-5 rounded-[20px] font-bold text-sm uppercase tracking-widest shadow-lg shadow-emerald-200 dark:shadow-none active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+                >
+                    {submitting ? (
+                        <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                        <ShoppingCart size={18} />
+                    )}
+                    {submitting ? 'Envoi en cours...' : `Commander · ${formatCFA(product.price * quantity)}`}
+                </motion.button>
+
+            </div>
         </div>
     );
 }

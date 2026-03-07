@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from './AuthContext';
+import { StoreType } from '@/lib/db';
 
 export interface StoreProfile {
     id: string;
@@ -12,6 +13,8 @@ export interface StoreProfile {
     createdAt: number;
     logo?: string;
     ownerRole?: string;
+    /** Type d'entité : RETAILER (marchand), PRODUCER (producteur), WHOLESALER (grossiste) */
+    store_type: StoreType;
 }
 
 interface ProfileContextType {
@@ -70,7 +73,8 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 ownerRole: (s.profiles as any)?.role || 'MERCHANT',
                 status: s.status || 'ACTIVE',
                 createdAt: new Date(s.created_at).getTime(),
-                logo: s.logo_url
+                logo: s.logo_url,
+                store_type: (s.store_type as StoreType) || 'RETAILER',
             }));
             setProfiles(mapped);
 

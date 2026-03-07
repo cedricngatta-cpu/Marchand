@@ -3,6 +3,9 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { db } from '@/lib/db';
 import { supabase } from '@/lib/supabase';
+import { useProfileContext } from './ProfileContext';
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface SyncContextType {
     isOnline: boolean;
@@ -15,23 +18,31 @@ interface SyncContextType {
 
 const SyncContext = createContext<SyncContextType | undefined>(undefined);
 
+// ─── Provider ─────────────────────────────────────────────────────────────────
+
 export function SyncProvider({ children }: { children: React.ReactNode }) {
+
+    // ProfileProvider wraps SyncProvider → useProfileContext() est toujours disponible ici.
+    const { activeProfile } = useProfileContext();
+
     const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
     const isSyncingRef = useRef(false);
     const [isSyncing, setIsSyncing] = useState(false);
     const [syncPendingCount, setSyncPendingCount] = useState(0);
     const [lastSyncError, setLastSyncError] = useState<string | null>(null);
 
+    // ── Compteur de la file d'attente ─────────────────────────────────────────
+
     const updatePendingCount = useCallback(async () => {
         const count = await db.syncQueue.count();
         setSyncPendingCount(count);
     }, []);
 
+    // ── Traitement de la file (Auto-Push) ─────────────────────────────────────
+
     const processQueue = useCallback(async (forceRetry: boolean = false) => {
         if (!navigator.onLine || isSyncingRef.current) return;
 
-        // Traiter PENDING et retenter les ERROR
-        // Si forceRetry est vrai, on inclut aussi les FAILED
         const statusFilter = forceRetry ? ['PENDING', 'ERROR', 'FAILED'] : ['PENDING', 'ERROR'];
 
         const pending = await db.syncQueue
@@ -44,27 +55,21 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
             return;
         }
 
-        // --- TRI DE LA FILE : Priorité absolue à la création des produits ---
+        // Tri de la file : ADD_PRODUCT doit précéder toutes les autres opérations (contraintes FK)
         pending.sort((a, b) => {
-            // ADD_PRODUCT doit passer avant TOUTE autre opération pour respecter les contraintes SQL
             if (a.action === 'ADD_PRODUCT' && b.action !== 'ADD_PRODUCT') return -1;
             if (a.action !== 'ADD_PRODUCT' && b.action === 'ADD_PRODUCT') return 1;
-
-            // Pour toutes les autres actions (UPDATE_STOCK, ADD_TRANSACTION, etc.), 
-            // on respecte l'ordre chronologique de création
             return (a.created_at || 0) - (b.created_at || 0);
         });
 
         isSyncingRef.current = true;
         setIsSyncing(true);
-        console.log(`[Sync] Processing ${pending.length} actions with ADD_PRODUCT priority...`);
+        console.log(`[Sync] Processing ${pending.length} actions...`);
 
         for (const item of pending) {
             try {
                 let success = false;
-                let errorDetails = null;
 
-                // Stop processing if another sync process claimed the queue during loop
                 if (!navigator.onLine) break;
 
                 switch (item.action) {
@@ -123,10 +128,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
                         if (!id) throw new Error("[SYNC_ERROR] ADD_PRODUCT: Payload manquant l'ID UUID.");
 
                         const payload: any = {
-                            id,
-                            store_id,
-                            name,
-                            price,
+                            id, store_id, name, price,
                             color: color || '#F1F5F9',
                             icon_color: icon_color || '#64748B',
                             audio_name: audio_name || name
@@ -136,9 +138,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
                         if (image_url) payload.image_url = image_url;
                         if (barcode) payload.barcode = barcode;
 
-                        const { error: apError } = await supabase
-                            .from('products')
-                            .insert([payload]);
+                        const { error: apError } = await supabase.from('products').insert([payload]);
 
                         if (apError) {
                             if (apError.code === '23505') {
@@ -146,13 +146,9 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
                             } else if (apError.message.includes('barcode') || apError.message.includes('image_url') || apError.message.includes('category')) {
                                 console.warn(`[Sync] Fallback ADD_PRODUCT sans colonnes optionnelles...`);
                                 const { error: retryError } = await supabase.from('products').insert([{
-                                    id: payload.id,
-                                    store_id: payload.store_id,
-                                    name: payload.name,
-                                    price: payload.price,
-                                    color: payload.color,
-                                    icon_color: payload.icon_color,
-                                    audio_name: payload.audio_name
+                                    id: payload.id, store_id: payload.store_id, name: payload.name,
+                                    price: payload.price, color: payload.color,
+                                    icon_color: payload.icon_color, audio_name: payload.audio_name
                                 }]);
                                 if (!retryError || retryError.code === '23505') success = true;
                                 else throw new Error(`[SUPABASE_ERROR] ADD_PRODUCT_FALLBACK: ${retryError.message}`);
@@ -177,25 +173,106 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
                         if (updates.category) mappedUpdates.category = updates.category;
 
                         const { error: upError } = await supabase
-                            .from('products')
-                            .update(mappedUpdates)
-                            .eq('id', upid);
+                            .from('products').update(mappedUpdates).eq('id', upid);
 
-                        if (upError) {
-                            throw new Error(`[SUPABASE_ERROR] UPDATE_PRODUCT: ${upError.message}`);
-                        }
+                        if (upError) throw new Error(`[SUPABASE_ERROR] UPDATE_PRODUCT: ${upError.message}`);
                         success = true;
                         break;
                     }
                     case 'DELETE_PRODUCT': {
                         const { id: dpid } = item.payload;
                         const { error: dpError } = await supabase
-                            .from('products')
-                            .delete()
-                            .eq('id', dpid);
+                            .from('products').delete().eq('id', dpid);
 
-                        if (dpError) {
-                            throw new Error(`[SUPABASE_ERROR] DELETE_PRODUCT: ${dpError.message}`);
+                        if (dpError) throw new Error(`[SUPABASE_ERROR] DELETE_PRODUCT: ${dpError.message}`);
+                        success = true;
+                        break;
+                    }
+
+                    // ── Flux B2B Producteur ↔ Marchand ────────────────────────────────────
+
+                    case 'CREATE_ORDER': {
+                        const {
+                            id, buyer_store_id, seller_store_id, product_id,
+                            product_name, quantity, unit_price, total_amount,
+                            buyer_name, seller_name, notes, created_at, updated_at,
+                        } = item.payload;
+
+                        if (!id) throw new Error("[SYNC_ERROR] CREATE_ORDER: Payload manquant l'ID UUID.");
+
+                        const { error: coError } = await supabase.from('orders').insert([{
+                            id, buyer_store_id, seller_store_id, product_id,
+                            product_name, quantity, unit_price, total_amount,
+                            status: 'PENDING',
+                            buyer_name: buyer_name ?? null,
+                            seller_name: seller_name ?? null,
+                            notes: notes ?? null,
+                            created_at, updated_at,
+                        }]);
+
+                        if (coError) {
+                            if (coError.code === '23505') { success = true; break; }
+                            if (coError.code === '23503') {
+                                throw new Error(`[FOREIGN_KEY_ERROR] CREATE_ORDER: store_id ou product_id introuvable. ${coError.message}`);
+                            }
+                            throw new Error(`[SUPABASE_ERROR] CREATE_ORDER: ${coError.message} (Code: ${coError.code})`);
+                        }
+                        success = true;
+                        break;
+                    }
+                    case 'ACCEPT_ORDER': {
+                        const { id, updated_at } = item.payload;
+                        const { error: aoError } = await supabase
+                            .from('orders').update({ status: 'ACCEPTED', updated_at }).eq('id', id);
+                        if (aoError) throw new Error(`[SUPABASE_ERROR] ACCEPT_ORDER: ${aoError.message}`);
+                        success = true;
+                        break;
+                    }
+                    case 'CANCEL_ORDER': {
+                        const { id, updated_at } = item.payload;
+                        const { error: cancelError } = await supabase
+                            .from('orders').update({ status: 'CANCELLED', updated_at }).eq('id', id);
+                        if (cancelError) throw new Error(`[SUPABASE_ERROR] CANCEL_ORDER: ${cancelError.message}`);
+                        success = true;
+                        break;
+                    }
+                    case 'SHIP_ORDER': {
+                        const { id, updated_at } = item.payload;
+                        const { error: shipError } = await supabase
+                            .from('orders').update({ status: 'SHIPPED', updated_at }).eq('id', id);
+                        if (shipError) throw new Error(`[SUPABASE_ERROR] SHIP_ORDER: ${shipError.message}`);
+                        success = true;
+                        break;
+                    }
+                    case 'DELIVER_ORDER': {
+                        const {
+                            id, transaction_id, payment_mode, buyer_store_id,
+                            product_id, product_name, quantity, unit_price, updated_at,
+                        } = item.payload;
+
+                        if (!transaction_id) throw new Error("[SYNC_ERROR] DELIVER_ORDER: transaction_id manquant.");
+
+                        const { error: deliverError } = await supabase
+                            .from('orders')
+                            .update({ status: 'DELIVERED', payment_mode, updated_at })
+                            .eq('id', id);
+
+                        if (deliverError) throw new Error(`[SUPABASE_ERROR] DELIVER_ORDER (update): ${deliverError.message}`);
+
+                        const txStatus = payment_mode === 'CASH' ? 'PAYÉ' : payment_mode === 'MOMO' ? 'MOMO' : 'DETTE';
+
+                        const { error: txError } = await supabase.from('transactions').insert([{
+                            id: transaction_id,
+                            type: 'LIVRAISON',
+                            product_id, product_name, quantity,
+                            price: unit_price,
+                            status: txStatus,
+                            store_id: buyer_store_id,
+                            created_at: updated_at,
+                        }]);
+
+                        if (txError && txError.code !== '23505') {
+                            throw new Error(`[SUPABASE_ERROR] DELIVER_ORDER (transaction): ${txError.message}`);
                         }
                         success = true;
                         break;
@@ -218,8 +295,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
                     retry_count: nextRetry
                 });
 
-                // On arrête tout traitement de la file si une erreur survient (principe de précaution)
-                console.warn("[Sync] Loop stopped due to error to maintain data integrity.");
+                console.warn('[Sync] Loop stopped to maintain data integrity.');
                 break;
             }
         }
@@ -227,11 +303,22 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
         isSyncingRef.current = false;
         setIsSyncing(false);
         updatePendingCount();
+
+        // Drain : si de nouveaux items sont arrivés pendant ce cycle, relancer immédiatement
+        const remaining = await db.syncQueue.where('status').anyOf(['PENDING', 'ERROR']).count();
+        if (remaining > 0 && navigator.onLine) {
+            setTimeout(() => {
+                if (!isSyncingRef.current) processQueue();
+            }, 200);
+        }
     }, [updatePendingCount]);
+
+    // ── Pilier 1 : Auto-Push — réseau + intervalle ────────────────────────────
 
     useEffect(() => {
         const handleOnline = () => {
             setIsOnline(true);
+            console.log('[Sync] Network restored — flushing queue...');
             processQueue();
         };
         const handleOffline = () => setIsOnline(false);
@@ -239,14 +326,11 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
         window.addEventListener('online', handleOnline);
         window.addEventListener('offline', handleOffline);
 
-        // Initial sync: process queue immediately on startup
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         updatePendingCount();
         if (typeof navigator !== 'undefined' && navigator.onLine) {
             processQueue();
         }
 
-        // More frequent periodic sync (every 30s) - reduced from 10s to improve battery/CPU
         const interval = setInterval(() => {
             if (typeof navigator !== 'undefined' && navigator.onLine) processQueue();
         }, 30000);
@@ -258,6 +342,106 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
         };
     }, [processQueue, updatePendingCount]);
 
+    // ── Pilier 2 : Auto-Pull — Supabase Realtime (serveur → Dexie) ───────────
+
+    useEffect(() => {
+        if (!activeProfile?.id) return;
+        const profileId = activeProfile.id;
+
+        // ── Handler orders ──
+        // Anti-boucle : put() UNIQUEMENT — jamais de syncQueue.add().
+        // Les useLiveQuery existants réagissent automatiquement à db.put().
+        const handleOrderChange = async (payload: any) => {
+            if (payload.eventType !== 'INSERT' && payload.eventType !== 'UPDATE') return;
+            try {
+                // Mappe le row Supabase vers LocalOrder (synced: 1 = confirmé côté serveur)
+                const row = payload.new;
+                await db.orders.put({
+                    id:               row.id,
+                    buyer_store_id:   row.buyer_store_id,
+                    seller_store_id:  row.seller_store_id,
+                    product_id:       row.product_id,
+                    product_name:     row.product_name,
+                    quantity:         row.quantity,
+                    unit_price:       row.unit_price,
+                    total_amount:     row.total_amount,
+                    status:           row.status,
+                    payment_mode:     row.payment_mode ?? undefined,
+                    buyer_name:       row.buyer_name ?? undefined,
+                    seller_name:      row.seller_name ?? undefined,
+                    notes:            row.notes ?? undefined,
+                    created_at:       row.created_at,
+                    updated_at:       row.updated_at,
+                    synced:           1,
+                });
+                console.log(`[Realtime] ✓ Order ${row.id.slice(0, 8)} → ${row.status}`);
+            } catch (err) {
+                console.error('[Realtime] Failed to update order in Dexie:', err);
+            }
+        };
+
+        // ── Handler transactions ──
+        const handleTransactionChange = async (payload: any) => {
+            if (payload.eventType !== 'INSERT' && payload.eventType !== 'UPDATE') return;
+            try {
+                const row = payload.new;
+                await db.transactions.put({
+                    id:           row.id,
+                    type:         row.type,
+                    product_id:   row.product_id,
+                    product_name: row.product_name,
+                    quantity:     row.quantity,
+                    price:        row.price,
+                    status:       row.status,
+                    store_id:     row.store_id,
+                    created_at:   row.created_at,
+                    client_name:  row.client_name ?? undefined,
+                    synced:       1,
+                });
+                console.log(`[Realtime] ✓ Transaction ${row.id.slice(0, 8)} upserted`);
+            } catch (err) {
+                console.error('[Realtime] Failed to update transaction in Dexie:', err);
+            }
+        };
+
+        // ── Création du channel Supabase ──
+        // Un seul channel par profil, 3 filtres postgres_changes :
+        //   1. orders WHERE buyer_store_id  = profileId  (marchand voit ses commandes)
+        //   2. orders WHERE seller_store_id = profileId  (producteur voit ses commandes)
+        //   3. transactions WHERE store_id  = profileId  (les deux voient leurs transactions)
+        const channel = supabase
+            .channel(`realtime-${profileId}`)
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'orders', filter: `buyer_store_id=eq.${profileId}` },
+                handleOrderChange,
+            )
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'orders', filter: `seller_store_id=eq.${profileId}` },
+                handleOrderChange,
+            )
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'transactions', filter: `store_id=eq.${profileId}` },
+                handleTransactionChange,
+            )
+            .subscribe((status, err) => {
+                if (status === 'SUBSCRIBED') {
+                    console.log(`[Realtime] ✓ Channel actif — profil ${profileId.slice(0, 8)}`);
+                } else if (status === 'CHANNEL_ERROR') {
+                    console.error('[Realtime] Channel error:', err);
+                }
+            });
+
+        return () => {
+            supabase.removeChannel(channel);
+            console.log(`[Realtime] Channel fermé — profil ${profileId.slice(0, 8)}`);
+        };
+    }, [activeProfile?.id]);
+
+    // ─────────────────────────────────────────────────────────────────────────
+
     return (
         <SyncContext.Provider value={{
             isOnline,
@@ -265,12 +449,12 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
             syncPendingCount,
             lastSyncError,
             syncAll: (retry?: boolean) => processQueue(retry),
-            triggerSync: () => processQueue(false)
+            triggerSync: () => processQueue(false),
         }}>
             {children}
         </SyncContext.Provider>
     );
-};
+}
 
 export const useSync = () => {
     const context = useContext(SyncContext);
