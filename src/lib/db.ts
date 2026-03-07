@@ -25,6 +25,7 @@ export interface LocalProduct {
     id: string;
     name: string;
     price: number;
+    delivery_price?: number;
     audio_name: string;
     category: string;
     barcode?: string;

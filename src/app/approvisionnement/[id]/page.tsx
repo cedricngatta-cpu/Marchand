@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle2, ChevronLeft, Minus, Package, Plus, ShoppingCart } from 'lucide-react';
+import { CheckCircle2, ChevronLeft, Minus, Package, Plus, ShoppingCart, Truck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { db } from '@/lib/db';
@@ -15,10 +15,12 @@ interface ProductDetail {
     id: string;
     name: string;
     price: number;
+    delivery_price?: number;
     category: string;
     store_id: string;
     storeName: string;
     stockQty: number;
+    image_url?: string;
 }
 
 const formatCFA = (n: number) => new Intl.NumberFormat('fr-FR').format(n) + '\u00A0F';
@@ -46,7 +48,7 @@ export default function CommanderProduitPage({ params }: { params: Promise<{ id:
             try {
                 const { data: prod, error } = await supabase
                     .from('products')
-                    .select('id, name, price, category, store_id')
+                    .select('id, name, price, delivery_price, category, store_id, image_url')
                     .eq('id', id)
                     .single();
 
@@ -65,13 +67,15 @@ export default function CommanderProduitPage({ params }: { params: Promise<{ id:
                     .maybeSingle();
 
                 setProduct({
-                    id:        prod.id,
-                    name:      prod.name,
-                    price:     prod.price,
-                    category:  prod.category,
-                    store_id:  prod.store_id,
-                    storeName: storeData?.name ?? 'Producteur',
-                    stockQty:  stockData?.quantity ?? 0,
+                    id:             prod.id,
+                    name:           prod.name,
+                    price:          prod.price,
+                    delivery_price: prod.delivery_price ?? undefined,
+                    category:       prod.category,
+                    store_id:       prod.store_id,
+                    storeName:      storeData?.name ?? 'Producteur',
+                    stockQty:       stockData?.quantity ?? 0,
+                    image_url:      prod.image_url ?? undefined,
                 });
             } catch (err) {
                 console.error('[Commander] fetch error:', err);
@@ -89,9 +93,10 @@ export default function CommanderProduitPage({ params }: { params: Promise<{ id:
         if (!product || !activeProfile || submitting) return;
         setSubmitting(true);
         try {
-            const orderId = crypto.randomUUID();
-            const now     = new Date().toISOString();
-            const total   = product.price * quantity;
+            const orderId     = crypto.randomUUID();
+            const now         = new Date().toISOString();
+            const unitTotal   = product.price + (product.delivery_price ?? 0);
+            const total       = unitTotal * quantity;
 
             // 1. Écriture locale Dexie
             await db.orders.add({
@@ -170,7 +175,9 @@ export default function CommanderProduitPage({ params }: { params: Promise<{ id:
                         <p className="font-bold text-xs text-slate-500 uppercase tracking-wider mb-1">Récapitulatif</p>
                         <p className="font-bold text-sm text-slate-800 dark:text-white">{product.name}</p>
                         <p className="text-[10px] text-slate-400 font-bold mt-0.5">
-                            {quantity} u · {formatCFA(product.price)} / u = {formatCFA(product.price * quantity)}
+                            {quantity} u · {formatCFA(product.price)} / u
+                            {(product.delivery_price ?? 0) > 0 && ` + ${formatCFA(product.delivery_price!)} livr.`}
+                            {' '}= {formatCFA((product.price + (product.delivery_price ?? 0)) * quantity)}
                         </p>
                     </div>
                     <button
@@ -255,10 +262,15 @@ export default function CommanderProduitPage({ params }: { params: Promise<{ id:
                 {/* Infos produit */}
                 <div className="bg-white dark:bg-slate-900 rounded-[24px] p-5 shadow-xl border border-slate-100 dark:border-slate-800">
                     <div className="flex items-center gap-4 mb-4">
-                        <div className="w-14 h-14 rounded-[14px] bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center shrink-0">
-                            <Package size={24} className="text-indigo-600" />
+                        {/* Photo ou icône */}
+                        <div className="w-14 h-14 rounded-[14px] bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center shrink-0 overflow-hidden">
+                            {product.image_url ? (
+                                <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+                            ) : (
+                                <Package size={24} className="text-indigo-600" />
+                            )}
                         </div>
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                             <h2 className="font-bold text-base text-slate-800 dark:text-white leading-tight truncate">
                                 {product.name}
                             </h2>
@@ -266,11 +278,18 @@ export default function CommanderProduitPage({ params }: { params: Promise<{ id:
                                 {product.storeName}
                             </p>
                         </div>
-                        <div className="text-right shrink-0 ml-auto">
+                        <div className="text-right shrink-0">
                             <p className="font-bold text-lg text-slate-800 dark:text-white">
                                 {formatCFA(product.price)}
                             </p>
-                            <p className="text-[10px] text-slate-400 font-bold">/ unité</p>
+                            {(product.delivery_price ?? 0) > 0 ? (
+                                <p className="text-[10px] text-blue-500 font-bold flex items-center justify-end gap-0.5">
+                                    <Truck size={9} />
+                                    +{formatCFA(product.delivery_price!)} livr.
+                                </p>
+                            ) : (
+                                <p className="text-[10px] text-slate-400 font-bold">/ unité</p>
+                            )}
                         </div>
                     </div>
 
@@ -304,11 +323,34 @@ export default function CommanderProduitPage({ params }: { params: Promise<{ id:
                             <Plus size={18} className="text-slate-600 dark:text-slate-300" />
                         </button>
                     </div>
-                    <div className="mt-4 pt-4 border-t border-slate-50 dark:border-slate-800 flex justify-between items-baseline">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total estimé</span>
-                        <span className="text-2xl font-black text-slate-800 dark:text-white">
-                            {formatCFA(product.price * quantity)}
-                        </span>
+                    <div className="mt-4 pt-4 border-t border-slate-50 dark:border-slate-800 space-y-1.5">
+                        {(product.delivery_price ?? 0) > 0 && (
+                            <div className="flex justify-between items-baseline">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                    Produit ({quantity} × {formatCFA(product.price)})
+                                </span>
+                                <span className="text-sm font-bold text-slate-600 dark:text-slate-300">
+                                    {formatCFA(product.price * quantity)}
+                                </span>
+                            </div>
+                        )}
+                        {(product.delivery_price ?? 0) > 0 && (
+                            <div className="flex justify-between items-baseline">
+                                <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider flex items-center gap-1">
+                                    <Truck size={9} />
+                                    Livraison ({quantity} × {formatCFA(product.delivery_price!)})
+                                </span>
+                                <span className="text-sm font-bold text-blue-500">
+                                    {formatCFA(product.delivery_price! * quantity)}
+                                </span>
+                            </div>
+                        )}
+                        <div className="flex justify-between items-baseline">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total estimé</span>
+                            <span className="text-2xl font-black text-slate-800 dark:text-white">
+                                {formatCFA((product.price + (product.delivery_price ?? 0)) * quantity)}
+                            </span>
+                        </div>
                     </div>
                 </div>
 
@@ -338,7 +380,7 @@ export default function CommanderProduitPage({ params }: { params: Promise<{ id:
                     ) : (
                         <ShoppingCart size={18} />
                     )}
-                    {submitting ? 'Envoi en cours...' : `Commander · ${formatCFA(product.price * quantity)}`}
+                    {submitting ? 'Envoi en cours...' : `Commander · ${formatCFA((product.price + (product.delivery_price ?? 0)) * quantity)}`}
                 </motion.button>
 
             </div>

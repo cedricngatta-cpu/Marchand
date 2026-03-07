@@ -123,7 +123,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
                         break;
                     }
                     case 'ADD_PRODUCT': {
-                        const { id, store_id, name, price, color, icon_color, audio_name, image_url, barcode, category } = item.payload;
+                        const { id, store_id, name, price, delivery_price, color, icon_color, audio_name, image_url, barcode, category } = item.payload;
 
                         if (!id) throw new Error("[SYNC_ERROR] ADD_PRODUCT: Payload manquant l'ID UUID.");
 
@@ -137,6 +137,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
                         if (category) payload.category = category;
                         if (image_url) payload.image_url = image_url;
                         if (barcode) payload.barcode = barcode;
+                        if (delivery_price) payload.delivery_price = delivery_price;
 
                         const { error: apError } = await supabase.from('products').insert([payload]);
 
@@ -181,10 +182,17 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
                     }
                     case 'DELETE_PRODUCT': {
                         const { id: dpid } = item.payload;
+
+                        // Supprimer le stock associé d'abord (contrainte FK inverse)
+                        await supabase.from('stock').delete().eq('product_id', dpid);
+
                         const { error: dpError } = await supabase
                             .from('products').delete().eq('id', dpid);
 
-                        if (dpError) throw new Error(`[SUPABASE_ERROR] DELETE_PRODUCT: ${dpError.message}`);
+                        // 42501 = RLS deny (produit déjà supprimé ou non propriétaire) → on ignore
+                        if (dpError && dpError.code !== '42501' && dpError.code !== 'PGRST116') {
+                            throw new Error(`[SUPABASE_ERROR] DELETE_PRODUCT: ${dpError.message}`);
+                        }
                         success = true;
                         break;
                     }
