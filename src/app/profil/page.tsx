@@ -69,6 +69,15 @@ export default function ProfilePage() {
                     label: 'Responsable Coop',
                     homePath: '/cooperative'
                 };
+            case 'FIELD_AGENT':
+                return {
+                    primary: 'bg-cyan-600',
+                    secondary: 'text-cyan-600',
+                    bg: 'bg-cyan-50',
+                    darkBg: 'bg-cyan-900/10',
+                    label: 'Agent Terrain',
+                    homePath: '/agent'
+                };
             default:
                 return {
                     primary: 'bg-emerald-600',
@@ -119,9 +128,10 @@ export default function ProfilePage() {
 
     const handleLogout = async () => {
         const ok = await confirm({
-            title: 'Se déconnecter ?',
-            message: 'Vous allez être déconnecté de votre profil.',
-            confirmLabel: 'Me déconnecter'
+            title: 'Déconnexion',
+            message: 'Voulez-vous vraiment vous déconnecter ? Vos données hors-ligne sont en sécurité.',
+            confirmLabel: 'Se déconnecter',
+            dangerMode: true,
         });
         if (ok) {
             logout();

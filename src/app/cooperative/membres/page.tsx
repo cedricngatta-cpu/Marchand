@@ -1,304 +1,642 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, User, Phone, MapPin, TrendingUp, AlertCircle, Mic, Send, Star, ShieldCheck, UserPlus, X, CheckCircle2, ChevronLeft } from 'lucide-react';
+import {
+    ChevronLeft, MapPin, Phone, Search,
+    TrendingDown, TrendingUp, User, UserPlus, Users, X,
+    Clock, CheckCircle2, XCircle, Camera,
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface Member {
+    id: string;
+    name: string;
+    phone: string;
+    role: 'MERCHANT' | 'PRODUCER' | 'COOPERATIVE' | 'FIELD_AGENT';
+    storeName?: string;
+    storeType?: string;
+    monthlySales: number;
+    prevMonthlySales: number;
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const formatCFA = (n: number) => new Intl.NumberFormat('fr-FR').format(n) + '\u00A0F';
+
+const ROLE_LABEL: Record<string, string> = {
+    MERCHANT: 'Marchand',
+    PRODUCER: 'Producteur',
+    COOPERATIVE: 'Coopérative',
+    FIELD_AGENT: 'Agent',
+};
+
+const ROLE_COLOR: Record<string, string> = {
+    MERCHANT: 'bg-emerald-100 text-emerald-700',
+    PRODUCER: 'bg-amber-100 text-amber-700',
+    COOPERATIVE: 'bg-purple-100 text-purple-700',
+    FIELD_AGENT: 'bg-blue-100 text-blue-700',
+};
+
+// ─── Types supplémentaires ─────────────────────────────────────────────────────
+
+interface PendingEnrollment {
+    id: string;
+    name: string;
+    phone: string;
+    role: string;
+    store_name: string;
+    photo_url: string | null;
+    agent_name: string;
+    created_at: string;
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function CooperativeMembers() {
     const router = useRouter();
-    const [selectedZone, setSelectedZone] = useState('Tous');
-    const [isAlertMode, setIsAlertMode] = useState(false);
+
+    const [members, setMembers] = useState<Member[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [search, setSearch] = useState('');
+    const [filterRole, setFilterRole] = useState<'ALL' | 'MERCHANT' | 'PRODUCER'>('ALL');
     const [showAddModal, setShowAddModal] = useState(false);
-    const [isSuccess, setIsSuccess] = useState(false);
-    const [showSectorDropdown, setShowSectorDropdown] = useState(false);
 
-    // Form State
-    const [newMember, setNewMember] = useState({
-        name: '',
-        phone: '',
-        location: 'Bouaké',
-        role: 'Membre'
-    });
+    // Demandes en attente
+    const [pending, setPending] = useState<PendingEnrollment[]>([]);
+    const [pendingLoading, setPendingLoading] = useState(true);
+    const [processingId, setProcessingId] = useState<string | null>(null);
+    const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
 
-    const members = [
-        { id: 1, name: 'Koffi Yao', phone: '07 08 09 10 11', location: 'Bouaké', status: 'ACTIVE', sales: 125000, trend: '+12%', role: 'Champion', joins: 12 },
-        { id: 2, name: 'Fatou Traoré', phone: '05 06 07 08 09', location: 'Yamoussoukro', status: 'ACTIVE', sales: 85000, trend: '+5%', role: 'Membre', joins: 8 },
-        { id: 3, name: 'Adama Diallo', phone: '01 02 03 04 05', location: 'Bouaké', status: 'WARNING', sales: 12000, trend: '-20%', role: 'Nouveau', joins: 1 },
-        { id: 4, name: 'Marie Koné', phone: '04 05 06 07 08', location: 'Abidjan', status: 'ACTIVE', sales: 310000, trend: '+25%', role: 'Expert', joins: 24 },
-    ];
+    // Formulaire
+    const [form, setForm] = useState({ name: '', phone: '' });
+    const [adding, setAdding] = useState(false);
+    const [addDone, setAddDone] = useState(false);
+    const [addError, setAddError] = useState('');
 
-    const handleAddMember = (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsSuccess(true);
-        setTimeout(() => {
-            setIsSuccess(false);
-            setShowAddModal(false);
-            setNewMember({ name: '', phone: '', location: 'Bouaké', role: 'Membre' });
-        }, 2000);
+    // ── Fetch ──────────────────────────────────────────────────────────────────
+
+    const fetchMembers = async () => {
+        setLoading(true);
+        try {
+            const now = new Date();
+            const ms = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+            const prevMs = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
+
+            // Profiles
+            const { data: profiles, error } = await supabase
+                .from('profiles')
+                .select('id, full_name, phone_number, role')
+                .in('role', ['MERCHANT', 'PRODUCER', 'FIELD_AGENT'])
+                .order('full_name');
+
+            if (error || !profiles) { setLoading(false); return; }
+
+            // Stores pour chaque profil
+            const profileIds = profiles.map(p => p.id);
+            const { data: stores } = await supabase
+                .from('stores')
+                .select('id, name, store_type, owner_id')
+                .in('owner_id', profileIds);
+
+            const storeByOwner: Record<string, { id: string; name: string; type: string }> = {};
+            stores?.forEach(s => { storeByOwner[s.owner_id] = { id: s.id, name: s.name, type: s.store_type }; });
+
+            // Transactions du mois courant
+            const storeIds = stores?.map(s => s.id) ?? [];
+            const { data: txCurrent } = storeIds.length > 0
+                ? await supabase
+                    .from('transactions')
+                    .select('store_id, price')
+                    .in('store_id', storeIds)
+                    .gte('created_at', ms)
+                : { data: [] };
+
+            const { data: txPrev } = storeIds.length > 0
+                ? await supabase
+                    .from('transactions')
+                    .select('store_id, price')
+                    .in('store_id', storeIds)
+                    .gte('created_at', prevMs)
+                    .lt('created_at', ms)
+                : { data: [] };
+
+            const salesCurrent: Record<string, number> = {};
+            const salesPrev: Record<string, number> = {};
+            txCurrent?.forEach(t => { salesCurrent[t.store_id] = (salesCurrent[t.store_id] ?? 0) + t.price; });
+            txPrev?.forEach(t => { salesPrev[t.store_id] = (salesPrev[t.store_id] ?? 0) + t.price; });
+
+            const mapped: Member[] = profiles.map(p => {
+                const store = storeByOwner[p.id];
+                return {
+                    id: p.id,
+                    name: p.full_name,
+                    phone: p.phone_number,
+                    role: p.role,
+                    storeName: store?.name,
+                    storeType: store?.type,
+                    monthlySales: store ? (salesCurrent[store.id] ?? 0) : 0,
+                    prevMonthlySales: store ? (salesPrev[store.id] ?? 0) : 0,
+                };
+            });
+
+            setMembers(mapped);
+        } catch (err) {
+            console.error('[Membres] fetch error:', err);
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const filteredMembers = selectedZone === 'Tous'
-        ? members
-        : members.filter(m => m.location === selectedZone);
+    // ── Fetch enrôlements en attente ───────────────────────────────────────────
+
+    const fetchPending = async () => {
+        setPendingLoading(true);
+        try {
+            const { data: enrollments } = await supabase
+                .from('agent_enrollments')
+                .select('id, name, phone, role, store_name, photo_url, agent_id, created_at')
+                .eq('status', 'PENDING')
+                .order('created_at', { ascending: false });
+
+            if (!enrollments?.length) { setPending([]); setPendingLoading(false); return; }
+
+            const agentIds = [...new Set(enrollments.map(e => e.agent_id).filter(Boolean))];
+            const { data: agentProfiles } = agentIds.length > 0
+                ? await supabase.from('profiles').select('id, name').in('id', agentIds)
+                : { data: [] };
+
+            const agentMap: Record<string, string> = {};
+            for (const p of agentProfiles ?? []) agentMap[p.id] = p.name ?? 'Agent';
+
+            setPending(enrollments.map(e => ({
+                id: e.id,
+                name: e.name,
+                phone: e.phone,
+                role: e.role,
+                store_name: e.store_name,
+                photo_url: e.photo_url,
+                agent_name: agentMap[e.agent_id] ?? 'Agent inconnu',
+                created_at: e.created_at,
+            })));
+        } catch (err) {
+            console.error('[Pending] fetch error:', err);
+        } finally {
+            setPendingLoading(false);
+        }
+    };
+
+    const handleValidate = async (enrollment: PendingEnrollment) => {
+        setProcessingId(enrollment.id);
+        try {
+            await supabase
+                .from('agent_enrollments')
+                .update({ status: 'VALIDATED' })
+                .eq('id', enrollment.id);
+            setPending(prev => prev.filter(e => e.id !== enrollment.id));
+        } catch (err) {
+            console.error('[Validate] error:', err);
+        } finally {
+            setProcessingId(null);
+        }
+    };
+
+    const handleReject = async (id: string) => {
+        setProcessingId(id);
+        try {
+            await supabase
+                .from('agent_enrollments')
+                .update({ status: 'REJECTED' })
+                .eq('id', id);
+            setPending(prev => prev.filter(e => e.id !== id));
+        } catch (err) {
+            console.error('[Reject] error:', err);
+        } finally {
+            setProcessingId(null);
+        }
+    };
+
+    useEffect(() => { fetchMembers(); fetchPending(); }, []);
+
+    // ── Filtres ────────────────────────────────────────────────────────────────
+
+    const filtered = members.filter(m => {
+        const matchSearch = m.name.toLowerCase().includes(search.toLowerCase()) ||
+            m.phone.includes(search) ||
+            (m.storeName ?? '').toLowerCase().includes(search.toLowerCase());
+        const matchRole = filterRole === 'ALL' || m.role === filterRole;
+        return matchSearch && matchRole;
+    });
+
+    const merchantCount = members.filter(m => m.role === 'MERCHANT').length;
+    const producerCount = members.filter(m => m.role === 'PRODUCER').length;
+
+    // ── Render ─────────────────────────────────────────────────────────────────
 
     return (
-        <main className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-6 max-w-4xl mx-auto pb-32 md:pb-48">
-            <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 pt-4">
-                <div className="flex items-center gap-4">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-24 overflow-x-hidden">
+
+            {/* ── Header wave ── */}
+            <div className="bg-purple-700 pt-8 pb-32 px-4 rounded-b-[2.5rem] shadow-lg">
+                <div className="flex items-center justify-between mb-6 max-w-lg mx-auto">
                     <button
                         onClick={() => router.back()}
-                        className="w-12 h-12 bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center shadow-sm text-slate-600 dark:text-slate-300 active:scale-90 transition-all border-2 border-slate-100 dark:border-slate-800 shrink-0"
+                        className="w-10 h-10 bg-white text-purple-700 rounded-full flex items-center justify-center active:scale-95 transition-transform shadow-sm shrink-0"
                     >
-                        <ArrowLeft size={24} />
+                        <ChevronLeft size={20} />
                     </button>
-                    <div>
-                        <h1 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none">Nos Membres</h1>
-                        <p className="text-purple-600 font-bold text-[10px] uppercase tracking-widest mt-1">Gestion communautaire</p>
+                    <div className="text-center">
+                        <h1 className="text-white font-bold text-lg tracking-wide uppercase leading-none">Membres</h1>
+                        <p className="text-purple-200 text-[10px] font-bold uppercase tracking-widest mt-0.5">Gestion communautaire</p>
                     </div>
-                </div>
-
-                <div className="flex items-center gap-3 w-full md:w-auto">
                     <button
                         onClick={() => setShowAddModal(true)}
-                        className="flex-1 md:flex-none w-full md:w-14 h-14 bg-slate-900 text-white rounded-2xl flex items-center justify-center shadow-lg active:scale-95 transition-all hover:bg-black"
+                        className="w-10 h-10 bg-white text-purple-700 rounded-full flex items-center justify-center active:scale-95 transition-transform shadow-sm shrink-0 relative"
                     >
-                        <UserPlus size={24} />
-                        <span className="md:hidden ml-2 font-black uppercase text-xs">Nouveau</span>
-                    </button>
-                    <button
-                        onClick={() => setIsAlertMode(!isAlertMode)}
-                        className={`flex-1 md:flex-none h-14 px-4 md:px-6 rounded-2xl font-black uppercase tracking-widest text-[9px] md:text-[10px] flex items-center justify-center gap-2 md:gap-3 transition-all ${isAlertMode ? 'bg-rose-500 text-white shadow-xl animate-pulse' : 'bg-white dark:bg-slate-900 text-slate-600 border-2 border-slate-100 dark:border-slate-800'}`}
-                    >
-                        <Mic size={18} className="shrink-0" />
-                        <span className="truncate">{isAlertMode ? 'Mode Alerte Actif' : 'Alerte de Masse'}</span>
+                        <UserPlus size={18} />
+                        {pending.length > 0 && (
+                            <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 text-white text-[8px] font-black rounded-full flex items-center justify-center">
+                                {pending.length}
+                            </span>
+                        )}
                     </button>
                 </div>
-            </header>
 
+                {/* Compteurs */}
+                <div className="max-w-lg mx-auto flex items-center justify-center gap-8 mt-2">
+                    <div className="text-center">
+                        {loading ? <div className="h-10 w-16 bg-white/10 rounded-xl animate-pulse mx-auto" /> : (
+                            <span className="text-4xl font-black text-white tracking-tighter">{members.length}</span>
+                        )}
+                        <p className="text-purple-200/70 text-[10px] font-bold uppercase tracking-wider mt-0.5">Total</p>
+                    </div>
+                    <div className="w-px h-10 bg-white/20" />
+                    <div className="text-center">
+                        {loading ? <div className="h-10 w-12 bg-white/10 rounded-xl animate-pulse mx-auto" /> : (
+                            <span className="text-4xl font-black text-white tracking-tighter">{merchantCount}</span>
+                        )}
+                        <p className="text-purple-200/70 text-[10px] font-bold uppercase tracking-wider mt-0.5">Marchands</p>
+                    </div>
+                    <div className="w-px h-10 bg-white/20" />
+                    <div className="text-center">
+                        {loading ? <div className="h-10 w-12 bg-white/10 rounded-xl animate-pulse mx-auto" /> : (
+                            <span className="text-4xl font-black text-white tracking-tighter">{producerCount}</span>
+                        )}
+                        <p className="text-purple-200/70 text-[10px] font-bold uppercase tracking-wider mt-0.5">Producteurs</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* ── Contenu overlap ── */}
+            <div className="px-4 max-w-lg mx-auto relative mt-[-40px] z-10 space-y-4">
+
+                {/* Recherche */}
+                <div className="bg-white dark:bg-slate-900 rounded-[20px] px-4 py-3 shadow-xl border border-slate-100 dark:border-slate-800 flex items-center gap-3">
+                    <Search size={16} className="text-slate-300 shrink-0" />
+                    <input
+                        type="text"
+                        placeholder="Nom, téléphone, boutique..."
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                        className="flex-1 bg-transparent font-bold text-sm text-slate-800 dark:text-white outline-none placeholder:text-slate-300 uppercase"
+                    />
+                    {search && (
+                        <button onClick={() => setSearch('')} className="text-slate-300">
+                            <X size={14} />
+                        </button>
+                    )}
+                </div>
+
+                {/* ── Demandes en attente ── */}
+                {(pendingLoading || pending.length > 0) && (
+                    <div className="bg-white dark:bg-slate-900 rounded-[20px] border border-slate-100 dark:border-slate-800 shadow-xl overflow-hidden">
+                        <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+                            <div className="flex items-center gap-2">
+                                <Clock size={14} className="text-amber-500" />
+                                <span className="font-black text-xs uppercase tracking-widest text-slate-700 dark:text-white">
+                                    Demandes en attente
+                                </span>
+                                {!pendingLoading && (
+                                    <span className="bg-amber-100 text-amber-700 text-[9px] font-black px-1.5 py-0.5 rounded-full">
+                                        {pending.length}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+
+                        {pendingLoading ? (
+                            <div className="space-y-3 p-3">
+                                {[0, 1].map(i => <div key={i} className="h-20 bg-slate-50 dark:bg-slate-800 rounded-[16px] animate-pulse" />)}
+                            </div>
+                        ) : (
+                            <div className="divide-y divide-slate-50 dark:divide-slate-800">
+                                {pending.map(e => {
+                                    const isProcessing = processingId === e.id;
+                                    return (
+                                        <motion.div
+                                            key={e.id}
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0, height: 0 }}
+                                            className="p-3 flex items-start gap-3"
+                                        >
+                                            {/* Photo ou avatar */}
+                                            {e.photo_url ? (
+                                                <button
+                                                    onClick={() => setPreviewPhoto(e.photo_url)}
+                                                    className="w-12 h-12 shrink-0 rounded-[12px] overflow-hidden border-2 border-amber-200 relative"
+                                                >
+                                                    <img src={e.photo_url} alt={e.name} className="w-full h-full object-cover" />
+                                                    <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                                                        <Camera size={12} className="text-white" />
+                                                    </div>
+                                                </button>
+                                            ) : (
+                                                <div className="w-12 h-12 shrink-0 rounded-[12px] bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center font-black text-amber-600 text-lg uppercase">
+                                                    {e.name.charAt(0)}
+                                                </div>
+                                            )}
+
+                                            {/* Infos */}
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-1.5 flex-wrap">
+                                                    <p className="font-bold text-sm text-slate-800 dark:text-white truncate">{e.name}</p>
+                                                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full shrink-0 ${e.role === 'MERCHANT' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                                                        {e.role === 'MERCHANT' ? 'Marchand' : 'Producteur'}
+                                                    </span>
+                                                </div>
+                                                <p className="text-[10px] text-slate-400 font-bold mt-0.5 truncate">
+                                                    <Phone size={9} className="inline mr-1 text-emerald-500" />{e.phone}
+                                                </p>
+                                                <p className="text-[9px] text-slate-300 dark:text-slate-600 truncate">
+                                                    {e.store_name} · via {e.agent_name}
+                                                </p>
+                                            </div>
+
+                                            {/* Actions */}
+                                            <div className="flex flex-col gap-1.5 shrink-0">
+                                                <button
+                                                    disabled={isProcessing}
+                                                    onClick={() => handleValidate(e)}
+                                                    className="flex items-center gap-1 bg-emerald-500 disabled:bg-slate-200 text-white px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-wider active:scale-95 transition-all"
+                                                >
+                                                    {isProcessing
+                                                        ? <span className="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin" />
+                                                        : <CheckCircle2 size={11} />
+                                                    }
+                                                    Valider
+                                                </button>
+                                                <button
+                                                    disabled={isProcessing}
+                                                    onClick={() => handleReject(e.id)}
+                                                    className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 disabled:opacity-40 text-slate-500 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-wider active:scale-95 transition-all"
+                                                >
+                                                    <XCircle size={11} />
+                                                    Rejeter
+                                                </button>
+                                            </div>
+                                        </motion.div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Filtres rôle */}
+                <div className="flex gap-2">
+                    {(['ALL', 'MERCHANT', 'PRODUCER'] as const).map(r => (
+                        <button
+                            key={r}
+                            onClick={() => setFilterRole(r)}
+                            className={`flex-1 py-2.5 rounded-[14px] font-bold text-[10px] uppercase tracking-wider transition-all ${filterRole === r ? 'bg-purple-700 text-white shadow-sm' : 'bg-white dark:bg-slate-900 text-slate-400 border border-slate-100 dark:border-slate-800'}`}
+                        >
+                            {r === 'ALL' ? 'Tous' : r === 'MERCHANT' ? 'Marchands' : 'Producteurs'}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Liste */}
+                {loading ? (
+                    <div className="space-y-3">
+                        {[0, 1, 2].map(i => (
+                            <div key={i} className="bg-white dark:bg-slate-900 h-28 rounded-[20px] border border-slate-100 dark:border-slate-800 animate-pulse" />
+                        ))}
+                    </div>
+                ) : filtered.length === 0 ? (
+                    <div className="bg-white dark:bg-slate-900 rounded-[24px] p-12 text-center border-2 border-dashed border-slate-100 dark:border-slate-800">
+                        <Users size={40} className="mx-auto text-slate-200 dark:text-slate-700 mb-3" />
+                        <p className="font-bold text-slate-300 dark:text-slate-700 uppercase text-[10px] tracking-widest">
+                            {search ? 'Aucun résultat' : 'Aucun membre trouvé'}
+                        </p>
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        {filtered.map((m, i) => {
+                            const trend = m.prevMonthlySales > 0
+                                ? ((m.monthlySales - m.prevMonthlySales) / m.prevMonthlySales) * 100
+                                : null;
+                            const isUp = trend !== null && trend >= 0;
+
+                            return (
+                                <motion.div
+                                    key={m.id}
+                                    initial={{ opacity: 0, y: 8 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: i * 0.03 }}
+                                    className="bg-white dark:bg-slate-900 rounded-[20px] border border-slate-100 dark:border-slate-800 p-4 shadow-sm"
+                                >
+                                    <div className="flex items-start gap-3">
+                                        {/* Avatar */}
+                                        <div className="w-12 h-12 shrink-0 rounded-[14px] bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center font-black text-purple-600 text-lg uppercase">
+                                            {m.name.charAt(0)}
+                                        </div>
+
+                                        {/* Infos */}
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 mb-0.5">
+                                                <h3 className="font-bold text-sm text-slate-800 dark:text-white truncate">{m.name}</h3>
+                                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${ROLE_COLOR[m.role] ?? 'bg-slate-100 text-slate-500'}`}>
+                                                    {ROLE_LABEL[m.role] ?? m.role}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-3 text-[10px] font-bold text-slate-400 uppercase">
+                                                <span className="flex items-center gap-1">
+                                                    <Phone size={10} className="text-emerald-500" />
+                                                    {m.phone}
+                                                </span>
+                                                {m.storeName && (
+                                                    <span className="flex items-center gap-1 truncate">
+                                                        <MapPin size={10} className="text-rose-400 shrink-0" />
+                                                        <span className="truncate">{m.storeName}</span>
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Ventes mois */}
+                                        <div className="text-right shrink-0">
+                                            <p className="font-bold text-sm text-slate-800 dark:text-white">
+                                                {formatCFA(m.monthlySales)}
+                                            </p>
+                                            {trend !== null ? (
+                                                <div className={`flex items-center justify-end gap-0.5 text-[10px] font-bold ${isUp ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                                    {isUp ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
+                                                    {isUp ? '+' : ''}{Math.round(trend)}%
+                                                </div>
+                                            ) : (
+                                                <p className="text-[9px] text-slate-300 font-bold">Ce mois</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+
+            {/* ── Modal photo ── */}
+            <AnimatePresence>
+                {previewPhoto && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setPreviewPhoto(null)}
+                        className="fixed inset-0 z-[300] flex items-center justify-center p-6 bg-slate-900/90 backdrop-blur-sm"
+                    >
+                        <motion.img
+                            initial={{ scale: 0.85 }}
+                            animate={{ scale: 1 }}
+                            src={previewPhoto}
+                            alt="Photo enrôlement"
+                            className="max-w-full max-h-[80vh] rounded-[24px] shadow-2xl object-contain"
+                        />
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* ── Modal Ajouter ── */}
             <AnimatePresence>
                 {showAddModal && (
-                    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm">
+                    <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm">
                         <motion.div
-                            initial={{ y: 50, opacity: 0 }}
+                            initial={{ y: 60, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
-                            exit={{ y: 50, opacity: 0 }}
-                            className="bg-white dark:bg-slate-950 w-full max-w-lg rounded-[32px] md:rounded-[48px] p-6 md:p-10 shadow-2xl overflow-hidden relative"
+                            exit={{ y: 60, opacity: 0 }}
+                            className="bg-white dark:bg-slate-900 w-full max-w-md rounded-[28px] p-6 shadow-2xl"
                         >
-                            {isSuccess ? (
-                                <div className="py-12 flex flex-col items-center text-center gap-6">
-                                    <div className="w-20 h-20 md:w-24 md:h-24 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center animate-bounce">
-                                        <CheckCircle2 size={48} className="md:w-14 md:h-14" />
+                            {addDone ? (
+                                <div className="py-10 flex flex-col items-center gap-4 text-center">
+                                    <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center">
+                                        <UserPlus size={28} className="text-emerald-600" />
                                     </div>
                                     <div>
-                                        <h3 className="text-2xl md:text-3xl font-black uppercase tracking-tighter">Membre Ajouté !</h3>
-                                        <p className="text-slate-500 font-bold mt-2 text-sm md:text-base">{newMember.name} a été inscrit avec succès.</p>
+                                        <h3 className="text-xl font-black uppercase tracking-tight text-slate-900 dark:text-white">Invitation envoyée !</h3>
+                                        <p className="text-slate-400 text-sm mt-1">{form.name} peut rejoindre la coopérative.</p>
                                     </div>
                                 </div>
                             ) : (
                                 <>
-                                    <div className="flex justify-between items-start mb-8 md:mb-10">
+                                    <div className="flex justify-between items-center mb-6">
                                         <div>
-                                            <h3 className="text-2xl md:text-3xl font-black uppercase tracking-tighter leading-none">Inscrire un membre</h3>
-                                            <p className="text-purple-600 font-bold text-[10px] uppercase tracking-widest mt-2">Nouveau profil coopérative</p>
+                                            <h3 className="text-xl font-black uppercase tracking-tight text-slate-900 dark:text-white">Inviter un membre</h3>
+                                            <p className="text-purple-600 text-[10px] font-bold uppercase tracking-widest mt-0.5">Nouveau profil coopérative</p>
                                         </div>
-                                        <button onClick={() => setShowAddModal(false)} className="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl text-slate-400">
-                                            <X size={24} />
+                                        <button
+                                            onClick={() => { setShowAddModal(false); setAddError(''); setForm({ name: '', phone: '' }); }}
+                                            className="w-9 h-9 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-400"
+                                        >
+                                            <X size={18} />
                                         </button>
                                     </div>
 
-                                    <form onSubmit={handleAddMember} className="space-y-6">
+                                    <div className="space-y-4">
                                         <div>
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4 mb-2 block">Nom Complet</label>
-                                            <input
-                                                required
-                                                type="text"
-                                                value={newMember.name}
-                                                onChange={(e) => setNewMember({ ...newMember, name: e.target.value })}
-                                                className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 p-4 md:p-6 rounded-[24px] md:rounded-[28px] font-bold text-base md:text-lg focus:border-purple-500 transition-colors"
-                                                placeholder="ex: Jean Koffi"
-                                            />
-                                        </div>
-
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div>
-                                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4 mb-2 block">Téléphone</label>
+                                            <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 block mb-1.5">Nom complet</label>
+                                            <div className="relative">
+                                                <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
                                                 <input
-                                                    required
-                                                    type="tel"
-                                                    value={newMember.phone}
-                                                    onChange={(e) => setNewMember({ ...newMember, phone: e.target.value })}
-                                                    className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 p-4 md:p-6 rounded-[24px] md:rounded-[28px] font-bold text-base md:text-lg focus:border-purple-500 transition-colors"
-                                                    placeholder="07 00 00 00 00"
+                                                    type="text"
+                                                    value={form.name}
+                                                    onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                                                    placeholder="ex: Jean Koffi"
+                                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl py-3.5 px-4 pl-10 font-bold text-sm text-slate-800 dark:text-white outline-none focus:border-purple-500 transition-all placeholder:text-slate-300"
                                                 />
                                             </div>
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 block mb-1.5">Téléphone</label>
                                             <div className="relative">
-                                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4 mb-2 block">Secteur</label>
-                                                <div className="relative z-50">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setShowSectorDropdown(!showSectorDropdown)}
-                                                        className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 p-4 md:p-6 rounded-[24px] md:rounded-[28px] font-black uppercase text-[10px] md:text-xs tracking-widest flex items-center justify-between focus:border-purple-500 transition-all outline-none"
-                                                    >
-                                                        {newMember.location}
-                                                        <ChevronLeft className={`transition-transform duration-300 ${showSectorDropdown ? '-rotate-90' : 'rotate-[-90deg]'}`} size={18} />
-                                                    </button>
-
-                                                    <AnimatePresence>
-                                                        {showSectorDropdown && (
-                                                            <>
-                                                                <div
-                                                                    className="fixed inset-0 z-10"
-                                                                    onClick={() => setShowSectorDropdown(false)}
-                                                                />
-                                                                <motion.div
-                                                                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                                                                    animate={{ opacity: 1, y: 5, scale: 1 }}
-                                                                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                                                                    className="absolute top-full left-0 right-0 z-20 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-[28px] shadow-2xl overflow-hidden p-2"
-                                                                >
-                                                                    {['Bouaké', 'Yamoussoukro', 'Abidjan', 'Korhogo'].map((z) => (
-                                                                        <button
-                                                                            key={z}
-                                                                            type="button"
-                                                                            onClick={() => {
-                                                                                setNewMember({ ...newMember, location: z });
-                                                                                setShowSectorDropdown(false);
-                                                                            }}
-                                                                            className={`w-full p-4 rounded-2xl font-black uppercase text-[10px] tracking-widest text-left transition-all ${newMember.location === z ? 'bg-purple-600 text-white' : 'hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-400'}`}
-                                                                        >
-                                                                            {z}
-                                                                        </button>
-                                                                    ))}
-                                                                </motion.div>
-                                                            </>
-                                                        )}
-                                                    </AnimatePresence>
-                                                </div>
+                                                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
+                                                <input
+                                                    type="tel"
+                                                    value={form.phone}
+                                                    onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+                                                    placeholder="07 00 00 00 00"
+                                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl py-3.5 px-4 pl-10 font-bold text-sm text-slate-800 dark:text-white outline-none focus:border-purple-500 transition-all placeholder:text-slate-300"
+                                                />
                                             </div>
                                         </div>
 
-                                        <button
-                                            type="submit"
-                                            className="w-full bg-purple-600 text-white py-6 md:py-8 rounded-[24px] md:rounded-[30px] font-black uppercase tracking-[0.2em] text-[10px] md:text-sm shadow-xl shadow-purple-200 dark:shadow-none active:scale-95 transition-all mt-4 hover:bg-purple-700"
+                                        {addError && (
+                                            <p className="text-rose-500 text-xs font-bold text-center">{addError}</p>
+                                        )}
+
+                                        <motion.button
+                                            whileTap={{ scale: 0.98 }}
+                                            disabled={!form.name.trim() || !form.phone.trim() || adding}
+                                            onClick={async () => {
+                                                if (!form.name.trim() || !form.phone.trim()) return;
+                                                setAdding(true);
+                                                setAddError('');
+                                                try {
+                                                    // Vérifie si le numéro existe déjà
+                                                    const { data: existing } = await supabase
+                                                        .from('profiles')
+                                                        .select('id')
+                                                        .eq('phone_number', form.phone.trim())
+                                                        .maybeSingle();
+
+                                                    if (existing) {
+                                                        setAddError('Ce numéro est déjà enregistré dans le système.');
+                                                        setAdding(false);
+                                                        return;
+                                                    }
+                                                    // En pratique, la création se fait via l'inscription.
+                                                    // Ici on simule une invitation réussie.
+                                                    setAddDone(true);
+                                                    setTimeout(() => {
+                                                        setAddDone(false);
+                                                        setShowAddModal(false);
+                                                        setForm({ name: '', phone: '' });
+                                                        fetchMembers();
+                                                    }, 2500);
+                                                } catch {
+                                                    setAddError('Erreur réseau. Réessaie.');
+                                                } finally {
+                                                    setAdding(false);
+                                                }
+                                            }}
+                                            className="w-full bg-purple-700 disabled:bg-slate-200 dark:disabled:bg-slate-800 text-white disabled:text-slate-400 py-4 rounded-[18px] font-bold text-sm uppercase tracking-widest shadow-lg shadow-purple-200 dark:shadow-none transition-all flex items-center justify-center gap-2"
                                         >
-                                            Valider l'inscription
-                                        </button>
-                                    </form>
+                                            {adding
+                                                ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                                : <UserPlus size={16} />
+                                            }
+                                            {adding ? 'Vérification...' : 'Inviter le membre'}
+                                        </motion.button>
+                                    </div>
                                 </>
                             )}
                         </motion.div>
                     </div>
                 )}
-
-                {isAlertMode && (
-                    <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="overflow-hidden mb-8"
-                    >
-                        <div className="bg-rose-500/10 border-4 border-rose-500/20 p-6 md:p-8 rounded-[32px] md:rounded-[40px] text-center">
-                            <h3 className="font-black text-rose-600 uppercase tracking-widest text-xs md:text-sm mb-4">Alerte Vocale : Secteur {selectedZone}</h3>
-                            <p className="text-rose-800/60 dark:text-rose-200/60 font-medium italic mb-6 text-sm md:text-base">"Tous les membres du secteur sélectionné recevront un message vocal immédiat."</p>
-                            <button className="bg-rose-500 text-white px-6 md:px-10 py-4 md:py-5 rounded-[20px] md:rounded-[25px] font-black uppercase tracking-widest text-[10px] md:text-xs flex items-center justify-center gap-3 md:gap-4 mx-auto w-full sm:w-auto shadow-xl hover:bg-rose-600 transition-all active:scale-95">
-                                <Send size={20} className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" /> Envoyer à {filteredMembers.length} membres
-                            </button>
-                        </div>
-                    </motion.div>
-                )}
             </AnimatePresence>
-
-            {/* Sector Filters */}
-            <div className="flex gap-2 overflow-x-auto pb-6 pt-2 -mx-2 px-2 scrollbar-hide mb-4">
-                {['Tous', 'Bouaké', 'Yamoussoukro', 'Abidjan', 'Korhogo'].map((zone) => (
-                    <button
-                        key={zone}
-                        onClick={() => setSelectedZone(zone)}
-                        className={`px-8 py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all whitespace-nowrap border-2 ${selectedZone === zone ? 'bg-purple-600 border-purple-600 text-white shadow-xl' : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 text-slate-400'}`}
-                    >
-                        {zone}
-                    </button>
-                ))}
-            </div>
-
-            <div className="space-y-6">
-                {filteredMembers.map((member) => (
-                    <motion.div
-                        key={member.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="bg-white dark:bg-slate-900 p-6 md:p-10 rounded-[32px] md:rounded-[48px] shadow-sm border-2 border-slate-100 dark:border-slate-800 relative group"
-                    >
-                        {/* Member Role Badge */}
-                        <div className="flex sm:absolute sm:top-8 sm:right-10 items-center justify-end gap-2 mb-4 sm:mb-0">
-                            {member.role === 'Champion' && <Star size={16} fill="#F59E0B" className="text-amber-500" />}
-                            {member.role === 'Expert' && <ShieldCheck size={16} className="text-blue-500" />}
-                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 sm:text-slate-300">{member.role}</span>
-                        </div>
-
-                        <div className="flex flex-col md:flex-row justify-between items-start mb-8 gap-6">
-                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 w-full">
-                                <div className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 bg-slate-50 dark:bg-slate-800 rounded-[24px] sm:rounded-[30px] flex items-center justify-center text-slate-400 border-2 border-transparent group-hover:border-purple-200 transition-all uppercase font-black text-xl sm:text-2xl">
-                                    {member.name.charAt(0)}
-                                </div>
-                                <div className="w-full">
-                                    <h3 className="font-black text-slate-900 dark:text-white uppercase text-xl sm:text-2xl tracking-tighter leading-none mb-3 sm:mb-2 truncate">{member.name}</h3>
-                                    <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-3 sm:gap-6">
-                                        <div className="flex items-center gap-2 text-[10px] font-black text-slate-500 sm:text-slate-400 uppercase tracking-widest bg-slate-50 dark:bg-slate-800 sm:bg-transparent px-3 py-2 sm:p-0 rounded-lg sm:rounded-none border sm:border-transparent border-slate-100 dark:border-slate-700">
-                                            <Phone size={14} className="text-emerald-500" /> {member.phone}
-                                        </div>
-                                        <div className="flex items-center gap-2 text-[10px] font-black text-slate-500 sm:text-slate-400 uppercase tracking-widest bg-slate-50 dark:bg-slate-800 sm:bg-transparent px-3 py-2 sm:p-0 rounded-lg sm:rounded-none border sm:border-transparent border-slate-100 dark:border-slate-700">
-                                            <MapPin size={14} className="text-rose-500" /> {member.location}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                            <div className="bg-slate-50 dark:bg-slate-800/50 p-5 md:p-6 rounded-[24px] md:rounded-[30px] border-2 border-slate-100/50 dark:border-slate-800 text-center">
-                                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 block mb-1">Ventes (Mois)</span>
-                                <div className="flex flex-col md:flex-row items-center justify-center gap-1 md:gap-3">
-                                    <span className="text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tighter">{member.sales.toLocaleString()} F</span>
-                                    <div className={`flex items-center gap-1 text-[10px] font-black ${member.trend.startsWith('+') ? 'text-emerald-500' : 'text-rose-500'}`}>
-                                        <TrendingUp size={14} className={member.trend.startsWith('-') ? 'rotate-180' : ''} />
-                                        {member.trend}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="bg-slate-50 dark:bg-slate-800/50 p-5 md:p-6 rounded-[24px] md:rounded-[30px] border-2 border-slate-100/50 dark:border-slate-800 text-center">
-                                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 block mb-1">Participations</span>
-                                <span className="text-xl md:text-2xl font-black text-purple-600 tracking-tighter">{member.joins} Achats</span>
-                            </div>
-
-                            <button className="sm:col-span-2 md:col-span-1 bg-slate-900 dark:bg-slate-800 text-white font-black uppercase tracking-[0.2em] text-[10px] md:text-[11px] rounded-[24px] md:rounded-[30px] shadow-xl active:scale-95 transition-all h-16 md:h-full md:min-h-[80px] hover:bg-purple-600">
-                                Profil Complet
-                            </button>
-                        </div>
-                    </motion.div>
-                ))}
-            </div>
-
-            {/* Health Alert Bar */}
-            <motion.div
-                whileHover={{ scale: 1.01 }}
-                className="mt-8 md:mt-12 p-6 md:p-10 bg-rose-500/10 rounded-[32px] md:rounded-[48px] border-4 border-rose-500/20 flex flex-col md:flex-row gap-6 md:gap-8 items-center justify-center text-center md:text-left shadow-2xl relative overflow-hidden"
-            >
-                <div className="p-5 md:p-6 bg-rose-500 text-white rounded-[24px] md:rounded-[30px] shadow-lg shadow-rose-500/30 relative z-10 shrink-0">
-                    <AlertCircle size={32} className="md:w-[40px] md:h-[40px]" strokeWidth={3} />
-                </div>
-                <div className="relative z-10 flex-1">
-                    <h4 className="font-black text-rose-500 uppercase tracking-widest text-[10px] md:text-xs mb-1 md:mb-2 italic">Alerte Santé Commerciale</h4>
-                    <p className="text-rose-900/80 dark:text-rose-200/80 font-bold italic text-sm md:text-base leading-tight">
-                        "Une baisse d'activité atypique est détectée à <span className="text-rose-600">Bouaké</span>. 3 membres n'ont pas enregistré de ventes depuis 72h."
-                    </p>
-                </div>
-                <button className="w-full md:w-auto bg-rose-500 text-white px-8 py-4 md:py-5 rounded-[20px] md:rounded-[25px] font-black uppercase text-[10px] tracking-widest relative z-10 hover:bg-rose-600 transition-all shrink-0 shadow-lg hover:shadow-rose-500/30 active:scale-95">
-                    Contacter le secteur
-                </button>
-            </motion.div>
-        </main>
+        </div>
     );
 }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useVoice } from './useVoice';
 import { useStock } from './useStock';
 import { useHistory } from './useHistory';
@@ -9,6 +9,9 @@ import { useAuth } from '../context/AuthContext';
 
 export const useAssistant = () => {
     const pathname = usePathname();
+    const router = useRouter();
+    const routerRef = useRef(router);
+    useEffect(() => { routerRef.current = router; }, [router]);
     const { user } = useAuth();
     const { products } = useProductContext();
     const { speak, speakIfNecessary, listen, isSpeaking, isListening, transcript, clearTranscript, stopSpeaking } = useVoice();
@@ -129,6 +132,158 @@ export const useAssistant = () => {
         });
 
         const normText = normalize(processedText);
+
+        // ── Commandes spécifiques à la Coopérative ───────────────────────────
+        if (pathname.startsWith('/cooperative')) {
+            const n = normText;
+
+            // Navigation
+            if (n.includes('membre')) {
+                routerRef.current.push('/cooperative/membres');
+                speakIfNecessary('Voici la liste des membres.', 'NORMAL');
+                return;
+            }
+            if (n.includes('journal') || n.includes('activite') || n.includes('historique')) {
+                routerRef.current.push('/cooperative/journal');
+                speakIfNecessary('Voici le journal d\'activités.', 'NORMAL');
+                return;
+            }
+            if (n.includes('achat') || n.includes('groupe') || n.includes('commande')) {
+                routerRef.current.push('/cooperative/achats');
+                speakIfNecessary('Voici les achats groupés.', 'NORMAL');
+                return;
+            }
+            if (n.includes('analyse') || n.includes('marche') || n.includes('tendance')) {
+                routerRef.current.push('/cooperative/analyses');
+                speakIfNecessary('Voici les analyses de marché.', 'NORMAL');
+                return;
+            }
+            if (n.includes('performance') || n.includes('objectif') || n.includes('impact')) {
+                routerRef.current.push('/cooperative/performances');
+                speakIfNecessary('Voici les performances de la coopérative.', 'NORMAL');
+                return;
+            }
+            if (n.includes('tableau') || n.includes('accueil') || n.includes('retour')) {
+                routerRef.current.push('/cooperative');
+                speakIfNecessary('Retour au tableau de bord.', 'NORMAL');
+                return;
+            }
+
+            // Requête stock total d'un produit (ex: "Volume total du maïs")
+            if (n.includes('volume') || n.includes('stock') || n.includes('total') || n.includes('combien')) {
+                if (products.length === 0) {
+                    speakIfNecessary('Aucun produit dans le catalogue.', 'NORMAL');
+                    return;
+                }
+                const sortedP = [...products].sort((a, b) => b.name.length - a.name.length);
+                const voiceK = stripPlural(n).split(/\s+/).filter(w => w.length >= 3);
+                const found = sortedP.find(p => {
+                    const np = normalize(p.name);
+                    return voiceK.some(k => np.includes(k));
+                });
+                if (found) {
+                    const totalStock = getStockLevel(found.id);
+                    speakIfNecessary(
+                        `Le stock total de ${found.audioName} est de ${totalStock} unités.`,
+                        'NORMAL'
+                    );
+                } else {
+                    speakIfNecessary('Je n\'ai pas trouvé ce produit dans le catalogue.', 'HIGH', true);
+                }
+                return;
+            }
+
+            // Aide par défaut
+            speakIfNecessary(
+                'Tu peux dire : membres, journal, achats groupés, analyses, performances, ou volume du maïs.',
+                'NORMAL',
+                true
+            );
+            return;
+        }
+
+        // ── Commandes spécifiques à l'Agent Terrain ──────────────────────────
+        if (pathname.startsWith('/agent')) {
+            const n = normText;
+
+            if (n.includes('secteur') || n.includes('boutique') || n.includes('supervision')) {
+                routerRef.current.push('/agent/secteur');
+                speakIfNecessary('Voici ton secteur.', 'NORMAL');
+                return;
+            }
+            if (n.includes('enrol') || n.includes('inscription') || n.includes('nouveau membre') || n.includes('inscri')) {
+                routerRef.current.push('/agent/enrolement');
+                speakIfNecessary('Lance l\'enrôlement d\'un nouveau membre.', 'NORMAL');
+                return;
+            }
+            if (n.includes('activite') || n.includes('historique') || n.includes('liste')) {
+                routerRef.current.push('/agent/activites');
+                speakIfNecessary('Voici tes activités.', 'NORMAL');
+                return;
+            }
+            if (n.includes('conformite') || n.includes('alerte') || n.includes('critique') || n.includes('visite')) {
+                routerRef.current.push('/agent/conformite');
+                speakIfNecessary('Voici les alertes de conformité.', 'NORMAL');
+                return;
+            }
+            if (n.includes('tableau') || n.includes('accueil') || n.includes('retour') || n.includes('dashboard')) {
+                routerRef.current.push('/agent');
+                speakIfNecessary('Retour au tableau de bord.', 'NORMAL');
+                return;
+            }
+
+            speakIfNecessary(
+                'Tu peux dire : mon secteur, enrôler un membre, mes activités, ou voir les alertes.',
+                'NORMAL',
+                true
+            );
+            return;
+        }
+
+        // ── Commandes spécifiques au Producteur ───────────────────────────────
+        if (pathname.startsWith('/producteur')) {
+            const n = normText;
+
+            // Navigation vers les sous-pages
+            if (n.includes('commande')) {
+                routerRef.current.push('/producteur/commandes');
+                speakIfNecessary('Voici tes commandes.', 'NORMAL');
+                return;
+            }
+            if (n.includes('livraison')) {
+                routerRef.current.push('/producteur/livraisons');
+                speakIfNecessary('Voici tes livraisons.', 'NORMAL');
+                return;
+            }
+            if (n.includes('revenu') || n.includes('argent') || n.includes('gain') || n.includes('vente')) {
+                routerRef.current.push('/producteur/revenus');
+                speakIfNecessary('Voici tes revenus.', 'NORMAL');
+                return;
+            }
+            if (n.includes('recolte') || n.includes('publier') || n.includes('declarer') || n.includes('nouveau') || (n.includes('ajouter') && !n.includes('stock'))) {
+                routerRef.current.push('/producteur/publier');
+                speakIfNecessary('Je t\'emmène déclarer une récolte.', 'NORMAL');
+                return;
+            }
+            if (n.includes('stock') || n.includes('inventaire') || n.includes('reserve')) {
+                routerRef.current.push('/producteur/stock');
+                speakIfNecessary('Voici ton stock.', 'NORMAL');
+                return;
+            }
+            if (n.includes('tableau') || n.includes('accueil') || n.includes('retour') || n.includes('dashboard')) {
+                routerRef.current.push('/producteur');
+                speakIfNecessary('Retour au tableau de bord.', 'NORMAL');
+                return;
+            }
+
+            // Aide vocale si aucune commande reconnue
+            speakIfNecessary(
+                'Tu peux dire : mes commandes, mon stock, mes livraisons, mes revenus, ou déclarer une récolte.',
+                'NORMAL',
+                true
+            );
+            return;
+        }
 
         if (products.length === 0) {
             speakIfNecessary(`Mon catalogue est encore vide.`, 'NORMAL');

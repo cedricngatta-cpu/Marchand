@@ -7,7 +7,7 @@ export const ConditionalAssistant = () => {
     const pathname = usePathname();
 
     // On affiche l'assistant sur les dashboards principaux
-    const allowedSubstrings = ['/commercant', '/producteur', '/cooperative'];
+    const allowedSubstrings = ['/commercant', '/producteur', '/cooperative', '/agent'];
     const isAllowed = allowedSubstrings.some(route => pathname === route || pathname.startsWith(route + '/'));
 
     if (!isAllowed) return null;

@@ -12,7 +12,18 @@ export const VoiceAssistant = () => {
     const getExampleText = () => {
         if (pathname.includes('/vendre')) return '"Vend 2 pains à Fatou"';
         if (pathname.includes('/stock')) return '"J\'ai reçu 10 sacs de riz"';
-        if (pathname.includes('/cooperative')) return '"Volume total du Maïs ?"';
+        if (pathname.includes('/cooperative/membres')) return '"Liste des membres"';
+        if (pathname.includes('/cooperative/journal')) return '"Toutes les ventes"';
+        if (pathname.includes('/cooperative/achats')) return '"Achats groupés"';
+        if (pathname.includes('/cooperative')) return '"Volume du Maïs ?"';
+        if (pathname.includes('/producteur/publier')) return '"Déclarer une récolte"';
+        if (pathname.includes('/producteur/commandes')) return '"Mes commandes"';
+        if (pathname.includes('/producteur')) return '"Mes commandes ?"';
+        if (pathname.includes('/agent/enrolement')) return '"Enrôler un marchand"';
+        if (pathname.includes('/agent/secteur')) return '"Boutiques critiques"';
+        if (pathname.includes('/agent/activites')) return '"Mes enrôlements"';
+        if (pathname.includes('/agent/conformite')) return '"Alertes secteur"';
+        if (pathname.includes('/agent')) return '"Mon secteur"';
         return '"Besoin d\'aide ?"';
     };
 

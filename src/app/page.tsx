@@ -24,10 +24,12 @@ export default function LandingPage() {
   React.useEffect(() => {
     if (isAuthenticated && user) {
       router.push(getDashboardPath(user.role));
+    } else if (isAuthenticated === false) {
+      router.push('/login');
     }
   }, [isAuthenticated, user, router]);
 
-  if (isAuthenticated) {
+  if (isAuthenticated !== true) {
     return null;
   }
 

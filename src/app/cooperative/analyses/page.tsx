@@ -1,79 +1,182 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, BarChart3, TrendingUp, MapPin, PieChart, ArrowUpRight } from 'lucide-react';
+import { ArrowLeft, BarChart3, TrendingUp, TrendingDown, PieChart, ArrowUpRight, Package, RefreshCcw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
+
+const formatCFA = (n: number) => new Intl.NumberFormat('fr-FR').format(n) + '\u00A0F';
+
+interface ProductStat {
+    name: string;
+    volume: number;
+    count: number;
+}
+
+interface AnalyticsData {
+    currentVolume: number;
+    prevVolume: number;
+    growthPct: number | null;
+    topProducts: ProductStat[];
+    totalTx: number;
+    loading: boolean;
+}
+
+const COLORS = ['bg-emerald-500', 'bg-blue-500', 'bg-purple-500', 'bg-amber-500', 'bg-rose-500'];
 
 export default function CooperativeAnalyses() {
     const router = useRouter();
+    const [data, setData] = useState<AnalyticsData>({
+        currentVolume: 0, prevVolume: 0, growthPct: null,
+        topProducts: [], totalTx: 0, loading: true,
+    });
 
-    const regionalStats = [
-        { zone: 'Bouaké', demand: 'Riz, Maïs', growth: '+18%', color: 'bg-emerald-500' },
-        { zone: 'Yamoussoukro', demand: 'Tomate, Oignon', growth: '+5%', color: 'bg-blue-500' },
-        { zone: 'Abidjan', demand: 'Manioc, Igname', growth: '+22%', color: 'bg-purple-500' },
-        { zone: 'Korhogo', demand: 'Coton, Noix', growth: '-2%', color: 'bg-rose-500' },
-    ];
+    const load = async () => {
+        setData(d => ({ ...d, loading: true }));
+        try {
+            const now = new Date();
+            const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+            const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
+
+            const [{ data: currentTx }, { data: prevTx }] = await Promise.all([
+                supabase.from('transactions').select('product_name, price').gte('created_at', monthStart),
+                supabase.from('transactions').select('price').gte('created_at', prevMonthStart).lt('created_at', monthStart),
+            ]);
+
+            const currentVolume = (currentTx ?? []).reduce((s, t) => s + (t.price ?? 0), 0);
+            const prevVolume = (prevTx ?? []).reduce((s, t) => s + (t.price ?? 0), 0);
+            const growthPct = prevVolume > 0 ? ((currentVolume - prevVolume) / prevVolume * 100) : null;
+
+            const productMap: Record<string, { volume: number; count: number }> = {};
+            for (const tx of currentTx ?? []) {
+                const k = tx.product_name ?? 'Inconnu';
+                if (!productMap[k]) productMap[k] = { volume: 0, count: 0 };
+                productMap[k].volume += tx.price ?? 0;
+                productMap[k].count += 1;
+            }
+            const topProducts = Object.entries(productMap)
+                .sort((a, b) => b[1].volume - a[1].volume)
+                .slice(0, 5)
+                .map(([name, stats]) => ({ name, ...stats }));
+
+            setData({
+                currentVolume, prevVolume, growthPct,
+                topProducts, totalTx: (currentTx ?? []).length, loading: false,
+            });
+        } catch (err) {
+            console.error('[Analyses] fetch error:', err);
+            setData(d => ({ ...d, loading: false }));
+        }
+    };
+
+    useEffect(() => { load(); }, []);
+
+    const growthPositive = data.growthPct === null || data.growthPct >= 0;
+    const growthLabel = data.growthPct !== null
+        ? `${data.growthPct >= 0 ? '+' : ''}${data.growthPct.toFixed(1)}% vs mois précédent`
+        : 'Premier mois de données';
+
+    const topProduct = data.topProducts[0];
 
     return (
         <main className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-6 max-w-4xl mx-auto pb-24 md:pb-32">
-            <header className="flex items-center gap-4 mb-8 md:mb-10 pt-4">
-                <button
-                    onClick={() => router.back()}
-                    className="w-12 h-12 bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center shadow-sm text-slate-600 dark:text-slate-300 active:scale-90 transition-all border border-slate-100 dark:border-slate-800 shrink-0"
-                >
-                    <ArrowLeft size={24} />
-                </button>
-                <div>
-                    <h1 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none">Analyses Sectorielles</h1>
-                    <p className="text-blue-600 font-bold text-[10px] uppercase tracking-widest mt-1">Intelligence de Marché</p>
+            <header className="flex items-center justify-between gap-4 mb-8 md:mb-10 pt-4">
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={() => router.back()}
+                        className="w-12 h-12 bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center shadow-sm text-slate-600 dark:text-slate-300 active:scale-90 transition-all border border-slate-100 dark:border-slate-800 shrink-0"
+                    >
+                        <ArrowLeft size={24} />
+                    </button>
+                    <div>
+                        <h1 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none">Analyses Sectorielles</h1>
+                        <p className="text-blue-600 font-bold text-[10px] uppercase tracking-widest mt-1">Intelligence de Marché</p>
+                    </div>
                 </div>
+                <button
+                    onClick={load}
+                    className="w-10 h-10 bg-white dark:bg-slate-800 rounded-full flex items-center justify-center shadow-sm text-slate-400 border border-slate-100 dark:border-slate-700 active:scale-90 transition-all shrink-0"
+                >
+                    <RefreshCcw size={16} />
+                </button>
             </header>
 
             <div className="space-y-6 md:space-y-8">
+
                 {/* Main Insight Card */}
-                <div className="bg-blue-600 p-6 md:p-10 rounded-[32px] md:rounded-[45px] text-white shadow-2xl shadow-blue-200 dark:shadow-none relative overflow-hidden">
+                <div className={`p-6 md:p-10 rounded-[32px] md:rounded-[45px] text-white shadow-2xl relative overflow-hidden dark:shadow-none ${growthPositive ? 'bg-blue-600 shadow-blue-200' : 'bg-rose-600 shadow-rose-200'}`}>
                     <div className="relative z-10">
-                        <span className="text-blue-100 font-black uppercase text-[10px] md:text-xs tracking-widest">Tendance Globale</span>
-                        <h2 className="text-2xl md:text-4xl font-black mt-2 mb-4 md:mb-6 leading-tight max-w-[90%] md:max-w-full">Augmentation de la demande en produits vivriers de +12% ce mois-ci.</h2>
+                        <span className="text-blue-100 font-black uppercase text-[10px] md:text-xs tracking-widest">
+                            Tendance Globale — Ce mois
+                        </span>
+                        {data.loading ? (
+                            <div className="h-10 w-56 bg-white/10 rounded-xl animate-pulse mt-3 mb-4" />
+                        ) : (
+                            <div className="mt-2 mb-4 md:mb-6">
+                                <h2 className="text-2xl md:text-4xl font-black leading-tight">
+                                    {formatCFA(data.currentVolume)}
+                                </h2>
+                                <p className="text-white/70 font-bold text-sm mt-1">{growthLabel}</p>
+                            </div>
+                        )}
                         <div className="flex items-center gap-2 bg-white/20 w-fit px-3 py-1.5 md:px-4 md:py-2 rounded-full backdrop-blur-md">
-                            <TrendingUp size={16} className="md:w-5 md:h-5" />
-                            <span className="font-black uppercase text-[9px] md:text-[10px] tracking-widest">Optimiste</span>
+                            {growthPositive ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+                            <span className="font-black uppercase text-[9px] md:text-[10px] tracking-widest">
+                                {data.loading ? '...' : `${data.totalTx} transaction${data.totalTx > 1 ? 's' : ''} ce mois`}
+                            </span>
                         </div>
                     </div>
                     <PieChart size={160} className="absolute -right-12 -bottom-12 md:-right-16 md:-bottom-16 text-white/10 rotate-12 md:w-[200px] md:h-[200px]" />
                 </div>
 
-                {/* Regional Breakdown */}
+                {/* Top Products */}
                 <section>
-                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] ml-4 md:ml-8 mb-4 md:mb-6 text-center md:text-left">Performance par Zone</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {regionalStats.map((stat, i) => (
-                            <motion.div
-                                key={i}
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ delay: i * 0.1 }}
-                                className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-[24px] md:rounded-[35px] border-2 border-slate-50 dark:border-slate-800 flex items-center justify-between gap-4 group hover:border-blue-200 transition-colors"
-                            >
-                                <div className="flex items-center gap-4 md:gap-5">
-                                    <div className={`w-12 h-12 md:w-14 md:h-14 shrink-0 rounded-[18px] md:rounded-2xl ${stat.color} flex items-center justify-center text-white shadow-lg`}>
-                                        <MapPin size={24} />
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] ml-4 mb-4 text-center md:text-left">
+                        Top Produits ce mois
+                    </h3>
+                    {data.loading ? (
+                        <div className="space-y-3">
+                            {[0, 1, 2, 3].map(i => (
+                                <div key={i} className="bg-white dark:bg-slate-900 h-20 rounded-[24px] animate-pulse border border-slate-100 dark:border-slate-800" />
+                            ))}
+                        </div>
+                    ) : data.topProducts.length === 0 ? (
+                        <div className="bg-white dark:bg-slate-900 p-12 rounded-[24px] text-center border-2 border-dashed border-slate-100 dark:border-slate-800">
+                            <Package size={40} className="mx-auto text-slate-200 dark:text-slate-700 mb-3" />
+                            <p className="font-bold text-slate-300 dark:text-slate-700 uppercase text-[10px] tracking-widest">
+                                Aucune vente ce mois
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {data.topProducts.map((p, i) => (
+                                <motion.div
+                                    key={p.name}
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ delay: i * 0.07 }}
+                                    className="bg-white dark:bg-slate-900 p-5 rounded-[24px] border-2 border-slate-50 dark:border-slate-800 flex items-center justify-between gap-4 hover:border-blue-200 transition-colors"
+                                >
+                                    <div className="flex items-center gap-4 min-w-0">
+                                        <div className={`w-12 h-12 shrink-0 rounded-[18px] ${COLORS[i] ?? 'bg-slate-500'} flex items-center justify-center text-white shadow-lg`}>
+                                            <Package size={22} />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <h4 className="font-black text-slate-900 dark:text-white uppercase text-sm tracking-tight truncate">{p.name}</h4>
+                                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                                                {p.count} vente{p.count > 1 ? 's' : ''}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div className="min-w-0">
-                                        <h4 className="font-black text-slate-900 dark:text-white uppercase text-sm md:text-base tracking-tight truncate">{stat.zone}</h4>
-                                        <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 md:mt-1 truncate">{stat.demand}</p>
+                                    <div className="text-right shrink-0">
+                                        <div className="text-sm font-black text-slate-800 dark:text-white">{formatCFA(p.volume)}</div>
+                                        <div className="text-[8px] font-black text-slate-300 uppercase tracking-tighter">Volume</div>
                                     </div>
-                                </div>
-                                <div className="text-right">
-                                    <div className={`text-xl font-black ${stat.growth.startsWith('+') ? 'text-emerald-500' : 'text-rose-500'}`}>
-                                        {stat.growth}
-                                    </div>
-                                    <div className="text-[8px] font-black text-slate-300 uppercase tracking-tighter">vs mois dernier</div>
-                                </div>
-                            </motion.div>
-                        ))}
-                    </div>
+                                </motion.div>
+                            ))}
+                        </div>
+                    )}
                 </section>
 
                 {/* Market Advice */}
@@ -83,14 +186,30 @@ export default function CooperativeAnalyses() {
                             <BarChart3 size={20} className="md:w-6 md:h-6" />
                         </div>
                         <div>
-                            <p className="text-slate-900 dark:text-white font-black uppercase tracking-widest text-[10px] md:text-xs mb-1 md:mb-2">Opportunité détectée</p>
-                            <p className="text-slate-600 dark:text-slate-400 font-bold text-sm md:text-base leading-relaxed">
-                                Les prix de gros du Maïs à Yamoussoukro sont actuellement 15% plus bas que la moyenne nationale. Un achat groupé massif est recommandé.
+                            <p className="text-slate-900 dark:text-white font-black uppercase tracking-widest text-[10px] md:text-xs mb-1 md:mb-2">
+                                {topProduct ? 'Produit leader' : 'Opportunité'}
                             </p>
+                            {data.loading ? (
+                                <div className="h-12 w-full bg-slate-50 dark:bg-slate-800 rounded-xl animate-pulse" />
+                            ) : topProduct ? (
+                                <p className="text-slate-600 dark:text-slate-400 font-bold text-sm md:text-base leading-relaxed">
+                                    <span className="text-slate-900 dark:text-white">{topProduct.name}</span> est le
+                                    produit le plus vendu ce mois avec {formatCFA(topProduct.volume)} sur{' '}
+                                    {topProduct.count} transaction{topProduct.count > 1 ? 's' : ''}.
+                                    {data.topProducts.length > 1 && (
+                                        <> Suivi par <span className="text-slate-900 dark:text-white">{data.topProducts[1].name}</span> ({formatCFA(data.topProducts[1].volume)}).</>
+                                    )}
+                                </p>
+                            ) : (
+                                <p className="text-slate-600 dark:text-slate-400 font-bold text-sm leading-relaxed">
+                                    Aucune transaction enregistrée ce mois. Encouragez les marchands à saisir leurs ventes.
+                                </p>
+                            )}
                         </div>
                     </div>
                     <ArrowUpRight size={100} className="absolute -right-4 -bottom-4 text-slate-50 dark:text-slate-800 group-hover:scale-110 transition-transform" />
                 </div>
+
             </div>
         </main>
     );
