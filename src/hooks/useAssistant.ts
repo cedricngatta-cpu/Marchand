@@ -54,55 +54,53 @@ export const useAssistant = () => {
         // Helper pour ignorer les pluriels (supprime le 's' ou 'x' en fin de mot)
         const stripPlural = (str: string) => str.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "").split(/\s+/).map(w => w.replace(/[sx]$/i, '')).join(' ');
 
-        // --- NOUVEAU : NUMBER MAPPER (Français) ---
+        // --- SMART NUMBER MAPPER (0-100) ---
         const numberWords: Record<string, number> = {
-            'zero': 0, 'un': 1, 'une': 1, 'deux': 2, 'trois': 3, 'quatre': 4, 'cinq': 5, 'six': 6, 'sept': 7, 'huit': 8, 'neuf': 9,
+            'zero': 0, 'un': 1, 'une': 1, 'deux': 2, 'de': 2, 'des': 2, 'trois': 3, 'troi': 3, 'quatre': 4, 'cinq': 5, 'six': 6, 'sept': 7, 'huit': 8, 'neuf': 9,
             'dix': 10, 'onze': 11, 'douze': 12, 'treize': 13, 'quatorze': 14, 'quinze': 15, 'seize': 16, 'dix-sept': 17, 'dix-huit': 18, 'dix-neuf': 19,
             'vingt': 20, 'trente': 30, 'quarante': 40, 'cinquante': 50, 'soixante': 60, 'soixante-dix': 70, 'quatre-vingt': 80, 'quatre-vingts': 80, 'quatre-vingt-dix': 90, 'cent': 100
         };
 
         let textWithDigits = lowerText;
 
-        // Gérer les nombres composés (ex: vingt-trois, soixante-dix)
-        // On trie par longueur pour remplacer les plus longs d'abord
-        const sortedNumberWords = Object.keys(numberWords).sort((a, b) => b.length - a.length);
+        // 1. Nombres composés (ex: vingt trois, vingt-trois, vingt et un)
+        const tens = { 'vingt': 20, 'trente': 30, 'quarante': 40, 'cinquante': 50, 'soixante': 60 };
+        const ones = { 'un': 1, 'une': 1, 'deux': 2, 'trois': 3, 'quatre': 4, 'cinq': 5, 'six': 6, 'sept': 7, 'huit': 8, 'neuf': 9 };
 
-        // D'abord les composés avec "et un" (ex: vingt et un)
-        const tens = ['vingt', 'trente', 'quarante', 'cinquante', 'soixante'];
-        tens.forEach(ten => {
-            textWithDigits = textWithDigits.replace(new RegExp(`\\b${ten}\\s+et\\s+un\\b`, 'g'), (numberWords[ten] + 1).toString());
+        Object.entries(tens).forEach(([word, val]) => {
+            // Dizaines "et un"
+            textWithDigits = textWithDigits.replace(new RegExp(`\\b${word}\\s+et\\s+un\\b`, 'g'), (val + 1).toString());
+            // Dizaines - unités
+            Object.entries(ones).forEach(([oWord, oVal]) => {
+                textWithDigits = textWithDigits.replace(new RegExp(`\\b${word}[-\\s]${oWord}\\b`, 'g'), (val + oVal).toString());
+            });
         });
 
-        // Ensuite les composés avec tirets ou espaces (ex: vingt-trois, vingt trois)
-        sortedNumberWords.forEach(word => {
-            if (numberWords[word] >= 20 && numberWords[word] < 100) {
-                // Pour chaque dizaine, on cherche la forme "dizaine-chiffre" ou "dizaine chiffre"
-                for (let i = 1; i <= 9; i++) {
-                    const unitWord = Object.keys(numberWords).find(k => numberWords[k] === i && k !== 'une');
-                    if (unitWord) {
-                        const val = numberWords[word] + i;
-                        textWithDigits = textWithDigits.replace(new RegExp(`\\b${word}[-\\s]${unitWord}\\b`, 'g'), val.toString());
-                    }
-                }
+        // Cas spéciaux 70-79 et 90-99
+        for (let i = 11; i <= 19; i++) {
+            const word = Object.keys(numberWords).find(k => numberWords[k] === i);
+            if (word) {
+                textWithDigits = textWithDigits.replace(new RegExp(`\\bsoixante[-\\s]${word}\\b`, 'g'), (60 + i).toString());
+                textWithDigits = textWithDigits.replace(new RegExp(`\\bquatre-vingt(s)?\\s+${word}\\b`, 'g'), (80 + i).toString());
             }
-        });
+        }
 
-        // Enfin les nombres simples
-        sortedNumberWords.forEach(word => {
+        // 2. Chiffres simples (les plus longs d'abord)
+        Object.keys(numberWords).sort((a, b) => b.length - a.length).forEach(word => {
             textWithDigits = textWithDigits.replace(new RegExp(`\\b${word}\\b`, 'g'), numberWords[word].toString());
         });
 
         console.log('🔢 Text after Number Mapping:', textWithDigits);
 
-        // 2. Dictionnaire de corrections phonétiques
+        // 3. Corrections phonétiques ciblées
         const corrections: Record<string, string> = {
-            '22': 'vend 2',
-            'vingt deux': 'vend 2',
-            'vingt-deux': 'vend 2',
             'vends de': 'vend 2',
             'vend de': 'vend 2',
             'vends des': 'vend 2',
             'vend des': 'vend 2',
+            'vendes': 'vend',
+            'vendent': 'vend',
+            'ven': 'vend',
             'vente de': 'vend',
             'vent de': 'vend',
             'rue': 'riz',
@@ -142,13 +140,14 @@ export const useAssistant = () => {
 
         // C. Extraction Quantité Robuste
         let quantity = 1;
+        // On cherche le PREMIER nombre dans le texte traité
         const digitMatch = processedText.match(/(\d+)/);
         if (digitMatch) {
             quantity = parseInt(digitMatch[1]);
         }
 
-        // D. Extraction du Client
-        const clientMatch = processedText.match(/(?:à|pour|a)\s+([a-zA-Z\s]+?)(?:\s+(?:en|sur|avec|pour|à|a|termine|fini|confirme|biscuit|riz|savon|sucre)|$)/i);
+        // D. Extraction du Client (Harden keywords to stop name capture)
+        const clientMatch = processedText.match(/(?:à|pour|a)\s+([a-zA-Z\s]+?)(?:\s+(?:en|sur|avec|pour|à|a|termine|fini|confirme|biscuit|riz|savon|sucre|dette|credit|momo|espece|payer|vendre|vends)|$)/i);
         let customerName = undefined;
         if (clientMatch) {
             const rawName = clientMatch[1].trim();
