@@ -48,15 +48,27 @@ export const useAssistant = () => {
         console.log('🎙️ Assistant RAW transcript:', text);
         const lowerText = text.toLowerCase();
 
-        // 1. Normalisation et nettoyage
+        // 1. Normalisation et nettoyage phonétique
         const normalize = (str: string) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
-        const processedText = lowerText
-            .replace(/\bvingt[\s-]deux\s+rue\b/g, 'vend 2 riz')
-            .replace(/\bvingt[\s-]deux\b/g, 'vend 2')
-            .replace(/\b22\b/g, 'vend 2')
-            .replace(/\brue\b/g, 'riz')
-            .replace(/\bvent\b/g, 'vend');
+        // Dictionnaire de corrections pour les erreurs phonétiques et homophones
+        const corrections: Record<string, string> = {
+            '22': 'vend 2',
+            'vingt deux': 'vend 2',
+            'vingt-deux': 'vend 2',
+            'vente de': 'vend',
+            'vent de': 'vend',
+            'vends de': 'vend',
+            'rue': 'riz',
+            'vent': 'vend'
+        };
+
+        let processedText = lowerText;
+        Object.entries(corrections).forEach(([error, fix]) => {
+            // Utiliser une Regex pour remplacer les mots entiers (\b) uniquement
+            const regex = new RegExp(`\\b${error}\\b`, 'g');
+            processedText = processedText.replace(regex, fix);
+        });
 
         const normText = normalize(processedText);
 
