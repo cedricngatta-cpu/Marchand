@@ -26,7 +26,7 @@ export default function OrderSupplierPage({ params }: { params: Promise<{ id: st
     }
 
     const handleOrder = () => {
-        speak(`Commande de ${orderQuantity} ${supplier.unit} de ${supplier.product} envoyée à ${supplier.name}.`);
+        // speak(`Commande...`); - SILENCED Mission 1
         setOrderSuccess(true);
         setTimeout(() => {
             router.push('/approvisionnement');

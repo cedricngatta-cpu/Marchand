@@ -26,13 +26,13 @@ export const StockDetailModal: React.FC<StockDetailModalProps> = ({
 
     const productHistory = getProductHistory(product.id).slice(0, 3);
 
-    const announceCapital = () => {
-        speakIfNecessary(`Ce produit représente ${capitalValue} francs de ton capital marchand actuel, ${name}.`, 'NORMAL', true);
-    };
+    // const announceCapital = () => {
+    //     speakIfNecessary(`Ce produit représente ${capitalValue} francs de ton capital marchand actuel, ${name}.`, 'NORMAL', true);
+    // };
 
-    useEffect(() => {
-        announceCapital();
-    }, []);
+    // useEffect(() => {
+    //     announceCapital();
+    // }, []);
 
     return (
         <motion.div
@@ -71,8 +71,7 @@ export const StockDetailModal: React.FC<StockDetailModalProps> = ({
                     </div>
 
                     <div
-                        onClick={announceCapital}
-                        className="bg-emerald-50 p-4 rounded-xl flex items-start gap-3 text-primary cursor-pointer active:bg-emerald-100 transition-colors"
+                        className="bg-emerald-50 p-4 rounded-xl flex items-start gap-3 text-primary"
                     >
                         <Volume2 className="shrink-0 w-5 h-5" />
                         <p className="font-semibold text-xs leading-snug">

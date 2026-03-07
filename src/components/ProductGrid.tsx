@@ -67,7 +67,6 @@ export const ProductGrid = ({ onAdd, onSpeak }: ProductGridProps) => {
                             key={p.id}
                             onClick={() => {
                                 onAdd(p);
-                                onSpeak(`${p.name} ajouté.`);
                             }}
                             className="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 cursor-pointer active:scale-95 transition-all group relative"
                         >

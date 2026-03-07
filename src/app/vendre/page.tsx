@@ -35,12 +35,7 @@ export default function VendrePage() {
 
         const isDebt = paymentStatus === 'DETTE';
         const isMomo = paymentStatus === 'MOMO';
-        const message = isDebt
-            ? `${total} francs mis en dette pour ${clientName || 'ce client'}.`
-            : isMomo ? `Paiement Mobile Money de ${total} francs initié.`
-                : `${total} francs. C'est vendu ${clientName ? `à ${clientName}` : ''} !`;
-
-        speakIfNecessary(message, 'NORMAL');
+        // speakIfNecessary(message, 'NORMAL'); - SILENCED PER MISSION 1
         setShowConfirmation(true);
 
         try {
@@ -103,9 +98,6 @@ export default function VendrePage() {
         const product = products.find(p => p.barcode === barcode);
         if (product) {
             addItem(product);
-            speakIfNecessary(`${product.name} ajouté.`, 'LOW');
-        } else {
-            speakIfNecessary("Produit non reconnu.", 'HIGH');
         }
     };
 
@@ -253,7 +245,7 @@ export default function VendrePage() {
 
                 {/* Grille des Produits du Catalogue */}
                 <div className="w-full mt-2">
-                    <ProductGrid onAdd={addItem} onSpeak={(text) => speakIfNecessary(text, 'LOW')} />
+                    <ProductGrid onAdd={addItem} onSpeak={() => { }} />
                 </div>
             </div>
 

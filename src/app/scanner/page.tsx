@@ -43,11 +43,8 @@ export default function ScannerPage() {
 
         if (foundProduct) {
             setScannedProduct(foundProduct);
-            const shortName = foundProduct.audioName.replace(/^[Ll]e\s+/, '').replace(/^[Ll]a\s+/, '').replace(/^[Ll]'\s+/, '');
-            speakIfNecessary(`${shortName} trouvé. Prix : ${foundProduct.price} francs.`, 'NORMAL');
         } else {
             setScanError(`Code non reconnu : ${decodedText}`);
-            speakIfNecessary("Produit non trouvé dans le catalogue.", 'HIGH');
         }
     };
 
@@ -63,7 +60,6 @@ export default function ScannerPage() {
         const currentStock = stock[scannedProduct.id] || 0;
         if (currentStock <= 0) {
             setScanError("Stock épuisé !");
-            speakIfNecessary("Attention, ce produit est en rupture de stock.", 'HIGH');
             return;
         }
 
@@ -76,8 +72,7 @@ export default function ScannerPage() {
             price: scannedProduct.price
         });
 
-        const shortName = scannedProduct.audioName.replace(/^[Ll]e\s+/, '').replace(/^[Ll]a\s+/, '').replace(/^[Ll]'\s+/, '');
-        speakIfNecessary(`Vendu : un ${shortName}.`, 'LOW');
+        // speak(`Vendu : un ${shortName}.`); - SILENCED Mission 1
 
         // Return to scanner after 1.5s
         setTimeout(() => resetScanner(), 1500);

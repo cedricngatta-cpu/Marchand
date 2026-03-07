@@ -15,7 +15,7 @@ export default function PublierProduit() {
     const [category, setCategory] = useState('RECOLTE');
 
     const handlePublish = () => {
-        speak(`Bravo, ton stock de ${name} est maintenant visible par tous les marchands.`);
+        // speak(`Bravo...`); - SILENCED Mission 1
         router.push('/producteur');
     };
 

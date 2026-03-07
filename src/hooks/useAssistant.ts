@@ -48,318 +48,173 @@ export const useAssistant = () => {
         console.log('🎙️ Assistant RAW transcript:', text);
         const lowerText = text.toLowerCase();
 
-        // Pre-processing : Corriger les erreurs de transcription courantes (French quirks)
+        // 1. Normalisation et nettoyage
         const normalize = (str: string) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
         const processedText = lowerText
             .replace(/\bvingt[\s-]deux\s+rue\b/g, 'vend 2 riz')
             .replace(/\bvingt[\s-]deux\b/g, 'vend 2')
-            .replace(/\bvingt[\s-]trois\b/g, 'vend 3')
-            .replace(/\b22\s+rue\b/g, 'vend 2 riz')
-            .replace(/\b23\s+riz\b/g, 'vend 3 riz')
             .replace(/\b22\b/g, 'vend 2')
-            .replace(/\b23\b/g, 'vend 3')
             .replace(/\brue\b/g, 'riz')
-            .replace(/\bvent\b/g, 'vend'); // Correction cruciale pour l'utilisateur
+            .replace(/\bvent\b/g, 'vend');
 
         const normText = normalize(processedText);
 
         if (products.length === 0) {
-            speakIfNecessary(`Mon catalogue est encore vide ${userName}. Va dans ton profil pour le mettre à jour.`, 'NORMAL');
+            speakIfNecessary(`Mon catalogue est encore vide.`, 'NORMAL');
             return;
         }
 
-        // --- SECTION 1: INTENTIONS GLOBALES (STOCK, PANIER, ETC.) ---
-        if (normText.includes('stock') || normText.includes('inventaire') || normText.includes('reste') || normText.includes('bilan')) {
-            const inStock = products.filter(p => getStockLevel(p.id) > 0);
-            if (inStock.length > 0) {
-                const list = inStock.slice(0, 3).map(p => p.audioName || p.name).join(', ');
-                const totalItems = inStock.length;
-                speakIfNecessary(`Tu as du stock pour ${totalItems} produits, comme le ${list}. Pour lequel veux-tu le détail ?`, 'NORMAL', true);
-            } else {
-                speakIfNecessary(`${userName}, ton stock est vide. Tu dois ajouter des produits.`, 'NORMAL');
-            }
-            return;
+        // --- SMART PARSER (Mission 2) ---
+
+        // A. Extraction de l'Intention
+        let intent: 'SALE' | 'ADD_STOCK' | 'REMOVE_STOCK' | 'CHECK_STOCK' | 'PAY_DEBT' | 'UNKNOWN' = 'UNKNOWN';
+        if (normText.includes('vend') || normText.includes('vendre') || normText.includes('donne')) intent = 'SALE';
+        else if (normText.includes('ajoute') || normText.includes('recu') || normText.includes('livre')) intent = 'ADD_STOCK';
+        else if (normText.includes('retire') || normText.includes('enleve') || normText.includes('supprime')) intent = 'REMOVE_STOCK';
+        else if (normText.includes('combien') || normText.includes('reste') || normText.includes('stock') || normText.includes('inventaire')) intent = 'CHECK_STOCK';
+        else if (normText.includes('paye') || normText.includes('regle') || normText.includes('dette') || normText.includes('credit')) {
+            if (normText.includes('paye') || normText.includes('regle')) intent = 'PAY_DEBT';
+            else intent = 'CHECK_STOCK'; // "quelle est ma dette" -> CHECK_STOCK/BALANCE
         }
 
-        if ((normText.includes('panier') || normText.includes('commande')) && (normText.includes('quoi') || normText.includes('voir') || normText.includes('liste'))) {
-            if (pathname === '/vendre' && items.length > 0) {
-                const list = items.slice(0, 3).map(item => item.name).join(', ');
-                speakIfNecessary(`Dans ton panier, il y a : ${list}.`, 'NORMAL');
-            } else if (pathname === '/vendre') {
-                speakIfNecessary(`Ton panier est vide ${userName}.`, 'LOW');
-            } else {
-                speakIfNecessary(`Je peux t'aider avec tes ventes, ${userName}. Est-ce que tu veux vendre quelque chose ?`, 'NORMAL', true);
-            }
-            return;
-        }
+        // B. Extraction du Moyen de Paiement
+        let paymentMethod: 'CASH' | 'CREDIT' | 'MOMO' = 'CASH';
+        if (normText.includes('credit') || normText.includes('dette')) paymentMethod = 'CREDIT';
+        else if (normText.includes('momo') || normText.includes('mobile money')) paymentMethod = 'MOMO';
 
-        // --- SECTION 2: GESTION DES DETTES ---
-        if (normText.includes('paye') || normText.includes('payer') || normText.includes('regle') || normText.includes('donne')) {
-            // Uniquement si le contexte est une dette (contient "dette" ou "credit") ou un nom de client
-            if (normText.includes('dette') || normText.includes('credit')) {
-                let clientMatch = processedText.match(/([a-zA-Záàâäãåçéèêëíìîïñóòôöõúùûüýÿ]+)\s+(?:a|me)\s+(?:tout\s+|enfin\s+)?(?:payé|payer|paye|réglé)/i);
-                if (!clientMatch) {
-                    clientMatch = processedText.match(/(?:payé|payer|paye|réglé|donne)\s+(?:sa\s+dette\s+)?(?:à|pour|a)\s+([a-zA-Záàâäãåçéèêëíìîïñóòôöõúùûüýÿ]+)/i);
-                }
-
-                const clientName = clientMatch ? (clientMatch[1]).trim() : undefined;
-
-                if (clientName && clientName.toLowerCase() !== 'dette' && clientName.toLowerCase() !== 'sa') {
-                    const clientDebts = history.filter(t => t.status === 'DETTE' && t.clientName?.toLowerCase() === clientName.toLowerCase());
-                    if (clientDebts.length > 0) {
-                        const totalPaid = clientDebts.reduce((acc, t) => acc + t.price, 0);
-                        markAllAsPaid(clientName);
-                        speakIfNecessary(`C'est fait ${userName}. J'ai marqué que ${clientName} a tout payé, soit ${totalPaid} francs.`, 'NORMAL');
-                        return;
-                    }
-                }
+        // C. Extraction du Client (NLP simple)
+        // Cherche ce qui vient après "à" ou "pour"
+        const clientMatch = processedText.match(/(?:à|pour|a)\s+([a-zA-Z\s]+?)(?:\s+(?:en|sur|avec|pour|à|a|termine|fini|confirme|biscuit|riz|savon|sucre)|$)/i);
+        let customerName = undefined;
+        if (clientMatch) {
+            const rawName = clientMatch[1].trim();
+            // Filtrer les faux positifs (mots de paiement ou de quantité)
+            if (!['credit', 'dette', 'cash', 'espece', 'un', 'une', 'deux', 'des'].includes(normalize(rawName))) {
+                customerName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
             }
         }
 
-        // --- SECTION 3: ACTIONS SUR LES PRODUITS ---
-
-        // 2. Identifier le produit (Détection ultra-flexible avec phonétique)
-        const genericWords = ['sac', 'paquet', 'boite', 'boîte', 'bidon', 'litre', 'unité', 'morceau', 'kilo', 'gramme', 'de', 'le', 'la', 'les', 'des', 'un', 'une'];
-        const phonetics: Record<string, string[]> = {
-            'riz': ['rz', 'ri', 'ry', 'rise', 'ris', 'rue', 'roue', 'rize'],
-            'huile': ['uil', 'oile', 'huil', 'wil'],
-            'sucre': ['suc', 'suk', 'sucre', 'suker'],
-            'biscuit': ['biscui', 'biscuite', 'biski', 'biscu'],
-            'attieke': ['atieke', 'adjeke', 'ateke', 'adjé'],
-            'savon': ['savo', 'saven', 'sabou', 'sabun'],
-            'eau': ['o', 'eaux'],
-            'lait': ['le', 'lay']
-        };
-
+        // D. Identification du Produit (Détection flexible)
         const sortedProducts = [...products].sort((a, b) => b.name.length - a.name.length);
-
         const product = sortedProducts.find(p => {
             const nName = normalize(p.name);
             const nAudio = normalize(p.audioName || p.name).replace(/^[Ll]e\s+/, '').replace(/^[Ll]a\s+/, '').replace(/^[Ll]'\s+/, '');
-
-            const wordsInText = normText.split(/[\s']+/);
-            const pKeywords = nName.split(/[\s']+/).filter(w => w.length >= 2 && !genericWords.includes(w));
-            const aKeywords = nAudio.split(/[\s']+/).filter(w => w.length >= 2 && !genericWords.includes(w));
-            const allKeywords = [...new Set([...pKeywords, ...aKeywords])];
-
-            // 1. Match Direct ou Complet
-            if (normText.includes(nName) || normText.includes(nAudio)) return true;
-
-            // 2. Match par mots-clés et racines
-            return wordsInText.some(word => {
-                if (allKeywords.some(kw => word.startsWith(kw) || kw.startsWith(word))) return true;
-                const cleanWord = word.replace(/[sxte]$/, '');
-                if (cleanWord.length >= 3 && allKeywords.some(kw => kw.startsWith(cleanWord) || cleanWord.startsWith(kw.replace(/[sxte]$/, '')))) return true;
-
-                return allKeywords.some(kw => {
-                    const aliases = phonetics[kw] || [];
-                    return aliases.some(alias => word.includes(alias) || alias.includes(word));
-                });
-            });
+            return normText.includes(nName) || normText.includes(nAudio);
         });
 
+        // E. Extraction Quantité
+        const numberMap: Record<string, number> = { 'un': 1, 'une': 1, 'deux': 2, 'trois': 3, 'quatre': 4, 'cinq': 5 };
+        let quantity = 1;
+        const digitMatch = normText.match(/(\d+)/);
+        if (digitMatch) quantity = parseInt(digitMatch[1]);
+        else {
+            const letterMatch = Object.keys(numberMap).find(k => normText.includes(k));
+            if (letterMatch) quantity = numberMap[letterMatch];
+        }
+
+        const structuredCommand = { intent, product: product?.name, quantity, paymentMethod, customerName };
+        console.log('🎯 Intent Parsed:', structuredCommand);
+
+        // --- EXÉCUTION DE L'ACTION ---
+
+        if (intent === 'PAY_DEBT' && customerName) {
+            const clientDebts = history.filter(t => t.status === 'DETTE' && t.clientName?.toLowerCase() === customerName.toLowerCase());
+            if (clientDebts.length > 0) {
+                const totalPaid = clientDebts.reduce((acc, t) => acc + t.price, 0);
+                markAllAsPaid(customerName);
+                speakIfNecessary(`C'est fait ${userName}. ${customerName} a réglé sa dette de ${totalPaid} francs.`, 'NORMAL');
+                return;
+            }
+        }
+
         if (!product) {
-            // Si le texte contient "vends" ou "ajoute" mais pas de produit, on demande précision
-            if (normText.includes('vend') || normText.includes('vendre') || normText.includes('ajoute')) {
-                speakIfNecessary(`Je n'ai pas trouvé le produit dans ton catalogue ${userName}. J'ai entendu "${text}". Peux-tu répéter ?`, 'HIGH', true);
+            if (intent !== 'CHECK_STOCK' && intent !== 'UNKNOWN') {
+                speakIfNecessary(`Je n'ai pas trouvé le produit. Peux-tu répéter ?`, 'HIGH', true);
+            } else if (intent === 'CHECK_STOCK') {
+                const totalVal = products.reduce((acc, p) => acc + (p.price * getStockLevel(p.id)), 0);
+                speakIfNecessary(`Ton capital marchand actuel est de ${totalVal} francs.`, 'NORMAL');
             }
             return;
         }
 
-        // 3. Identifier la quantité
-        const numberMap: Record<string, number> = {
-            'un': 1, 'une': 1, 'deux': 2, 'duex': 2, 'de': 2, 'des': 2, 'd\'': 2,
-            'trois': 3, 'quatre': 4, 'cinq': 5, 'six': 6, 'sept': 7, 'huit': 8, 'neuf': 9, 'dix': 10
-        };
-
-        let quantity = 1;
-        let customPrice: number | undefined = undefined;
-
-        // 1. Chercher des chiffres (prioritaire)
-        const allDigits = Array.from(normText.matchAll(/(\d+)/g)).map(m => parseInt(m[1]));
-
-        // 2. Chercher des nombres en lettres
-        const words = normText.split(/[\s']+/);
-        // On cherche le nombre AVANT le produit si possible
-        const letterNumberKey = words.find(w => numberMap[w]);
-        const letterNumber = letterNumberKey ? numberMap[letterNumberKey] : null;
-
-        if (allDigits.length > 0) {
-            if (allDigits.length === 1) {
-                if (allDigits[0] >= 50) customPrice = allDigits[0];
-                else quantity = allDigits[0];
-            } else {
-                if (allDigits[0] < 50) {
-                    quantity = allDigits[0];
-                    if (allDigits[1] >= 50) customPrice = allDigits[1];
-                } else {
-                    customPrice = allDigits[0];
-                    if (allDigits[1] < 50) quantity = allDigits[1];
-                }
-            }
-        } else if (letterNumber) {
-            quantity = letterNumber;
-        }
-
-        const priceMatch = processedText.match(/(?:à|pour|f|francs|cfa|prix)?\s*(\d{2,}(?:[.,]\d+)?)\s*(?:francs|f|cfa|balle|mille)?/i);
-        if (priceMatch) {
-            const parsedPrice = parseInt(priceMatch[1].replace(/[,.]/g, ''));
-            if (parsedPrice >= 50) customPrice = parsedPrice;
-        }
-
         const finalProduct = { ...product };
-        if (customPrice !== undefined) finalProduct.price = customPrice;
+        const feedback = formatSpeech(finalProduct.audioName, quantity);
 
-        console.log('📦 Assistant Parsed Result:', {
-            product: finalProduct.name,
-            quantity: quantity,
-            price: finalProduct.price,
-            isVendrePage: pathname === '/vendre'
-        });
-        const isSaleIntent = processedText.includes('vendu') ||
-            processedText.includes('vend') ||
-            processedText.includes('vends') ||
-            processedText.includes('vent') ||
-            processedText.includes('vens') ||
-            processedText.includes('donne') ||
-            processedText.includes('donnes');
-
-        const isAddIntent = processedText.includes('ajoute') ||
-            processedText.includes('reçu') ||
-            processedText.includes('livré') ||
-            processedText.includes('prend');
-
-        const isRemoveIntent = processedText.includes('retire') ||
-            processedText.includes('enlève') ||
-            processedText.includes('supprime');
-
-        if (isAddIntent) {
-            if (pathname === '/vendre') {
-                addItem(finalProduct, quantity);
-                speakIfNecessary(`${formatSpeech(finalProduct.audioName, quantity)} ajouté au panier.`, 'LOW');
-            } else {
-                updateStock(finalProduct.id, quantity);
-                addTransaction({
-                    type: 'LIVRAISON',
-                    productId: finalProduct.id,
-                    productName: finalProduct.name,
-                    quantity: quantity,
-                    price: finalProduct.price * quantity
-                });
-                speakIfNecessary(`${formatSpeech(finalProduct.audioName, quantity)} ajouté au stock.`, 'LOW');
-            }
-        }
-        else if (isSaleIntent) {
-            const isDebtCommand = processedText.includes('crédit') || processedText.includes('dette');
-
-            // Regex plus costaude pour le client (capte jusqu'à la fin de la phrase ou un mot clé)
-            const clientMatch = processedText.match(/(?:à|pour|a)\s+([a-zA-Z\s]+?)(?:\s+(?:en|sur|avec|pour|à|a|termine|fini|confirme)|$)/i);
-            let clientName = undefined;
-
-            if (clientMatch) {
-                const rawName = clientMatch[1].trim();
-                const ln = rawName.toLowerCase();
-                // Éviter de prendre "crédit", "dette" ou un nom de produit comme nom de client
-                if (!['crédit', 'dette', 'panier', 'mon', '2', 'deux', 'des'].includes(ln) && rawName.length > 1) {
-                    clientName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
-                }
-            }
-
-            if (pathname === '/vendre') {
-                addItem(finalProduct, quantity);
-                let feedback = formatSpeech(finalProduct.audioName, quantity);
-                if (customPrice !== undefined) feedback += ` à ${customPrice} francs`;
-
-                if (clientName) {
-                    feedback += ` pour ${clientName}`;
-                    speakIfNecessary(`${feedback}. C'est vendu !`, 'LOW');
-                } else {
+        switch (intent) {
+            case 'ADD_STOCK':
+                if (pathname === '/vendre') {
+                    addItem(finalProduct, quantity);
                     speakIfNecessary(`${feedback} ajouté au panier.`, 'LOW');
+                } else {
+                    updateStock(finalProduct.id, quantity);
+                    speakIfNecessary(`${feedback} ajouté au stock.`, 'LOW');
                 }
+                break;
 
-                if (isDebtCommand) feedback += ` en dette`;
+            case 'SALE':
+                if (pathname === '/vendre') {
+                    addItem(finalProduct, quantity);
+                    let saleFeedback = `${feedback} pour ${customerName || 'le client'}`;
+                    if (paymentMethod === 'CREDIT') saleFeedback += " en dette";
 
-                window.dispatchEvent(new CustomEvent('assistant-set-client', {
-                    detail: { name: clientName, status: isDebtCommand ? 'DETTE' : 'PAYÉ' }
-                }));
+                    speakIfNecessary(`${saleFeedback}.`, 'LOW');
 
-                // SI intention de vente ET client précisé -> On valide automatiquement
-                if (clientName || processedText.includes('termine') || processedText.includes('fini') || processedText.includes('confirme')) {
-                    setTimeout(() => window.dispatchEvent(new Event('assistant-finish-sale')), 1500);
+                    window.dispatchEvent(new CustomEvent('assistant-set-client', {
+                        detail: { name: customerName, status: paymentMethod === 'CREDIT' ? 'DETTE' : 'PAYÉ' }
+                    }));
+
+                    if (customerName || normText.includes('confirme')) {
+                        setTimeout(() => window.dispatchEvent(new Event('assistant-finish-sale')), 1500);
+                    }
+                } else {
+                    const stock = getStockLevel(finalProduct.id);
+                    if (stock < quantity) {
+                        speakIfNecessary(`Attention, il ne te reste que ${stock} de ${finalProduct.name}.`, 'HIGH');
+                    } else {
+                        updateStock(finalProduct.id, -quantity);
+                        addTransaction({
+                            type: 'VENTE',
+                            productId: finalProduct.id,
+                            productName: finalProduct.name,
+                            quantity: quantity,
+                            price: finalProduct.price * quantity,
+                            clientName: customerName,
+                            status: paymentMethod === 'CREDIT' ? 'DETTE' : 'PAYÉ'
+                        });
+                        speakIfNecessary(`${feedback} vendu ${customerName ? `à ${customerName}` : ''}${paymentMethod === 'CREDIT' ? ' à crédit' : ''}.`, 'LOW');
+                    }
                 }
-            } else {
+                break;
+
+            case 'REMOVE_STOCK':
+                if (pathname === '/vendre') {
+                    removeItem(finalProduct.id);
+                    speakIfNecessary(`${finalProduct.name} retiré du panier.`, 'LOW');
+                } else {
+                    updateStock(finalProduct.id, -quantity);
+                    speakIfNecessary(`${feedback} retiré du stock.`, 'LOW');
+                }
+                break;
+
+            case 'CHECK_STOCK':
                 const currentStock = getStockLevel(finalProduct.id);
-                if (currentStock < quantity) {
-                    speakIfNecessary(`Attention ${userName}, tu n'as pas assez de ${finalProduct.audioName} en stock. Il t'en reste seulement ${currentStock}.`, 'HIGH', true);
-                    return;
-                }
-                updateStock(finalProduct.id, -quantity);
-                addTransaction({
-                    type: 'VENTE',
-                    productId: finalProduct.id,
-                    productName: finalProduct.name,
-                    quantity: quantity,
-                    price: finalProduct.price * quantity,
-                    clientName: clientName,
-                    status: isDebtCommand ? 'DETTE' : 'PAYÉ'
-                });
+                speakIfNecessary(`Il te reste ${currentStock} de ${finalProduct.audioName}.`, 'NORMAL');
+                break;
 
-                let feedback = `${formatSpeech(finalProduct.audioName, quantity)} vendu`;
-                if (customPrice !== undefined) feedback += ` à ${customPrice} francs`;
-                if (isDebtCommand) feedback += ` à crédit`;
-                if (clientName) feedback += ` à ${clientName}`;
-                speakIfNecessary(`${feedback} !`, 'LOW');
-            }
-        }
-        else if (isRemoveIntent) {
-            if (pathname === '/vendre') {
-                removeItem(finalProduct.id);
-                speakIfNecessary(`${finalProduct.audioName} retiré du panier.`, 'LOW');
-            } else {
-                updateStock(finalProduct.id, -quantity);
-                addTransaction({
-                    type: 'RETRAIT',
-                    productId: finalProduct.id,
-                    productName: finalProduct.name,
-                    quantity: quantity,
-                    price: finalProduct.price * quantity
-                });
-                speakIfNecessary(`${formatSpeech(finalProduct.audioName, quantity)} retiré du stock.`, 'LOW');
-            }
-        }
-        else {
-            const currentStock = getStockLevel(finalProduct.id);
-            speakIfNecessary(`Pour le ${finalProduct.audioName}, tu en as ${currentStock} en stock et le prix est de ${finalProduct.price} francs.`, 'NORMAL');
+            default:
+                speakIfNecessary(`Je ne suis pas sûr d'avoir compris. Tu veux vendre ou ajouter du ${product.name} ?`, 'NORMAL', true);
         }
     }, [speakIfNecessary, updateStock, getStockLevel, addTransaction, markAllAsPaid, addItem, removeItem, pathname, history, products, userName, items]);
 
+    // Mission 1: Suppression des salutations automatiques au changement de route
     useEffect(() => {
         stopSpeakingRef.current();
-
-        const greeting = {
-            '/': `Bienvenue ${userName}. Appuie sur le gros bouton en bas pour me parler.`,
-            '/commercant': `${getGreeting()} ${userName}. Prêt pour tes ventes de la journée ?`,
-            '/producteur': `${getGreeting()} ${userName}. Voici l'état de ta production et de tes stocks.`,
-            '/cooperative': `${getGreeting()} ${userName}. Prêt pour piloter ta coopérative ?`,
-            '/vendre': `${getGreeting()}, enregistre tes ventes ici ${userName}. Choisis tes produits.`,
-            '/stock': `${getGreeting()}, c'est ton stock ${userName}. Regarde ce qu'il te reste.`,
-            '/bilan': `${getGreeting()}, voici ton bilan ${userName}. Regarde ton argent.`,
-            '/acheter': `${getGreeting()}, ici ${userName} tu peux noter les livraisons.`,
-            '/carnet': `${getGreeting()}, c'est ton carnet de dettes ${userName}.`
-        } as Record<string, string>;
-
-        const timer = setTimeout(() => {
-            if (greeting[pathname]) {
-                speakRef.current(greeting[pathname], 'LOW');
-            }
-        }, 800);
-
+        // On ne fait plus de speakRef.current(...) ici pour garder le silence
         return () => {
-            clearTimeout(timer);
             stopSpeakingRef.current();
         };
-    }, [pathname, userName, speakIfNecessary, stopSpeaking]);
+    }, [pathname]);
 
     useEffect(() => {
         if (transcript && !isListening) {

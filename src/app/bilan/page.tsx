@@ -38,7 +38,7 @@ export default function BilanPage() {
     const announceBilan = () => {
         // Révéler le solde si l'utilisateur demande à l'entendre
         setIsBalanceVisible(true);
-        speakIfNecessary(`${name}, voici ton bilan. Tu as ${balance} francs dans la caisse, et ta marchandise vaut ${stockValue} francs.`, 'NORMAL', true);
+        // speakIfNecessary silenced - Mission 1
     };
 
     const handleReset = async () => {
@@ -50,7 +50,6 @@ export default function BilanPage() {
         });
         if (ok) {
             await clearHistory();
-            speakIfNecessary("C'est fait, la caisse et l'historique sont vides pour demain.", 'LOW');
         }
     };
 
@@ -268,7 +267,7 @@ export default function BilanPage() {
                                         <div className="space-y-4">
                                             <p className={`text-base font-bold leading-snug ${adviceColor} tracking-tight`}>{adviceText}</p>
                                             <button
-                                                onClick={() => speakIfNecessary(voiceText, 'NORMAL', true)}
+                                                onClick={() => { }}
                                                 className="bg-amber-400 hover:bg-amber-300 text-slate-900 px-4 py-2.5 rounded-xl font-bold uppercase text-[10px] tracking-wider flex items-center justify-center md:justify-start gap-2 active:scale-95 transition-all w-full md:w-auto"
                                             >
                                                 <Volume2 size={18} /> Écouter le conseil
