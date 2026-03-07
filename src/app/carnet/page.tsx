@@ -11,7 +11,7 @@ import { useAuth } from '@/context/AuthContext';
 
 export default function CarnetPage() {
     const router = useRouter();
-    const { speak, handleAction, isSpeaking, isListening } = useAssistant();
+    const { speakIfNecessary, handleAction, isSpeaking, isListening } = useAssistant();
     const { history, markAsPaid, markAllAsPaid } = useHistory();
     const { user } = useAuth();
     const name = user?.name?.split(' ')[0] || 'Marchand';
@@ -36,7 +36,7 @@ export default function CarnetPage() {
 
     const handleSettle = (transactionId: string, clientName: string, amount: number) => {
         markAsPaid(transactionId);
-        speak(`C'est noté ${name}. ${clientName} a payé ${amount} francs. C'est ajouté à ta caisse.`);
+        speakIfNecessary(`C'est noté ${name}. ${clientName} a payé ${amount} francs. C'est ajouté à ta caisse.`, 'LOW');
     };
 
     const totalGlobalDette = Object.values(debtsByClient).reduce((acc, c) => acc + c.total, 0);
@@ -119,7 +119,7 @@ export default function CarnetPage() {
                                             <button
                                                 onClick={() => {
                                                     markAllAsPaid(client.name);
-                                                    speak(`Parfait ${name}. ${client.name} a tout réglé, soit ${client.total} francs.`);
+                                                    speakIfNecessary(`Parfait ${name}. ${client.name} a tout réglé, soit ${client.total} francs.`, 'LOW');
                                                 }}
                                                 className="flex-1 bg-emerald-600 text-white px-2 py-3 rounded-xl font-bold text-[10px] uppercase shadow-md active:scale-[0.98] transition-all text-center"
                                             >

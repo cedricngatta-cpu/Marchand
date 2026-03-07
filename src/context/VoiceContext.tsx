@@ -2,11 +2,17 @@
 
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 
+export type SpeechPriority = 'LOW' | 'NORMAL' | 'HIGH';
+export type VerbosityLevel = 'NORMAL' | 'SILENT';
+
 interface VoiceContextType {
     isSpeaking: boolean;
     isListening: boolean;
     transcript: string;
+    verbosity: VerbosityLevel;
+    setVerbosity: (level: VerbosityLevel) => void;
     speak: (text: string, autoListen?: boolean) => void;
+    speakIfNecessary: (text: string, priority?: SpeechPriority, autoListen?: boolean) => void;
     listen: () => void;
     stopSpeaking: () => void;
     clearTranscript: () => void;
@@ -18,8 +24,20 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const [isSpeaking, setIsSpeaking] = useState(false);
     const [isListening, setIsListening] = useState(false);
     const [transcript, setTranscript] = useState('');
+    const [verbosity, setVerbosity] = useState<VerbosityLevel>('NORMAL');
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const recognitionRef = useRef<any>(null);
+
+    // Initialiser les préférences au montage
+    useEffect(() => {
+        const savedVerbosity = localStorage.getItem('assistant_verbosity');
+        if (savedVerbosity === 'SILENT') setVerbosity('SILENT');
+    }, []);
+
+    const handleSetVerbosity = useCallback((level: VerbosityLevel) => {
+        setVerbosity(level);
+        localStorage.setItem('assistant_verbosity', level);
+    }, []);
 
     // Refs to break circular dependency
     const speakRef = useRef<(text: string, autoListen?: boolean) => void>(undefined);
@@ -102,6 +120,17 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
     }, []);
 
+    const speakIfNecessary = useCallback((text: string, priority: SpeechPriority = 'LOW', autoListen: boolean = false) => {
+        // En mode silencieux, seules les paroles HAUTE priorité (erreurs, alertes) passent.
+        if (verbosity === 'SILENT' && priority !== 'HIGH') {
+            // Optionnel : on pourrait jouer un petit 'bip' court ici si on a un Earcon (audio court).
+            return;
+        }
+
+        // En mode normal (ou si c'est prioritaire), on lit le texte complet.
+        speak(text, autoListen);
+    }, [verbosity, speak]);
+
     useEffect(() => {
         speakRef.current = speak;
     }, [speak]);
@@ -115,7 +144,10 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             isSpeaking,
             isListening,
             transcript,
+            verbosity,
+            setVerbosity: handleSetVerbosity,
             speak,
+            speakIfNecessary,
             listen,
             stopSpeaking,
             clearTranscript

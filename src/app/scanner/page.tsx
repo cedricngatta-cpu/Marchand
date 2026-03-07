@@ -16,7 +16,7 @@ export default function ScannerPage() {
     const { products } = useProductContext();
     const { stock } = useStock();
     const { addTransaction } = useHistory();
-    const { speak } = useVoice();
+    const { speakIfNecessary } = useVoice();
 
     const [scannedProduct, setScannedProduct] = useState<any>(null);
     const [isScanning, setIsScanning] = useState(true);
@@ -44,10 +44,10 @@ export default function ScannerPage() {
         if (foundProduct) {
             setScannedProduct(foundProduct);
             const shortName = foundProduct.audioName.replace(/^[Ll]e\s+/, '').replace(/^[Ll]a\s+/, '').replace(/^[Ll]'\s+/, '');
-            speak(`${shortName} trouvé. Prix : ${foundProduct.price} francs.`);
+            speakIfNecessary(`${shortName} trouvé. Prix : ${foundProduct.price} francs.`, 'NORMAL');
         } else {
             setScanError(`Code non reconnu : ${decodedText}`);
-            speak("Produit non trouvé dans le catalogue.");
+            speakIfNecessary("Produit non trouvé dans le catalogue.", 'HIGH');
         }
     };
 
@@ -63,7 +63,7 @@ export default function ScannerPage() {
         const currentStock = stock[scannedProduct.id] || 0;
         if (currentStock <= 0) {
             setScanError("Stock épuisé !");
-            speak("Attention, ce produit est en rupture de stock.");
+            speakIfNecessary("Attention, ce produit est en rupture de stock.", 'HIGH');
             return;
         }
 
@@ -77,7 +77,7 @@ export default function ScannerPage() {
         });
 
         const shortName = scannedProduct.audioName.replace(/^[Ll]e\s+/, '').replace(/^[Ll]a\s+/, '').replace(/^[Ll]'\s+/, '');
-        speak(`Vendu : un ${shortName}.`);
+        speakIfNecessary(`Vendu : un ${shortName}.`, 'LOW');
 
         // Return to scanner after 1.5s
         setTimeout(() => resetScanner(), 1500);

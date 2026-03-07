@@ -8,7 +8,7 @@ import { useVoice } from '@/hooks/useVoice';
 
 export default function FormationPage() {
     const router = useRouter();
-    const { speak, stopSpeaking, isSpeaking } = useVoice();
+    const { speakIfNecessary, stopSpeaking, isSpeaking } = useVoice();
     const [playingId, setPlayingId] = useState<number | null>(null);
 
     const tutorials = [
@@ -23,7 +23,7 @@ export default function FormationPage() {
             stopSpeaking();
             setPlayingId(null);
         } else {
-            speak(tuto.text);
+            speakIfNecessary(tuto.text, 'NORMAL');
             setPlayingId(tuto.id);
         }
     };

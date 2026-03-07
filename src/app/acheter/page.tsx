@@ -9,13 +9,15 @@ import { useStock } from '@/hooks/useStock';
 import { useHistory } from '@/hooks/useHistory';
 import { useProductContext } from '@/context/ProductContext';
 import { useAuth } from '@/context/AuthContext';
+import { useVoice } from '@/hooks/useVoice'; // Added import for useVoice
 
 export default function AcheterPage() {
     const router = useRouter();
     const { products } = useProductContext();
     const { user } = useAuth();
+    const { speakIfNecessary } = useVoice(); // Added this line
     const name = user?.name?.split(' ')[0] || 'Marchand';
-    const { speak, handleAction, isSpeaking, isListening } = useAssistant();
+    const { handleAction, isSpeaking, isListening } = useAssistant(); // Modified this line to remove 'speak'
     const { updateStock } = useStock();
     const { addTransaction } = useHistory();
     const [lastOrdered, setLastOrdered] = useState<string | null>(null);
@@ -55,7 +57,7 @@ export default function AcheterPage() {
             price: product.price
         });
         setLastOrdered(product.name);
-        speak(`Bravo ${name}, tu as reçu ${formattedName}. C'est ajouté à ton stock.`);
+        speakIfNecessary(`Bravo ${name}, tu as reçu ${formattedName}. C'est ajouté à ton stock.`, 'LOW');
         setTimeout(() => setLastOrdered(null), 3000);
     };
 

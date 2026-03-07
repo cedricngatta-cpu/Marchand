@@ -16,7 +16,7 @@ import { useAuth } from '@/context/AuthContext';
 export default function VendrePage() {
     const router = useRouter();
     const { products } = useProductContext();
-    const { speak, isSpeaking, isListening, handleAction } = useAssistant();
+    const { speakIfNecessary, isSpeaking, isListening, handleAction } = useAssistant();
     const { items, addItem, removeItem, clearCart, total } = useCart();
     const { updateStock } = useStock();
     const { addTransaction } = useHistory();
@@ -29,7 +29,7 @@ export default function VendrePage() {
 
     const handleFinish = async () => {
         if (items.length === 0) {
-            speak(`Ton panier est vide, ${user?.name?.split(' ')[0] || 'Marchand'}.`);
+            speakIfNecessary(`Ton panier est vide, ${user?.name?.split(' ')[0] || 'Marchand'}.`, 'LOW');
             return;
         }
 
@@ -40,7 +40,7 @@ export default function VendrePage() {
             : isMomo ? `Paiement Mobile Money de ${total} francs initié.`
                 : `${total} francs. C'est vendu ${clientName ? `à ${clientName}` : ''} !`;
 
-        speak(message);
+        speakIfNecessary(message, 'NORMAL');
         setShowConfirmation(true);
 
         try {
@@ -61,11 +61,13 @@ export default function VendrePage() {
 
             setTimeout(() => {
                 clearCart();
-                router.push('/commercant');
-            }, 6000);
+                setClientName('');
+                setPaymentStatus('PAYÉ');
+                setShowConfirmation(false);
+            }, 3000);
         } catch (err) {
             console.error("Erreur lors de la validation :", err);
-            speak(`Désolé ${user?.name?.split(' ')[0] || 'Marchand'}, il y a eu un petit problème technique.`);
+            speakIfNecessary(`Désolé ${user?.name?.split(' ')[0] || 'Marchand'}, il y a eu un petit problème technique.`, 'HIGH');
         }
     };
 
@@ -89,7 +91,7 @@ export default function VendrePage() {
             window.removeEventListener('assistant-set-client', handleAssistantClient);
             window.removeEventListener('assistant-finish-sale', handleAssistantFinish);
         };
-    }, [speak, items, clientName, paymentStatus, handleFinish]);
+    }, [speakIfNecessary, items, clientName, paymentStatus, handleFinish]);
 
     const handleBarcodeScan = (barcode: string) => {
         const now = Date.now();
@@ -101,9 +103,9 @@ export default function VendrePage() {
         const product = products.find(p => p.barcode === barcode);
         if (product) {
             addItem(product);
-            speak(`${product.name} ajouté.`);
+            speakIfNecessary(`${product.name} ajouté.`, 'LOW');
         } else {
-            speak("Produit non reconnu.");
+            speakIfNecessary("Produit non reconnu.", 'HIGH');
         }
     };
 
@@ -251,7 +253,7 @@ export default function VendrePage() {
 
                 {/* Grille des Produits du Catalogue */}
                 <div className="w-full mt-2">
-                    <ProductGrid onAdd={addItem} onSpeak={speak} />
+                    <ProductGrid onAdd={addItem} onSpeak={(text) => speakIfNecessary(text, 'LOW')} />
                 </div>
             </div>
 

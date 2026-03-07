@@ -26,11 +26,13 @@ import { useProductContext } from '@/context/ProductContext';
 import { useSync } from '@/context/SyncContext';
 import { supabase } from '@/lib/supabase';
 import { syncGlobalCatalog } from '@/services/product.service';
+import { useVoiceContext } from '@/context/VoiceContext';
 
 export default function ProfilePage() {
     const router = useRouter();
     const { user, logout, updatePin, updateLanguage } = useAuth();
     const { activeProfile } = useProfileContext();
+    const { verbosity, setVerbosity } = useVoiceContext();
     // syncGlobalCatalog is now imported directly
     const { syncAll, syncPendingCount, isSyncing, isOnline, lastSyncError } = useSync();
     const confirm = useConfirm();
@@ -242,6 +244,36 @@ export default function ProfilePage() {
                                 </button>
                             ))}
                         </div>
+
+                        {/* Séparateur */}
+                        <div className="h-px bg-slate-100 dark:bg-slate-800/50 my-2" />
+
+                        {/* Réglage de Bavardage IA */}
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <div className="bg-emerald-50 dark:bg-slate-800 p-3 rounded-2xl text-emerald-600">
+                                    <Bell size={20} />
+                                </div>
+                                <div>
+                                    <span className="font-black text-slate-900 dark:text-white text-xs uppercase tracking-wider block">Réponses vocales</span>
+                                    <p className="text-[9px] font-bold text-slate-400 mt-0.5 uppercase tracking-widest">Le niveau de détail vocal de l'IA</p>
+                                </div>
+                            </div>
+                            <div className="flex bg-slate-50 dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-700">
+                                <button
+                                    onClick={() => setVerbosity('NORMAL')}
+                                    className={`px-4 py-2 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all ${verbosity === 'NORMAL' ? 'bg-emerald-500 text-white shadow-md' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+                                >
+                                    Normal
+                                </button>
+                                <button
+                                    onClick={() => setVerbosity('SILENT')}
+                                    className={`px-4 py-2 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all ${verbosity === 'SILENT' ? 'bg-emerald-500 text-white shadow-md' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+                                >
+                                    Court
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     <ProfileMenuItem
@@ -259,8 +291,8 @@ export default function ProfilePage() {
                                 <Bell size={20} />
                             </div>
                             <div>
-                                <span className="font-black text-slate-900 dark:text-white text-xs uppercase tracking-wider block">Notifications Sonores</span>
-                                <p className="text-[9px] font-bold text-slate-400 mt-0.5 uppercase tracking-widest">Messages et conseils IA</p>
+                                <span className="font-black text-slate-900 dark:text-white text-xs uppercase tracking-wider block">Notifications Push</span>
+                                <p className="text-[9px] font-bold text-slate-400 mt-0.5 uppercase tracking-widest">Alertes de ventes et système</p>
                             </div>
                         </div>
                         <button

@@ -16,7 +16,7 @@ interface AdviceModalProps {
 
 export default function AdviceModal({ isOpen, onClose }: AdviceModalProps) {
     const { user } = useAuth();
-    const { speak } = useVoice();
+    const { speakIfNecessary } = useVoice();
     const { history, balance } = useHistory();
     const { stock } = useStock();
     const { products } = useProductContext();
@@ -127,7 +127,7 @@ export default function AdviceModal({ isOpen, onClose }: AdviceModalProps) {
 
                         <div className="flex flex-col gap-3">
                             <button
-                                onClick={() => advice && speak(advice.voice)}
+                                onClick={() => advice && speakIfNecessary(advice.voice, 'NORMAL', true)}
                                 className="w-full py-4 bg-primary text-white rounded-xl flex items-center justify-center gap-3 text-sm font-bold shadow-md active:scale-[0.98] transition-all"
                             >
                                 <Volume2 size={20} />

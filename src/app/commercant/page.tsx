@@ -32,13 +32,13 @@ import { useSync } from '@/context/SyncContext';
 export default function CommercantDashboard() {
     const router = useRouter();
     const { user } = useAuth();
-    const { speak } = useVoice();
+    const { speakIfNecessary } = useVoice();
     const { balance, history } = useHistory();
     const { unreadCount } = useNotifications();
     const [showBalance, setShowBalance] = useState(true);
 
     const handleNotifications = () => {
-        speak(`${user?.name?.split(' ')[0] || 'Marchand'}, tu as ${unreadCount} nouveaux messages.`);
+        speakIfNecessary(`${user?.name?.split(' ')[0] || 'Marchand'}, tu as ${unreadCount} nouveaux messages.`, 'LOW');
         router.push('/notifications');
     };
 

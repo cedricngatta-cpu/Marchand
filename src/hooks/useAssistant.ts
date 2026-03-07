@@ -11,15 +11,15 @@ export const useAssistant = () => {
     const pathname = usePathname();
     const { user } = useAuth();
     const { products } = useProductContext();
-    const { speak, listen, isSpeaking, isListening, transcript, clearTranscript, stopSpeaking } = useVoice();
+    const { speak, speakIfNecessary, listen, isSpeaking, isListening, transcript, clearTranscript, stopSpeaking } = useVoice();
     const { updateStock, getStockLevel } = useStock();
     const { history, addTransaction, markAllAsPaid } = useHistory();
     const { items, addItem, removeItem } = useCart();
 
     // Refs stables pour éviter les cycles de re-renders dans l'effet de salutation
-    const speakRef = useRef(speak);
+    const speakRef = useRef(speakIfNecessary);
     const stopSpeakingRef = useRef(stopSpeaking);
-    useEffect(() => { speakRef.current = speak; }, [speak]);
+    useEffect(() => { speakRef.current = speakIfNecessary; }, [speakIfNecessary]);
     useEffect(() => { stopSpeakingRef.current = stopSpeaking; }, [stopSpeaking]);
 
     const userName = user?.name?.split(' ')[0] || 'Marchand';
@@ -65,7 +65,7 @@ export const useAssistant = () => {
         const normText = normalize(processedText);
 
         if (products.length === 0) {
-            speak(`Mon catalogue est encore vide ${userName}. Va dans ton profil pour le mettre à jour.`);
+            speakIfNecessary(`Mon catalogue est encore vide ${userName}. Va dans ton profil pour le mettre à jour.`, 'NORMAL');
             return;
         }
 
@@ -75,9 +75,9 @@ export const useAssistant = () => {
             if (inStock.length > 0) {
                 const list = inStock.slice(0, 3).map(p => p.audioName || p.name).join(', ');
                 const totalItems = inStock.length;
-                speak(`Tu as du stock pour ${totalItems} produits, comme le ${list}. Pour lequel veux-tu le détail ?`, true);
+                speakIfNecessary(`Tu as du stock pour ${totalItems} produits, comme le ${list}. Pour lequel veux-tu le détail ?`, 'NORMAL', true);
             } else {
-                speak(`${userName}, ton stock est vide. Tu dois ajouter des produits.`);
+                speakIfNecessary(`${userName}, ton stock est vide. Tu dois ajouter des produits.`, 'NORMAL');
             }
             return;
         }
@@ -85,11 +85,11 @@ export const useAssistant = () => {
         if ((normText.includes('panier') || normText.includes('commande')) && (normText.includes('quoi') || normText.includes('voir') || normText.includes('liste'))) {
             if (pathname === '/vendre' && items.length > 0) {
                 const list = items.slice(0, 3).map(item => item.name).join(', ');
-                speak(`Dans ton panier, il y a : ${list}.`);
+                speakIfNecessary(`Dans ton panier, il y a : ${list}.`, 'NORMAL');
             } else if (pathname === '/vendre') {
-                speak(`Ton panier est vide ${userName}.`);
+                speakIfNecessary(`Ton panier est vide ${userName}.`, 'LOW');
             } else {
-                speak(`Je peux t'aider avec tes ventes, ${userName}. Est-ce que tu veux vendre quelque chose ?`, true);
+                speakIfNecessary(`Je peux t'aider avec tes ventes, ${userName}. Est-ce que tu veux vendre quelque chose ?`, 'NORMAL', true);
             }
             return;
         }
@@ -110,7 +110,7 @@ export const useAssistant = () => {
                     if (clientDebts.length > 0) {
                         const totalPaid = clientDebts.reduce((acc, t) => acc + t.price, 0);
                         markAllAsPaid(clientName);
-                        speak(`C'est fait ${userName}. J'ai marqué que ${clientName} a tout payé, soit ${totalPaid} francs.`);
+                        speakIfNecessary(`C'est fait ${userName}. J'ai marqué que ${clientName} a tout payé, soit ${totalPaid} francs.`, 'NORMAL');
                         return;
                     }
                 }
@@ -162,7 +162,7 @@ export const useAssistant = () => {
         if (!product) {
             // Si le texte contient "vends" ou "ajoute" mais pas de produit, on demande précision
             if (normText.includes('vend') || normText.includes('vendre') || normText.includes('ajoute')) {
-                speak(`Je n'ai pas trouvé le produit dans ton catalogue ${userName}. J'ai entendu "${text}". Peux-tu répéter ?`, true);
+                speakIfNecessary(`Je n'ai pas trouvé le produit dans ton catalogue ${userName}. J'ai entendu "${text}". Peux-tu répéter ?`, 'HIGH', true);
             }
             return;
         }
@@ -237,7 +237,7 @@ export const useAssistant = () => {
         if (isAddIntent) {
             if (pathname === '/vendre') {
                 addItem(finalProduct, quantity);
-                speak(`${formatSpeech(finalProduct.audioName, quantity)} ajouté au panier.`);
+                speakIfNecessary(`${formatSpeech(finalProduct.audioName, quantity)} ajouté au panier.`, 'LOW');
             } else {
                 updateStock(finalProduct.id, quantity);
                 addTransaction({
@@ -247,7 +247,7 @@ export const useAssistant = () => {
                     quantity: quantity,
                     price: finalProduct.price * quantity
                 });
-                speak(`${formatSpeech(finalProduct.audioName, quantity)} ajouté au stock.`);
+                speakIfNecessary(`${formatSpeech(finalProduct.audioName, quantity)} ajouté au stock.`, 'LOW');
             }
         }
         else if (isSaleIntent) {
@@ -273,9 +273,9 @@ export const useAssistant = () => {
 
                 if (clientName) {
                     feedback += ` pour ${clientName}`;
-                    speak(`${feedback}. C'est vendu !`);
+                    speakIfNecessary(`${feedback}. C'est vendu !`, 'LOW');
                 } else {
-                    speak(`${feedback} ajouté au panier.`);
+                    speakIfNecessary(`${feedback} ajouté au panier.`, 'LOW');
                 }
 
                 if (isDebtCommand) feedback += ` en dette`;
@@ -291,7 +291,7 @@ export const useAssistant = () => {
             } else {
                 const currentStock = getStockLevel(finalProduct.id);
                 if (currentStock < quantity) {
-                    speak(`Attention ${userName}, tu n'as pas assez de ${finalProduct.audioName} en stock. Il t'en reste seulement ${currentStock}.`, true);
+                    speakIfNecessary(`Attention ${userName}, tu n'as pas assez de ${finalProduct.audioName} en stock. Il t'en reste seulement ${currentStock}.`, 'HIGH', true);
                     return;
                 }
                 updateStock(finalProduct.id, -quantity);
@@ -309,13 +309,13 @@ export const useAssistant = () => {
                 if (customPrice !== undefined) feedback += ` à ${customPrice} francs`;
                 if (isDebtCommand) feedback += ` à crédit`;
                 if (clientName) feedback += ` à ${clientName}`;
-                speak(`${feedback} !`);
+                speakIfNecessary(`${feedback} !`, 'LOW');
             }
         }
         else if (isRemoveIntent) {
             if (pathname === '/vendre') {
                 removeItem(finalProduct.id);
-                speak(`${finalProduct.audioName} retiré du panier.`);
+                speakIfNecessary(`${finalProduct.audioName} retiré du panier.`, 'LOW');
             } else {
                 updateStock(finalProduct.id, -quantity);
                 addTransaction({
@@ -325,14 +325,14 @@ export const useAssistant = () => {
                     quantity: quantity,
                     price: finalProduct.price * quantity
                 });
-                speak(`${formatSpeech(finalProduct.audioName, quantity)} retiré du stock.`);
+                speakIfNecessary(`${formatSpeech(finalProduct.audioName, quantity)} retiré du stock.`, 'LOW');
             }
         }
         else {
             const currentStock = getStockLevel(finalProduct.id);
-            speak(`Pour le ${finalProduct.audioName}, tu en as ${currentStock} en stock et le prix est de ${finalProduct.price} francs.`);
+            speakIfNecessary(`Pour le ${finalProduct.audioName}, tu en as ${currentStock} en stock et le prix est de ${finalProduct.price} francs.`, 'NORMAL');
         }
-    }, [speak, updateStock, getStockLevel, addTransaction, markAllAsPaid, addItem, removeItem, pathname, history, products, userName, items]);
+    }, [speakIfNecessary, updateStock, getStockLevel, addTransaction, markAllAsPaid, addItem, removeItem, pathname, history, products, userName, items]);
 
     useEffect(() => {
         stopSpeakingRef.current();
@@ -351,7 +351,7 @@ export const useAssistant = () => {
 
         const timer = setTimeout(() => {
             if (greeting[pathname]) {
-                speakRef.current(greeting[pathname]);
+                speakRef.current(greeting[pathname], 'LOW');
             }
         }, 800);
 
@@ -359,9 +359,7 @@ export const useAssistant = () => {
             clearTimeout(timer);
             stopSpeakingRef.current();
         };
-        // Intentionnellement: speak et stopSpeaking exclus pour éviter le cycle de re-renders
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [pathname, userName]);
+    }, [pathname, userName, speakIfNecessary, stopSpeaking]);
 
     useEffect(() => {
         if (transcript && !isListening) {
@@ -370,5 +368,5 @@ export const useAssistant = () => {
         }
     }, [transcript, isListening, processCommand, clearTranscript]);
 
-    return { speak, listen, isSpeaking, isListening, stopSpeaking, handleAction };
+    return { speak, speakIfNecessary, listen, isSpeaking, isListening, stopSpeaking, handleAction };
 };

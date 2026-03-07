@@ -18,7 +18,7 @@ export const StockDetailModal: React.FC<StockDetailModalProps> = ({
     currentStock,
     onClose
 }) => {
-    const { speak } = useVoice();
+    const { speakIfNecessary } = useVoice();
     const { getProductHistory } = useHistory();
     const { user } = useAuth();
     const name = user?.name?.split(' ')[0] || 'Marchand';
@@ -27,7 +27,7 @@ export const StockDetailModal: React.FC<StockDetailModalProps> = ({
     const productHistory = getProductHistory(product.id).slice(0, 3);
 
     const announceCapital = () => {
-        speak(`Ce produit représente ${capitalValue} francs de ton capital marchand actuel, ${name}.`);
+        speakIfNecessary(`Ce produit représente ${capitalValue} francs de ton capital marchand actuel, ${name}.`, 'NORMAL', true);
     };
 
     useEffect(() => {

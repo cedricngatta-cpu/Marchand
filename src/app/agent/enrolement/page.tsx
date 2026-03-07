@@ -8,7 +8,7 @@ import { useVoice } from '@/hooks/useVoice';
 
 export default function AgentEnrollment() {
     const router = useRouter();
-    const { speak } = useVoice();
+    const { speakIfNecessary } = useVoice();
     const [step, setStep] = useState<'PHOTO' | 'INFO' | 'SUCCESS'>('PHOTO');
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
@@ -16,7 +16,7 @@ export default function AgentEnrollment() {
     const handleNext = () => {
         if (step === 'PHOTO') setStep('INFO');
         else if (step === 'INFO') {
-            speak(`Félicitations ! Le nouveau marchand ${name} est maintenant inscrit.`);
+            speakIfNecessary(`Félicitations ! Le nouveau marchand ${name} est maintenant inscrit.`, 'NORMAL');
             setStep('SUCCESS');
         }
     };

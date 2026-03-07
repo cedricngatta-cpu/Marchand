@@ -25,7 +25,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ id: stri
     const router = useRouter();
     const { products } = useProductContext();
     const { stock } = useStock();
-    const { speak } = useVoice();
+    const { speakIfNecessary } = useVoice();
     const { getProductHistory } = useHistory();
     const { user } = useAuth();
 
@@ -38,7 +38,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ id: stri
 
     useEffect(() => {
         if (product) {
-            speak(`Détails de ${product.name}. Ton stock actuel est de ${currentStock}.`);
+            speakIfNecessary(`Détails de ${product.name}. Ton stock actuel est de ${currentStock}.`, 'NORMAL', true);
         }
     }, [product]);
 
@@ -107,7 +107,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ id: stri
                 {/* Voice Interaction */}
                 <motion.div
                     whileTap={{ scale: 0.98 }}
-                    onClick={() => speak(`Ce produit représente ${capitalValue} francs de ton capital marchand actuel, ${name}.`)}
+                    onClick={() => speakIfNecessary(`Ce produit représente ${capitalValue} francs de ton capital marchand actuel, ${name}.`, 'NORMAL', true)}
                     className="bg-primary p-5 rounded-[24px] flex items-center gap-4 text-white shadow-lg cursor-pointer"
                 >
                     <div className="bg-white/20 p-2.5 rounded-xl">

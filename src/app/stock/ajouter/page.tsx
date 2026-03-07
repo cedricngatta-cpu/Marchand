@@ -2,7 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, Save, Package, CreditCard, Barcode, Camera, X } from 'lucide-react';
+import { ChevronLeft, Save, Package, CreditCard, Barcode, Camera, X, CheckCircle2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { BarcodeScanner } from '@/components/BarcodeScanner';
 import { useProductContext } from '@/context/ProductContext';
@@ -11,7 +11,7 @@ import { useAssistant } from '@/hooks/useAssistant';
 export default function AddProductPage() {
     const router = useRouter();
     const { addProduct } = useProductContext();
-    const { speak } = useAssistant();
+    const { speakIfNecessary } = useAssistant();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [name, setName] = useState('');
@@ -20,6 +20,7 @@ export default function AddProductPage() {
     const [imageUrl, setImageUrl] = useState('');
     const [isScanning, setIsScanning] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
 
     const handlePhotoCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -48,8 +49,17 @@ export default function AddProductPage() {
                 audioName: name.toLowerCase(),
                 icon: Package
             });
-            speak(`${name} a été ajouté à votre catalogue.`);
-            router.replace('/stock');
+            speakIfNecessary(`${name} a été ajouté à votre catalogue.`, 'LOW');
+
+            // Réinitialiser le formulaire
+            setName('');
+            setPrice('');
+            setBarcode('');
+            setImageUrl('');
+
+            // Afficher le toast
+            setShowSuccess(true);
+            setTimeout(() => setShowSuccess(false), 3000);
         } catch (error) {
             console.error("Erreur, impossible d'ajouter", error);
         } finally {
@@ -59,6 +69,20 @@ export default function AddProductPage() {
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-32">
+            <AnimatePresence>
+                {showSuccess && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -50 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -50 }}
+                        className="fixed top-4 left-4 right-4 z-50 bg-emerald-500 text-white p-4 rounded-2xl shadow-xl flex items-center justify-center gap-3"
+                    >
+                        <CheckCircle2 size={24} />
+                        <span className="font-bold text-sm uppercase tracking-widest">Produit ajouté !</span>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Header Coloré (Card Overlap Style) */}
             <div className="bg-primary pt-8 pb-32 px-4 rounded-b-[2.5rem] relative shadow-lg">
                 <div className="flex items-center gap-4 max-w-lg mx-auto mb-6">
