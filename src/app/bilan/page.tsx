@@ -2,8 +2,9 @@
 
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronLeft, Wallet, Store, TrendingUp, RotateCcw, Volume2, Clock, ShoppingBag, PlusCircle, MinusCircle, Eye, EyeOff } from 'lucide-react';
+import { ChevronLeft, Wallet, Store, TrendingUp, RotateCcw, Volume2, Clock, ShoppingBag, PlusCircle, MinusCircle, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { db } from '@/lib/db';
 import { useAssistant } from '@/hooks/useAssistant';
 import { Mic } from 'lucide-react';
 import { useStock } from '@/hooks/useStock';
@@ -340,6 +341,25 @@ export default function BilanPage() {
                     >
                         <RotateCcw size={16} className="shrink-0" />
                         <span className="font-black uppercase text-[10px] md:text-xs tracking-widest text-left">Remettre à zéro<br className="sm:hidden" /> (Fin de journée)</span>
+                    </button>
+
+                    <button
+                        onClick={async () => {
+                            const ok = await confirm({
+                                title: 'Vider la file d\'attente ?',
+                                message: 'Cela supprimera les opérations bloquées. À n\'utiliser que si la synchronisation est figée.',
+                                confirmLabel: 'Vider le bouchon',
+                                dangerMode: true
+                            });
+                            if (ok) {
+                                await db.syncQueue.clear();
+                                window.location.reload();
+                            }
+                        }}
+                        className="flex items-center gap-2 md:gap-3 text-rose-300 dark:text-rose-900 hover:text-rose-500 transition-colors py-3 md:py-4 px-6 md:px-8 rounded-full border-[1.5px] border-dashed border-rose-200 dark:border-rose-800 active:scale-95 text-center"
+                    >
+                        <AlertCircle size={16} className="shrink-0" />
+                        <span className="font-black uppercase text-[10px] md:text-xs tracking-widest text-left">Vider le bouchon<br className="sm:hidden" /> (11 bloqués)</span>
                     </button>
                 </div>
             </main>

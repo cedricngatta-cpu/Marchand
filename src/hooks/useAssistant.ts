@@ -152,7 +152,9 @@ export const useAssistant = () => {
         let customerName = undefined;
         if (clientMatch) {
             const rawName = clientMatch[1].trim();
-            if (!['credit', 'dette', 'cash', 'espece', 'un', 'une', 'deux', 'des'].includes(normalize(rawName))) {
+            const normalizedName = normalize(rawName).toLowerCase();
+            const badNames = ['credit', 'dette', 'cash', 'espece', 'especes', 'momo', 'mobile money', 'un', 'une', 'deux', 'des'];
+            if (rawName.length > 2 && !badNames.includes(normalizedName)) {
                 customerName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
             }
         }

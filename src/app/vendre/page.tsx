@@ -27,7 +27,7 @@ export default function VendrePage() {
     const [paymentStatus, setPaymentStatus] = useState<'PAYÉ' | 'DETTE' | 'MOMO'>('PAYÉ');
     const lastScanRef = React.useRef<{ code: string, time: number } | null>(null);
 
-    const handleFinish = async () => {
+    const handleFinish = React.useCallback(async () => {
         if (items.length === 0) {
             speakIfNecessary(`Ton panier est vide, ${user?.name?.split(' ')[0] || 'Marchand'}.`, 'LOW');
             return;
@@ -35,7 +35,6 @@ export default function VendrePage() {
 
         const isDebt = paymentStatus === 'DETTE';
         const isMomo = paymentStatus === 'MOMO';
-        // speakIfNecessary(message, 'NORMAL'); - SILENCED PER MISSION 1
         setShowConfirmation(true);
 
         try {
@@ -64,7 +63,7 @@ export default function VendrePage() {
             console.error("Erreur lors de la validation :", err);
             speakIfNecessary(`Désolé ${user?.name?.split(' ')[0] || 'Marchand'}, il y a eu un petit problème technique.`, 'HIGH');
         }
-    };
+    }, [items, paymentStatus, clientName, updateStock, addTransaction, clearCart, speakIfNecessary, user]);
 
     React.useEffect(() => {
         const handleAssistantClient = (e: any) => {

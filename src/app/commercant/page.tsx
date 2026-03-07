@@ -188,15 +188,17 @@ export default function CommercantDashboard() {
                                     </div>
                                     <div>
                                         <p className="font-bold text-xs sm:text-sm text-slate-800 dark:text-white capitalize truncate">
-                                            {t.type === 'VENTE' ? `Vendu ${t.clientName ? `à ${t.clientName}` : 'au client'}` : t.type}
+                                            {t.type === 'VENTE'
+                                                ? (t.status === 'DETTE' ? `Vendu à crédit à ${t.clientName || 'Client'}` : `Vendu à ${t.clientName || 'Client'}`)
+                                                : t.type}
                                         </p>
                                         <p className="text-[10px] text-slate-400 capitalize -mt-0.5">
-                                            {new Date(t.timestamp).toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' })} • {user?.name?.split(' ')[0]}
+                                            {new Date(t.timestamp).toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' })} • {t.productName || 'Vente'}
                                         </p>
                                     </div>
                                 </div>
-                                <div className="font-bold text-xs sm:text-sm text-slate-800 dark:text-white whitespace-nowrap">
-                                    {t.type === 'VENTE' ? '+' : '-'}{t.price}F
+                                <div className={`font-bold text-xs sm:text-sm whitespace-nowrap ${t.status === 'DETTE' ? 'text-orange-500' : 'text-slate-800 dark:text-white'}`}>
+                                    {t.type === 'VENTE' ? (t.status === 'DETTE' ? '' : '+') : '-'}{t.price}F
                                 </div>
                             </div>
                         ))}
