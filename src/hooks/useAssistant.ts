@@ -51,8 +51,8 @@ export const useAssistant = () => {
         // 1. Normalisation et nettoyage phonétique
         const normalize = (str: string) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
-        // Helper pour ignorer les pluriels (supprime le 's' en fin de mot)
-        const stripPlural = (str: string) => str.split(/\s+/).map(w => w.replace(/s$/i, '')).join(' ');
+        // Helper pour ignorer les pluriels (supprime le 's' ou 'x' en fin de mot)
+        const stripPlural = (str: string) => str.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "").split(/\s+/).map(w => w.replace(/[sx]$/i, '')).join(' ');
 
         // Dictionnaire de corrections pour les erreurs phonétiques et homophones
         const corrections: Record<string, string> = {
@@ -130,8 +130,9 @@ export const useAssistant = () => {
             if (nNameSingular.includes(voiceSingular) || nAudioSingular.includes(voiceSingular)) return true;
 
             // 2. Match par mots-clés (si un mot clé essentiel est présent dans le nom du produit)
-            // On exclut les mots d'intention (vend, ajoute, etc.) des mots clés de recherche
-            const searchKeywords = voiceKeywords.filter(w => !['vend', 'vendre', 'donne', 'ajoute', 'recu', 'livre', 'retire', 'enleve', 'supprime', 'combien', 'reste', 'stock'].includes(w));
+            // On exclut les mots d'intention et les mots de liaison courants
+            const stopWords = ['vend', 'vendre', 'donne', 'ajoute', 'recu', 'livre', 'retire', 'enleve', 'supprime', 'combien', 'reste', 'stock', 'de', 'le', 'la', 'les', 'un', 'une', 'des', 'au', 'aux', 'pour', 'avec', 'dans', 'sur', 'plus', 'moins'];
+            const searchKeywords = voiceKeywords.filter(w => !stopWords.includes(w));
 
             return searchKeywords.some(keyword =>
                 nNameSingular.includes(keyword) ||
@@ -172,7 +173,9 @@ export const useAssistant = () => {
 
         if (!product) {
             if (intent !== 'CHECK_STOCK' && intent !== 'UNKNOWN') {
-                speakIfNecessary(`Je n'ai pas trouvé le produit. Peux-tu répéter ?`, 'HIGH', true);
+                const count = products.length;
+                console.warn(`[Voice] No product match for: "${normText}" in catalog of ${count} items.`);
+                speakIfNecessary(`Je n'ai pas trouvé le produit parmi les ${count} de ton catalogue. Peux-tu répéter ?`, 'HIGH', true);
             } else if (intent === 'CHECK_STOCK') {
                 const totalVal = products.reduce((acc, p) => acc + (p.price * getStockLevel(p.id)), 0);
                 speakIfNecessary(`Ton capital marchand actuel est de ${totalVal} francs.`, 'NORMAL');
