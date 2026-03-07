@@ -46,15 +46,55 @@ export const useAssistant = () => {
 
     const processCommand = useCallback((text: string) => {
         console.log('🎙️ Assistant RAW transcript:', text);
-        const lowerText = text.toLowerCase();
+        const lowerText = text.toLowerCase().trim();
 
-        // 1. Normalisation et nettoyage phonétique
+        // 1. Normalisation et nettoyage
         const normalize = (str: string) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
         // Helper pour ignorer les pluriels (supprime le 's' ou 'x' en fin de mot)
         const stripPlural = (str: string) => str.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "").split(/\s+/).map(w => w.replace(/[sx]$/i, '')).join(' ');
 
-        // Dictionnaire de corrections pour les erreurs phonétiques et homophones
+        // --- NOUVEAU : NUMBER MAPPER (Français) ---
+        const numberWords: Record<string, number> = {
+            'zero': 0, 'un': 1, 'une': 1, 'deux': 2, 'trois': 3, 'quatre': 4, 'cinq': 5, 'six': 6, 'sept': 7, 'huit': 8, 'neuf': 9,
+            'dix': 10, 'onze': 11, 'douze': 12, 'treize': 13, 'quatorze': 14, 'quinze': 15, 'seize': 16, 'dix-sept': 17, 'dix-huit': 18, 'dix-neuf': 19,
+            'vingt': 20, 'trente': 30, 'quarante': 40, 'cinquante': 50, 'soixante': 60, 'soixante-dix': 70, 'quatre-vingt': 80, 'quatre-vingts': 80, 'quatre-vingt-dix': 90, 'cent': 100
+        };
+
+        let textWithDigits = lowerText;
+
+        // Gérer les nombres composés (ex: vingt-trois, soixante-dix)
+        // On trie par longueur pour remplacer les plus longs d'abord
+        const sortedNumberWords = Object.keys(numberWords).sort((a, b) => b.length - a.length);
+
+        // D'abord les composés avec "et un" (ex: vingt et un)
+        const tens = ['vingt', 'trente', 'quarante', 'cinquante', 'soixante'];
+        tens.forEach(ten => {
+            textWithDigits = textWithDigits.replace(new RegExp(`\\b${ten}\\s+et\\s+un\\b`, 'g'), (numberWords[ten] + 1).toString());
+        });
+
+        // Ensuite les composés avec tirets ou espaces (ex: vingt-trois, vingt trois)
+        sortedNumberWords.forEach(word => {
+            if (numberWords[word] >= 20 && numberWords[word] < 100) {
+                // Pour chaque dizaine, on cherche la forme "dizaine-chiffre" ou "dizaine chiffre"
+                for (let i = 1; i <= 9; i++) {
+                    const unitWord = Object.keys(numberWords).find(k => numberWords[k] === i && k !== 'une');
+                    if (unitWord) {
+                        const val = numberWords[word] + i;
+                        textWithDigits = textWithDigits.replace(new RegExp(`\\b${word}[-\\s]${unitWord}\\b`, 'g'), val.toString());
+                    }
+                }
+            }
+        });
+
+        // Enfin les nombres simples
+        sortedNumberWords.forEach(word => {
+            textWithDigits = textWithDigits.replace(new RegExp(`\\b${word}\\b`, 'g'), numberWords[word].toString());
+        });
+
+        console.log('🔢 Text after Number Mapping:', textWithDigits);
+
+        // 2. Dictionnaire de corrections phonétiques
         const corrections: Record<string, string> = {
             '22': 'vend 2',
             'vingt deux': 'vend 2',
@@ -66,9 +106,8 @@ export const useAssistant = () => {
             'vent': 'vend'
         };
 
-        let processedText = lowerText;
+        let processedText = textWithDigits;
         Object.entries(corrections).forEach(([error, fix]) => {
-            // Utiliser une Regex pour remplacer les mots entiers (\b) uniquement
             const regex = new RegExp(`\\b${error}\\b`, 'g');
             processedText = processedText.replace(regex, fix);
         });
@@ -80,7 +119,7 @@ export const useAssistant = () => {
             return;
         }
 
-        // --- SMART PARSER (Mission 2) ---
+        // --- SMART PARSER ---
 
         // A. Extraction de l'Intention
         let intent: 'SALE' | 'ADD_STOCK' | 'REMOVE_STOCK' | 'CHECK_STOCK' | 'PAY_DEBT' | 'UNKNOWN' = 'UNKNOWN';
@@ -90,33 +129,34 @@ export const useAssistant = () => {
         else if (normText.includes('combien') || normText.includes('reste') || normText.includes('stock') || normText.includes('inventaire')) intent = 'CHECK_STOCK';
         else if (normText.includes('paye') || normText.includes('regle') || normText.includes('dette') || normText.includes('credit')) {
             if (normText.includes('paye') || normText.includes('regle')) intent = 'PAY_DEBT';
-            else intent = 'CHECK_STOCK'; // "quelle est ma dette" -> CHECK_STOCK/BALANCE
+            else intent = 'CHECK_STOCK';
         }
 
         // B. Extraction du Moyen de Paiement
         let paymentMethod: 'CASH' | 'CREDIT' | 'MOMO' = 'CASH';
-        if (normText.includes('credit') || normText.includes('dette')) paymentMethod = 'CREDIT';
+        if (normText.includes('credit') || normText.includes('dette') || normText.includes('a credit')) paymentMethod = 'CREDIT';
         else if (normText.includes('momo') || normText.includes('mobile money')) paymentMethod = 'MOMO';
 
-        // C. Extraction du Client (NLP simple)
-        // Cherche ce qui vient après "à" ou "pour"
+        // C. Extraction Quantité Robuste
+        let quantity = 1;
+        const digitMatch = processedText.match(/(\d+)/);
+        if (digitMatch) {
+            quantity = parseInt(digitMatch[1]);
+        }
+
+        // D. Extraction du Client
         const clientMatch = processedText.match(/(?:à|pour|a)\s+([a-zA-Z\s]+?)(?:\s+(?:en|sur|avec|pour|à|a|termine|fini|confirme|biscuit|riz|savon|sucre)|$)/i);
         let customerName = undefined;
         if (clientMatch) {
             const rawName = clientMatch[1].trim();
-            // Filtrer les faux positifs (mots de paiement ou de quantité)
             if (!['credit', 'dette', 'cash', 'espece', 'un', 'une', 'deux', 'des'].includes(normalize(rawName))) {
                 customerName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
             }
         }
 
-        // D. Identification du Produit (Détection flexible)
-        // On trie par longueur décroissante pour privilégier les noms longs (ex: "Biscuits Chocolat" avant "Biscuits")
+        // E. Identification du Produit (Détection flexible)
         const sortedProducts = [...products].sort((a, b) => b.name.length - a.name.length);
-
-        // Nettoyage de la voix pour la recherche
         const voiceSingular = stripPlural(normText);
-        // Mots clés de la voix (on garde les mots de 2 lettres et plus, certains produits sont courts comme "Riz" ou "Sel")
         const voiceKeywords = voiceSingular.split(/\s+/).filter(w => w.length >= 2);
 
         const product = sortedProducts.find(p => {
@@ -125,13 +165,10 @@ export const useAssistant = () => {
             const nAudio = normalize(p.audioName || p.name).replace(/^[Ll]e\s+/, '').replace(/^[Ll]a\s+/, '').replace(/^[Ll]'\s+/, '');
             const nAudioSingular = stripPlural(nAudio);
 
-            // 1. Match par inclusion globale (ex: "vends biscuits" contient "biscuit")
             if (voiceSingular.includes(nNameSingular) || voiceSingular.includes(nAudioSingular)) return true;
             if (nNameSingular.includes(voiceSingular) || nAudioSingular.includes(voiceSingular)) return true;
 
-            // 2. Match par mots-clés (si un mot clé essentiel est présent dans le nom du produit)
-            // On exclut les mots d'intention et les mots de liaison courants
-            const stopWords = ['vend', 'vendre', 'donne', 'ajoute', 'recu', 'livre', 'retire', 'enleve', 'supprime', 'combien', 'reste', 'stock', 'de', 'le', 'la', 'les', 'un', 'une', 'des', 'au', 'aux', 'pour', 'avec', 'dans', 'sur', 'plus', 'moins'];
+            const stopWords = ['vend', 'vendre', 'donne', 'ajoute', 'recu', 'livre', 'retire', 'enleve', 'supprime', 'combien', 'reste', 'stock', 'de', 'le', 'la', 'les', 'un', 'une', 'des', 'au', 'aux', 'pour', 'avec', 'dans', 'sur', 'plus', 'moins', quantity.toString()];
             const searchKeywords = voiceKeywords.filter(w => !stopWords.includes(w));
 
             return searchKeywords.some(keyword =>
@@ -143,24 +180,14 @@ export const useAssistant = () => {
         if (product) {
             console.log(`✅ Produit trouvé: ${product.name} (Matché via: ${normText})`);
         } else {
-            console.warn(`❌ Aucun produit matché dans le catalogue (${products.length} produits) pour: ${normText}`);
-        }
-
-        // E. Extraction Quantité
-        const numberMap: Record<string, number> = { 'un': 1, 'une': 1, 'deux': 2, 'trois': 3, 'quatre': 4, 'cinq': 5 };
-        let quantity = 1;
-        const digitMatch = normText.match(/(\d+)/);
-        if (digitMatch) quantity = parseInt(digitMatch[1]);
-        else {
-            const letterMatch = Object.keys(numberMap).find(k => normText.includes(k));
-            if (letterMatch) quantity = numberMap[letterMatch];
+            const count = products.length;
+            console.warn(`❌ Aucun produit matché dans le catalogue (${count} produits) pour: ${normText}`);
         }
 
         const structuredCommand = { intent, product: product?.name, quantity, paymentMethod, customerName };
         console.log('🎯 Intent Parsed:', structuredCommand);
 
-        // --- EXÉCUTION DE L'ACTION ---
-
+        // --- EXÉCUTION ---
         if (intent === 'PAY_DEBT' && customerName) {
             const clientDebts = history.filter(t => t.status === 'DETTE' && t.clientName?.toLowerCase() === customerName.toLowerCase());
             if (clientDebts.length > 0) {
@@ -174,7 +201,6 @@ export const useAssistant = () => {
         if (!product) {
             if (intent !== 'CHECK_STOCK' && intent !== 'UNKNOWN') {
                 const count = products.length;
-                console.warn(`[Voice] No product match for: "${normText}" in catalog of ${count} items.`);
                 speakIfNecessary(`Je n'ai pas trouvé le produit parmi les ${count} de ton catalogue. Peux-tu répéter ?`, 'HIGH', true);
             } else if (intent === 'CHECK_STOCK') {
                 const totalVal = products.reduce((acc, p) => acc + (p.price * getStockLevel(p.id)), 0);
