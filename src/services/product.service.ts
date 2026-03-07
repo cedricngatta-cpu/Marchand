@@ -2,7 +2,7 @@
 import { supabase } from '@/lib/supabase';
 import { db, LocalProduct } from '@/lib/db';
 import { products as initialProductsData } from '@/data/products';
-import { Product } from '@/context/ProductContext'; // On garde l'interface pour le moment
+import type { Product } from '@/types/product';
 import { Package } from 'lucide-react';
 
 /**
@@ -11,7 +11,7 @@ import { Package } from 'lucide-react';
  * @returns L'objet Product formaté pour l'UI.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapRecordToProduct(record: any): Product {
+export function mapRecordToProduct(record: any): Product {
     return {
         id: record.id,
         name: record.name,
@@ -74,7 +74,7 @@ function mapSupabaseToLocalProduct(p: any): LocalProduct {
  * À appeler à l'initialisation de l'app ou au retour en ligne.
  */
 export async function syncProductsFromServer(profileId: string): Promise<void> {
-    if (!navigator.onLine) return;
+    if (typeof navigator === 'undefined' || !navigator.onLine) return;
 
     try {
         const { data, error } = await supabase
@@ -138,7 +138,9 @@ export async function addProduct(productData: Omit<Product, 'id'>, storeId: stri
 
         console.log(`[Product] Produit créé localement avec ID UUID: ${id}`);
 
-        window.dispatchEvent(new Event('online'));
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(new Event('online'));
+        }
         return localRecord;
     } catch (error) {
         console.error('[ProductService] Error adding product:', error);
@@ -168,7 +170,9 @@ export async function updateProduct(id: string, updates: Partial<Product>) {
             retry_count: 0,
             created_at: Date.now()
         });
-        window.dispatchEvent(new Event('online'));
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(new Event('online'));
+        }
     } catch (error) {
         console.error('[ProductService] Error updating product:', error);
         throw new Error("Erreur lors de la mise à jour du produit.");
@@ -185,7 +189,9 @@ export async function deleteProduct(id: string) {
             retry_count: 0,
             created_at: Date.now()
         });
-        window.dispatchEvent(new Event('online'));
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(new Event('online'));
+        }
     } catch (error) {
         console.error('[ProductService] Error deleting product:', error);
         throw new Error("Erreur lors de la suppression du produit.");
@@ -202,7 +208,7 @@ export async function resetProductsStore(storeId: string) {
 }
 
 export async function syncGlobalCatalog() {
-    if (!navigator.onLine) return;
+    if (typeof navigator === 'undefined' || !navigator.onLine) return;
 
     try {
         const { data: existingGlobal } = await supabase

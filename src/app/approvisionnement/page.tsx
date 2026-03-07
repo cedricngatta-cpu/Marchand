@@ -15,10 +15,12 @@ interface CatalogueItem {
     id: string;
     name: string;
     price: number;
+    delivery_price?: number;
     category: string;
     store_id: string;
     storeName: string;
     stockQty: number;
+    image_url?: string;
 }
 
 const formatCFA = (n: number) => new Intl.NumberFormat('fr-FR').format(n) + '\u00A0F';
@@ -64,7 +66,7 @@ export default function ApprovisionnementPage() {
                 // 2. Produits de ces magasins
                 const { data: prodData, error: prodErr } = await supabase
                     .from('products')
-                    .select('id, name, price, category, store_id')
+                    .select('id, name, price, delivery_price, category, store_id, image_url')
                     .in('store_id', storeIds);
 
                 if (prodErr || !prodData?.length) { setItems([]); return; }
@@ -80,13 +82,15 @@ export default function ApprovisionnementPage() {
                 stockData?.forEach(s => { stockMap[s.product_id] = s.quantity; });
 
                 const catalogue: CatalogueItem[] = prodData.map(p => ({
-                    id:        p.id,
-                    name:      p.name,
-                    price:     p.price,
-                    category:  p.category,
-                    store_id:  p.store_id,
-                    storeName: storeMap[p.store_id] ?? 'Producteur',
-                    stockQty:  stockMap[p.id] ?? 0,
+                    id:             p.id,
+                    name:           p.name,
+                    price:          p.price,
+                    delivery_price: p.delivery_price ?? undefined,
+                    category:       p.category,
+                    store_id:       p.store_id,
+                    storeName:      storeMap[p.store_id] ?? 'Producteur',
+                    stockQty:       stockMap[p.id] ?? 0,
+                    image_url:      p.image_url ?? undefined,
                 }));
 
                 setItems(catalogue);
@@ -180,14 +184,19 @@ export default function ApprovisionnementPage() {
                             className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 shadow-sm cursor-pointer flex items-center justify-between gap-3"
                         >
                             <div className="flex items-center gap-3 min-w-0">
-                                <div className="w-12 h-12 rounded-[14px] bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center shrink-0">
-                                    <Package size={20} className="text-indigo-600" />
+                                {/* Photo ou icône */}
+                                <div className="w-12 h-12 rounded-[14px] bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center shrink-0 overflow-hidden">
+                                    {item.image_url ? (
+                                        <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <Package size={20} className="text-indigo-600" />
+                                    )}
                                 </div>
                                 <div className="min-w-0">
                                     <h3 className="font-bold text-sm text-slate-800 dark:text-white truncate leading-tight">
                                         {item.name}
                                     </h3>
-                                    <div className="flex items-center gap-2 mt-0.5">
+                                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                                         <p className="text-[10px] font-bold text-slate-400 uppercase truncate">
                                             {item.storeName}
                                         </p>
@@ -207,7 +216,14 @@ export default function ApprovisionnementPage() {
                                 <p className="font-bold text-sm text-slate-800 dark:text-white">
                                     {formatCFA(item.price)}
                                 </p>
-                                <p className="text-[10px] text-slate-400 font-bold mt-0.5">/ unité</p>
+                                {(item.delivery_price ?? 0) > 0 ? (
+                                    <p className="text-[10px] text-blue-500 font-bold mt-0.5 flex items-center justify-end gap-0.5">
+                                        <Truck size={8} />
+                                        +{formatCFA(item.delivery_price!)}
+                                    </p>
+                                ) : (
+                                    <p className="text-[10px] text-slate-400 font-bold mt-0.5">/ unité</p>
+                                )}
                             </div>
                         </motion.div>
                     ))

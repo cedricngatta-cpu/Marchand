@@ -1,111 +1,261 @@
 'use client';
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { ArrowLeft, Search, Filter, Calendar, Users, ShoppingBag, TrendingUp, AlertCircle, CheckCircle2 } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+    AlertCircle, ChevronLeft, ChevronRight,
+    RefreshCcw, ShoppingBag, TrendingUp, Truck, Users,
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type ActivityType = 'VENTE' | 'LIVRAISON' | 'COMMANDE' | 'RETRAIT';
+
+interface Activity {
+    id: string;
+    type: ActivityType;
+    label: string;
+    sub: string;
+    amount: number;
+    time: string;
+    status?: string;
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const formatCFA = (n: number) => new Intl.NumberFormat('fr-FR').format(n) + '\u00A0F';
+
+const formatDate = (iso: string) => {
+    const d = new Date(iso);
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) return 'À l\'instant';
+    if (diffMin < 60) return `Il y a ${diffMin}min`;
+    const diffH = Math.floor(diffMin / 60);
+    if (diffH < 24) return `Il y a ${diffH}h`;
+    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+};
+
+const TYPE_CONFIG: Record<ActivityType, { label: string; Icon: React.ElementType; bg: string; color: string }> = {
+    VENTE:    { label: 'Vente',    Icon: TrendingUp,   bg: 'bg-emerald-100', color: 'text-emerald-600' },
+    LIVRAISON:{ label: 'Livraison',Icon: Truck,         bg: 'bg-purple-100',  color: 'text-purple-600'  },
+    COMMANDE: { label: 'Commande', Icon: ShoppingBag,   bg: 'bg-blue-100',    color: 'text-blue-600'    },
+    RETRAIT:  { label: 'Retrait',  Icon: AlertCircle,   bg: 'bg-rose-100',    color: 'text-rose-600'    },
+};
+
+const FILTERS = ['Tous', 'Vente', 'Livraison', 'Commande'] as const;
+type Filter = typeof FILTERS[number];
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function CooperativeJournal() {
     const router = useRouter();
-    const [filter, setFilter] = useState('Tous');
 
-    const activities = [
-        { id: 1, user: 'Adama Diallo', type: 'Vente', action: 'Record de vente battu', info: '+450,000 F', time: 'Il y a 12min', icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-50' },
-        { id: 2, user: 'Coop Admin', type: 'Achat', action: 'Commande groupée validée', info: 'Engrais NPK (200 sacs)', time: 'Il y a 1h', icon: CheckCircle2, color: 'text-blue-500', bg: 'bg-blue-50' },
-        { id: 3, user: 'Marie Koné', type: 'Membre', action: 'Nouvelle inscription', info: 'Secteur Yamoussoukro', time: 'Il y a 2h', icon: Users, color: 'text-purple-500', bg: 'bg-purple-50' },
-        { id: 4, user: 'Koffi Yao', type: 'Vente', action: 'Vente enregistrée', info: '150 kg de Maïs', time: 'Il y a 4h', icon: ShoppingBag, color: 'text-emerald-500', bg: 'bg-emerald-50' },
-        { id: 5, user: 'Système', type: 'Alerte', action: 'Alerte de baisse d\'activité', info: 'Secteur Bouaké', time: 'Il y a 6h', icon: AlertCircle, color: 'text-rose-500', bg: 'bg-rose-50' },
-        { id: 6, user: 'Fatou Traoré', type: 'Achat', action: 'Participation achat groupé', info: 'Semences Riz', time: 'Ce matin', icon: ShoppingBag, color: 'text-blue-500', bg: 'bg-blue-50' },
-        { id: 7, user: 'Bamba I.', type: 'Vente', action: 'Vente enregistrée', info: '500 kg d\'Ignames', time: 'Hier', icon: ShoppingBag, color: 'text-emerald-500', bg: 'bg-emerald-50' },
-        { id: 8, user: 'Coop Admin', type: 'Alerte', action: 'Message de masse envoyé', info: 'Rappel réunion mensuelle', time: 'Hier', icon: AlertCircle, color: 'text-rose-500', bg: 'bg-rose-50' },
-    ];
+    const [activities, setActivities] = useState<Activity[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [filter, setFilter] = useState<Filter>('Tous');
+    const [page, setPage] = useState(0);
+    const PAGE_SIZE = 20;
 
-    const filteredActivities = filter === 'Tous'
-        ? activities
-        : activities.filter(a => a.type === filter);
+    const fetchActivities = async (pageNum: number = 0) => {
+        setLoading(true);
+        try {
+            const offset = pageNum * PAGE_SIZE;
+
+            // Transactions (ventes, livraisons, retraits)
+            const { data: txData } = await supabase
+                .from('transactions')
+                .select('id, type, product_name, price, status, created_at, client_name, store_id')
+                .order('created_at', { ascending: false })
+                .range(offset, offset + PAGE_SIZE - 1);
+
+            // Commandes B2B (ordres)
+            const { data: orderData } = await supabase
+                .from('orders')
+                .select('id, product_name, total_amount, status, buyer_name, seller_name, created_at')
+                .order('created_at', { ascending: false })
+                .range(offset, offset + 9);
+
+            const txActs: Activity[] = (txData ?? []).map(t => ({
+                id: `tx-${t.id}`,
+                type: (t.type === 'RETRAIT' ? 'RETRAIT' : t.type === 'LIVRAISON' ? 'LIVRAISON' : 'VENTE') as ActivityType,
+                label: t.product_name,
+                sub: t.client_name ? `${ROLE_MAP[t.type] ?? t.type} · ${t.client_name}` : (ROLE_MAP[t.type] ?? t.type),
+                amount: t.price ?? 0,
+                time: t.created_at,
+                status: t.status,
+            }));
+
+            const orderActs: Activity[] = (orderData ?? []).map(o => ({
+                id: `order-${o.id}`,
+                type: 'COMMANDE' as ActivityType,
+                label: o.product_name,
+                sub: `${o.buyer_name ?? '—'} → ${o.seller_name ?? '—'}`,
+                amount: o.total_amount ?? 0,
+                time: o.created_at,
+                status: o.status,
+            }));
+
+            const merged = [...txActs, ...orderActs]
+                .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+
+            setActivities(pageNum === 0 ? merged : prev => [...prev, ...merged]);
+        } catch (err) {
+            console.error('[Journal] fetch error:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => { fetchActivities(0); }, []);
+
+    const ROLE_MAP: Record<string, string> = {
+        VENTE: 'Vente', LIVRAISON: 'Livraison', RETRAIT: 'Retrait',
+    };
+
+    const filtered = activities.filter(a => {
+        if (filter === 'Tous') return true;
+        if (filter === 'Vente') return a.type === 'VENTE';
+        if (filter === 'Livraison') return a.type === 'LIVRAISON';
+        if (filter === 'Commande') return a.type === 'COMMANDE';
+        return true;
+    });
 
     return (
-        <main className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-6 max-w-4xl mx-auto pb-24 md:pb-32">
-            <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 pt-4">
-                <div className="flex items-center gap-4">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-24 overflow-x-hidden">
+
+            {/* ── Header wave ── */}
+            <div className="bg-purple-700 pt-8 pb-32 px-4 rounded-b-[2.5rem] shadow-lg">
+                <div className="flex items-center justify-between mb-6 max-w-lg mx-auto">
                     <button
                         onClick={() => router.back()}
-                        className="w-12 h-12 bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center shadow-sm text-slate-600 dark:text-slate-300 active:scale-90 transition-all border-2 border-slate-100 dark:border-slate-800 shrink-0"
+                        className="w-10 h-10 bg-white text-purple-700 rounded-full flex items-center justify-center active:scale-95 transition-transform shadow-sm shrink-0"
                     >
-                        <ArrowLeft size={24} />
+                        <ChevronLeft size={20} />
                     </button>
-                    <div>
-                        <h1 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none">Journal d'Activités</h1>
-                        <p className="text-purple-600 font-bold text-[10px] uppercase tracking-widest mt-1">Historique Complet</p>
+                    <div className="text-center">
+                        <h1 className="text-white font-bold text-lg tracking-wide uppercase leading-none">Journal</h1>
+                        <p className="text-purple-200 text-[10px] font-bold uppercase tracking-widest mt-0.5">Historique complet</p>
                     </div>
-                </div>
-
-                <div className="flex items-center gap-2 bg-white dark:bg-slate-900 p-3 md:p-2 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 w-full md:w-auto overflow-hidden">
-                    <Calendar size={18} className="text-slate-400 ml-2 shrink-0" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 pr-2 truncate">Mars 2026</span>
-                </div>
-            </header>
-
-            {/* Filters */}
-            <div className="flex gap-2 overflow-x-auto pb-6 pt-2 -mx-2 md:mx-0 px-2 md:px-0 scrollbar-hide mb-4">
-                {['Tous', 'Vente', 'Achat', 'Membre', 'Alerte'].map((f) => (
                     <button
-                        key={f}
-                        onClick={() => setFilter(f)}
-                        className={`px-6 md:px-8 py-3 md:py-4 rounded-2xl font-black text-[10px] md:text-[11px] uppercase tracking-widest transition-all border-2 whitespace-nowrap ${filter === f ? 'bg-slate-900 border-slate-900 text-white shadow-xl' : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 text-slate-400'}`}
+                        onClick={() => { setPage(0); fetchActivities(0); }}
+                        className="w-10 h-10 bg-white text-purple-700 rounded-full flex items-center justify-center active:scale-95 transition-transform shadow-sm shrink-0"
                     >
-                        {f}
+                        <RefreshCcw size={16} />
                     </button>
-                ))}
+                </div>
+
+                {/* Total transactions */}
+                <div className="max-w-lg mx-auto flex flex-col items-center mt-2">
+                    <div className="flex items-center gap-2 mb-1">
+                        <TrendingUp size={14} className="text-purple-200" />
+                        <span className="font-bold uppercase tracking-wider text-purple-100 text-[10px]">
+                            {filtered.length} activité{filtered.length > 1 ? 's' : ''} chargée{filtered.length > 1 ? 's' : ''}
+                        </span>
+                    </div>
+                    <div className="flex items-baseline gap-2 mt-1">
+                        {loading && activities.length === 0 ? (
+                            <div className="h-10 w-48 bg-white/10 rounded-xl animate-pulse" />
+                        ) : (
+                            <span className="text-4xl font-black text-white tracking-tighter">
+                                {new Intl.NumberFormat('fr-FR').format(
+                                    filtered.filter(a => a.type !== 'COMMANDE').reduce((s, a) => s + a.amount, 0)
+                                )} <span className="text-xl font-semibold text-purple-100">F</span>
+                            </span>
+                        )}
+                    </div>
+                    <p className="text-purple-200/60 text-[10px] font-bold uppercase tracking-wider mt-0.5">
+                        Volume filtré
+                    </p>
+                </div>
             </div>
 
-            {/* Activity List */}
-            <div className="space-y-4">
-                {filteredActivities.map((act, i) => (
-                    <motion.div
-                        key={act.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.05 }}
-                        className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-[24px] md:rounded-[32px] border-2 border-slate-100 dark:border-slate-800 flex items-start sm:items-center gap-4 sm:gap-6 shadow-sm hover:shadow-md transition-shadow group"
-                    >
-                        <div className={`w-12 h-12 md:w-16 md:h-16 rounded-[20px] md:rounded-[24px] ${act.bg} ${act.color} flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform`}>
-                            <act.icon size={24} className="md:w-7 md:h-7" strokeWidth={2.5} />
-                        </div>
+            {/* ── Contenu overlap ── */}
+            <div className="px-4 max-w-lg mx-auto relative mt-[-40px] z-10 space-y-4">
 
-                        <div className="flex-1 min-w-0 pt-1 sm:pt-0">
-                            <div className="flex justify-between items-start mb-2 sm:mb-1">
-                                <h3 className="font-black text-slate-900 dark:text-white uppercase text-xs sm:text-sm tracking-tight truncate pr-2 sm:pr-4">{act.action}</h3>
-                                <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest whitespace-nowrap mt-0.5 sm:mt-0">{act.time}</span>
-                            </div>
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3">
-                                <div className="flex items-center w-fit gap-1.5 px-2 py-1 sm:px-2.5 sm:py-1 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
-                                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest truncate">{act.user}</span>
-                                </div>
-                                <span className={`text-[9px] sm:text-[10px] font-bold ${act.color} truncate`}>{act.info}</span>
-                            </div>
-                        </div>
+                {/* Filtres */}
+                <div className="bg-white dark:bg-slate-900 rounded-[20px] px-2 py-2 shadow-xl border border-slate-100 dark:border-slate-800 flex gap-1.5">
+                    {FILTERS.map(f => (
+                        <button
+                            key={f}
+                            onClick={() => setFilter(f)}
+                            className={`flex-1 py-2.5 rounded-[14px] font-bold text-[10px] uppercase tracking-wider transition-all ${
+                                filter === f
+                                    ? 'bg-purple-700 text-white shadow-sm'
+                                    : 'text-slate-400 dark:text-slate-500'
+                            }`}
+                        >
+                            {f}
+                        </button>
+                    ))}
+                </div>
 
-                        <div className="hidden md:flex flex-col items-end shrink-0">
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{act.type}</span>
-                            <div className="h-1 w-8 bg-slate-100 dark:bg-slate-800 rounded-full mt-1" />
-                        </div>
-                    </motion.div>
-                ))}
-
-                {filteredActivities.length === 0 && (
-                    <div className="text-center py-20 opacity-30 select-none">
-                        <ShoppingBag size={80} className="mx-auto mb-4" />
-                        <p className="font-black uppercase tracking-[0.2em] text-sm">Aucune activité trouvée</p>
+                {/* Liste */}
+                {loading && activities.length === 0 ? (
+                    <div className="space-y-3">
+                        {[0, 1, 2, 3].map(i => (
+                            <div key={i} className="bg-white dark:bg-slate-900 h-16 rounded-[20px] border border-slate-100 dark:border-slate-800 animate-pulse" />
+                        ))}
                     </div>
+                ) : filtered.length === 0 ? (
+                    <div className="bg-white dark:bg-slate-900 rounded-[24px] p-12 text-center border-2 border-dashed border-slate-100 dark:border-slate-800">
+                        <ShoppingBag size={40} className="mx-auto text-slate-200 dark:text-slate-700 mb-3" />
+                        <p className="font-bold text-slate-300 dark:text-slate-700 uppercase text-[10px] tracking-widest">
+                            Aucune activité
+                        </p>
+                    </div>
+                ) : (
+                    <AnimatePresence mode="popLayout">
+                        <div className="space-y-2">
+                            {filtered.map((act, i) => {
+                                const cfg = TYPE_CONFIG[act.type] ?? TYPE_CONFIG.VENTE;
+                                return (
+                                    <motion.div
+                                        key={act.id}
+                                        initial={{ opacity: 0, y: 6 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: Math.min(i, 10) * 0.025 }}
+                                        className="bg-white dark:bg-slate-900 rounded-[18px] border border-slate-100 dark:border-slate-800 p-3.5 shadow-sm flex items-center gap-3"
+                                    >
+                                        <div className={`w-10 h-10 shrink-0 rounded-[12px] ${cfg.bg} flex items-center justify-center`}>
+                                            <cfg.Icon size={16} className={cfg.color} />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-bold text-xs text-slate-800 dark:text-white truncate leading-tight">{act.label}</p>
+                                            <p className="text-[10px] text-slate-400 mt-0.5 truncate">{act.sub} · {formatDate(act.time)}</p>
+                                        </div>
+                                        <div className="text-right shrink-0">
+                                            <p className="font-bold text-sm text-slate-800 dark:text-white">{formatCFA(act.amount)}</p>
+                                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${cfg.bg} ${cfg.color}`}>
+                                                {cfg.label}
+                                            </span>
+                                        </div>
+                                    </motion.div>
+                                );
+                            })}
+                        </div>
+                    </AnimatePresence>
+                )}
+
+                {/* Charger plus */}
+                {filtered.length >= PAGE_SIZE && (
+                    <button
+                        onClick={() => {
+                            const next = page + 1;
+                            setPage(next);
+                            fetchActivities(next);
+                        }}
+                        disabled={loading}
+                        className="w-full py-4 rounded-[18px] border-2 border-dashed border-slate-200 dark:border-slate-800 text-slate-400 font-bold uppercase text-[10px] tracking-widest hover:border-purple-400 hover:text-purple-600 transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-40"
+                    >
+                        {loading ? <span className="w-4 h-4 border-2 border-purple-300 border-t-purple-600 rounded-full animate-spin" /> : <ChevronRight size={14} />}
+                        Charger plus
+                    </button>
                 )}
             </div>
-
-            {/* Load More Simulation */}
-            <button className="w-full mt-8 md:mt-10 py-5 md:py-6 rounded-[24px] md:rounded-[30px] border-2 border-dashed border-slate-200 dark:border-slate-800 text-slate-400 font-black uppercase text-[10px] tracking-widest hover:border-purple-300 hover:text-purple-500 transition-all active:scale-95">
-                Charger les activités précédentes
-            </button>
-        </main>
+        </div>
     );
 }

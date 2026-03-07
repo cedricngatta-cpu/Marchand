@@ -127,7 +127,19 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
 
                         if (!id) throw new Error("[SYNC_ERROR] ADD_PRODUCT: Payload manquant l'ID UUID.");
 
-                        const payload: any = {
+                        const payload: {
+                            id: string;
+                            store_id: string;
+                            name: string;
+                            price: number;
+                            color: string;
+                            icon_color: string;
+                            audio_name: string;
+                            category?: string;
+                            image_url?: string;
+                            barcode?: string;
+                            delivery_price?: number;
+                        } = {
                             id, store_id, name, price,
                             color: color || '#F1F5F9',
                             icon_color: icon_color || '#64748B',
@@ -163,7 +175,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
                     }
                     case 'UPDATE_PRODUCT': {
                         const { id: upid, ...updates } = item.payload;
-                        const mappedUpdates: Record<string, any> = {};
+                        const mappedUpdates: Record<string, string | number | undefined> = {};
                         if (updates.name) mappedUpdates.name = updates.name;
                         if (updates.price) mappedUpdates.price = updates.price;
                         if (updates.audioName) mappedUpdates.audio_name = updates.audioName;
@@ -292,8 +304,8 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
                     updatePendingCount();
                     setLastSyncError(null);
                 }
-            } catch (err: any) {
-                const errorMsg = err.message || JSON.stringify(err);
+            } catch (err) {
+                const errorMsg = err instanceof Error ? err.message : String(err);
                 console.error(`[Sync] CRITICAL FAILURE on ${item.action}:`, errorMsg);
                 setLastSyncError(`[${item.action}] ${errorMsg}`);
 
@@ -359,28 +371,28 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
         // ── Handler orders ──
         // Anti-boucle : put() UNIQUEMENT — jamais de syncQueue.add().
         // Les useLiveQuery existants réagissent automatiquement à db.put().
-        const handleOrderChange = async (payload: any) => {
+        const handleOrderChange = async (payload: { eventType: string; new: any }) => {
             if (payload.eventType !== 'INSERT' && payload.eventType !== 'UPDATE') return;
             try {
                 // Mappe le row Supabase vers LocalOrder (synced: 1 = confirmé côté serveur)
                 const row = payload.new;
                 await db.orders.put({
-                    id:               row.id,
-                    buyer_store_id:   row.buyer_store_id,
-                    seller_store_id:  row.seller_store_id,
-                    product_id:       row.product_id,
-                    product_name:     row.product_name,
-                    quantity:         row.quantity,
-                    unit_price:       row.unit_price,
-                    total_amount:     row.total_amount,
-                    status:           row.status,
-                    payment_mode:     row.payment_mode ?? undefined,
-                    buyer_name:       row.buyer_name ?? undefined,
-                    seller_name:      row.seller_name ?? undefined,
-                    notes:            row.notes ?? undefined,
-                    created_at:       row.created_at,
-                    updated_at:       row.updated_at,
-                    synced:           1,
+                    id: row.id,
+                    buyer_store_id: row.buyer_store_id,
+                    seller_store_id: row.seller_store_id,
+                    product_id: row.product_id,
+                    product_name: row.product_name,
+                    quantity: row.quantity,
+                    unit_price: row.unit_price,
+                    total_amount: row.total_amount,
+                    status: row.status,
+                    payment_mode: row.payment_mode ?? undefined,
+                    buyer_name: row.buyer_name ?? undefined,
+                    seller_name: row.seller_name ?? undefined,
+                    notes: row.notes ?? undefined,
+                    created_at: row.created_at,
+                    updated_at: row.updated_at,
+                    synced: 1,
                 });
                 console.log(`[Realtime] ✓ Order ${row.id.slice(0, 8)} → ${row.status}`);
             } catch (err) {
@@ -389,22 +401,22 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
         };
 
         // ── Handler transactions ──
-        const handleTransactionChange = async (payload: any) => {
+        const handleTransactionChange = async (payload: { eventType: string; new: any }) => {
             if (payload.eventType !== 'INSERT' && payload.eventType !== 'UPDATE') return;
             try {
                 const row = payload.new;
                 await db.transactions.put({
-                    id:           row.id,
-                    type:         row.type,
-                    product_id:   row.product_id,
+                    id: row.id,
+                    type: row.type,
+                    product_id: row.product_id,
                     product_name: row.product_name,
-                    quantity:     row.quantity,
-                    price:        row.price,
-                    status:       row.status,
-                    store_id:     row.store_id,
-                    created_at:   row.created_at,
-                    client_name:  row.client_name ?? undefined,
-                    synced:       1,
+                    quantity: row.quantity,
+                    price: row.price,
+                    status: row.status,
+                    store_id: row.store_id,
+                    created_at: row.created_at,
+                    client_name: row.client_name ?? undefined,
+                    synced: 1,
                 });
                 console.log(`[Realtime] ✓ Transaction ${row.id.slice(0, 8)} upserted`);
             } catch (err) {

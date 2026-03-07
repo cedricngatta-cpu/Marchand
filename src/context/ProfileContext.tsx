@@ -34,7 +34,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const [profiles, setProfiles] = useState<StoreProfile[]>([]);
     const [activeProfileId, setActiveProfileId] = useState<string | null>(null);
 
-    const refreshProfiles = useCallback(async () => {
+    const refreshProfiles = useCallback(async function refresh() {
         if (!user) return;
 
         let query = supabase.from('stores').select('*, profiles:owner_id(full_name, role)');
@@ -45,32 +45,34 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
         const { data, error } = await query;
 
-        if (data && data.length === 0 && user.role === 'MERCHANT' && navigator.onLine) {
+        if (data && data.length === 0 && (user.role === 'MERCHANT' || user.role === 'PRODUCER') && navigator.onLine) {
             // Rétrocompatibilité : auto-création pour les anciens comptes
-            console.log('[ProfileContext] No store found, creating default store for merchant...');
-            const { data: newStore, error: insertError } = await supabase.from('stores').insert([{
+            const defaultName = user.role === 'PRODUCER' ? 'Ma Ferme' : 'Ma Boutique';
+            const defaultType = user.role === 'PRODUCER' ? 'PRODUCER' : 'RETAILER';
+            console.log(`[ProfileContext] No store found, creating default store for ${user.role}...`);
+            const { error: insertError } = await supabase.from('stores').insert([{
                 owner_id: user.id,
-                name: 'Ma Boutique',
+                name: defaultName,
+                store_type: defaultType,
                 status: 'ACTIVE'
-            }]).select().single();
+            }]);
 
             if (insertError) {
                 console.error('[ProfileContext] Failed to create default store:', insertError.message);
                 return;
             }
 
-            if (newStore) {
-                await refreshProfiles();
-                return;
-            }
+            // Relancer la récupération après création
+            await refresh();
+            return;
         }
 
         if (data && data.length > 0) {
             const mapped: StoreProfile[] = data.map(s => ({
                 id: s.id,
                 name: s.name,
-                merchantName: (s.profiles as any)?.full_name || 'Inconnu',
-                ownerRole: (s.profiles as any)?.role || 'MERCHANT',
+                merchantName: (s.profiles as unknown as { full_name: string })?.full_name || 'Inconnu',
+                ownerRole: (s.profiles as unknown as { role: string })?.role || 'MERCHANT',
                 status: s.status || 'ACTIVE',
                 createdAt: new Date(s.created_at).getTime(),
                 logo: s.logo_url,
