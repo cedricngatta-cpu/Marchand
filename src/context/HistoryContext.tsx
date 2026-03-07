@@ -209,16 +209,40 @@ export const HistoryProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
 
     const markAllAsPaid = async (clientName: string) => {
-        // 1. Update local
+        if (!activeProfile) return;
+
+        // 1. Trouver toutes les transactions de dette pour ce client (insensible à la casse)
+        // Dexie n'est pas nativement insensible à la casse sur tous les index, donc on filtre manuellement pour la sécurité
+        const normalizedInput = clientName.toLowerCase();
+        const debtStatuses = ['DETTE', 'CREDIT', 'NON_PAYE'];
+
         const toUpdate = await db.transactions
-            .where('client_name')
-            .equals(clientName)
-            .and(t => t.status === 'DETTE')
+            .where('store_id')
+            .equals(activeProfile.id)
+            .filter(t =>
+                debtStatuses.includes(t.status) &&
+                (t.client_name?.toLowerCase() === normalizedInput)
+            )
             .toArray();
 
-        for (const t of toUpdate) {
-            await markAsPaid(t.id);
-        }
+        if (toUpdate.length === 0) return;
+
+        // 2. Mettre à jour en masse localement
+        const updatePromises = toUpdate.map(t => db.transactions.update(t.id, { status: 'PAYÉ', synced: 0 }));
+        await Promise.all(updatePromises);
+
+        // 3. Ajouter à la file de synchro (un par un pour la logique de retry existante)
+        const syncPromises = toUpdate.map(t => db.syncQueue.add({
+            action: 'MARK_PAID',
+            payload: { id: t.id },
+            status: 'PENDING',
+            retry_count: 0,
+            created_at: Date.now()
+        }));
+        await Promise.all(syncPromises);
+
+        // 4. Mettre à jour l'UI une seule fois
+        await fetchHistory();
     };
 
     const clearHistory = async () => {

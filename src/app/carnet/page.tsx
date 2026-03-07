@@ -20,8 +20,10 @@ export default function CarnetPage() {
 
     // Grouper les dettes par client
     const debtsByClient = history.reduce((acc, t) => {
-        if (t.status === 'DETTE') {
-            const name = t.clientName || 'CLIENT INCONNU';
+        const debtStatuses = ['DETTE', 'CREDIT', 'NON_PAYE'];
+        if (debtStatuses.includes(t.status)) {
+            const rawName = t.clientName as (string | undefined);
+            const name = rawName && rawName !== 'Client standard' ? rawName : 'CLIENT INCONNU';
             const key = name.toUpperCase();
             if (!acc[key]) acc[key] = { name: name, total: 0, transactions: [] };
             acc[key].total += t.price;
@@ -34,8 +36,8 @@ export default function CarnetPage() {
         debtsByClient[key].name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const handleSettle = (transactionId: string, clientName: string, amount: number) => {
-        markAsPaid(transactionId);
+    const handleSettle = async (transactionId: string, clientName: string, amount: number) => {
+        await markAsPaid(transactionId);
         speakIfNecessary(`C'est noté ${name}. ${clientName} a payé ${amount} francs. C'est ajouté à ta caisse.`, 'LOW');
     };
 
@@ -117,8 +119,8 @@ export default function CarnetPage() {
 
                                         <div className="flex gap-2">
                                             <button
-                                                onClick={() => {
-                                                    markAllAsPaid(client.name);
+                                                onClick={async () => {
+                                                    await markAllAsPaid(client.name);
                                                     speakIfNecessary(`Parfait ${name}. ${client.name} a tout réglé, soit ${client.total} francs.`, 'LOW');
                                                 }}
                                                 className="flex-1 bg-emerald-600 text-white px-2 py-3 rounded-xl font-bold text-[10px] uppercase shadow-md active:scale-[0.98] transition-all text-center"
