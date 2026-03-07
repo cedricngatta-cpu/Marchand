@@ -99,9 +99,12 @@ export const useAssistant = () => {
             '22': 'vend 2',
             'vingt deux': 'vend 2',
             'vingt-deux': 'vend 2',
+            'vends de': 'vend 2',
+            'vend de': 'vend 2',
+            'vends des': 'vend 2',
+            'vend des': 'vend 2',
             'vente de': 'vend',
             'vent de': 'vend',
-            'vends de': 'vend',
             'rue': 'riz',
             'vent': 'vend'
         };
