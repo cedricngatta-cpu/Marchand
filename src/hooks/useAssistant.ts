@@ -101,6 +101,9 @@ export const useAssistant = () => {
             'vendes': 'vend',
             'vendent': 'vend',
             'ven': 'vend',
+            'donne': 'vend',
+            'donne-moi': 'vend',
+            'paye': 'vend',
             'vente de': 'vend',
             'vent de': 'vend',
             'rue': 'riz',
@@ -108,6 +111,18 @@ export const useAssistant = () => {
         };
 
         let processedText = textWithDigits;
+
+        // --- NOUVEAU : Fix Phonétique "Vends" (Verb) vs "Vingt" (20) ---
+        // Si le texte commence par 20-29 (vingt-X) et qu'on est sur la page vendre, 
+        // il y a 90% de chances que l'utilisateur ait dit "Vends X"
+        if (pathname === '/vendre' && (processedText.match(/^2[1-9]\b/) || processedText.match(/^vingt\s+[a-z]+/))) {
+            const match = processedText.match(/^2([1-9])\b/);
+            if (match) {
+                processedText = 'vend ' + match[1] + processedText.slice(match[0].length);
+                console.log('🔄 Phonetic Fix applied: 2X -> vend X');
+            }
+        }
+
         Object.entries(corrections).forEach(([error, fix]) => {
             const regex = new RegExp(`\\b${error}\\b`, 'g');
             processedText = processedText.replace(regex, fix);
@@ -122,15 +137,22 @@ export const useAssistant = () => {
 
         // --- SMART PARSER ---
 
-        // A. Extraction de l'Intention
+        // A. Extraction de l'Intention (avec défaut intelligent)
         let intent: 'SALE' | 'ADD_STOCK' | 'REMOVE_STOCK' | 'CHECK_STOCK' | 'PAY_DEBT' | 'UNKNOWN' = 'UNKNOWN';
-        if (normText.includes('vend') || normText.includes('vendre') || normText.includes('donne')) intent = 'SALE';
+
+        if (normText.includes('vend') || normText.includes('vendre') || normText.includes('donne') || normText.includes('prend')) intent = 'SALE';
         else if (normText.includes('ajoute') || normText.includes('recu') || normText.includes('livre')) intent = 'ADD_STOCK';
         else if (normText.includes('retire') || normText.includes('enleve') || normText.includes('supprime')) intent = 'REMOVE_STOCK';
         else if (normText.includes('combien') || normText.includes('reste') || normText.includes('stock') || normText.includes('inventaire')) intent = 'CHECK_STOCK';
         else if (normText.includes('paye') || normText.includes('regle') || normText.includes('dette') || normText.includes('credit')) {
             if (normText.includes('paye') || normText.includes('regle')) intent = 'PAY_DEBT';
             else intent = 'CHECK_STOCK';
+        }
+
+        // B. Défaut Intelligent basé sur la page actuelle
+        if (intent === 'UNKNOWN') {
+            if (pathname === '/vendre') intent = 'SALE';
+            else if (pathname === '/stocks') intent = 'CHECK_STOCK';
         }
 
         // B. Extraction du Moyen de Paiement
@@ -278,7 +300,12 @@ export const useAssistant = () => {
                 break;
 
             default:
-                speakIfNecessary(`Je ne suis pas sûr d'avoir compris. Tu veux vendre ou ajouter du ${product.name} ?`, 'NORMAL', true);
+                if (pathname === '/vendre' && product) {
+                    addItem({ ...product }, quantity);
+                    speakIfNecessary(`${formatSpeech(product.audioName, quantity)} ajouté au panier.`, 'LOW');
+                } else if (intent === 'UNKNOWN') {
+                    speakIfNecessary(`Je ne suis pas sûr d'avoir compris. Tu veux vendre ou ajouter du ${product.name} ?`, 'NORMAL', true);
+                }
         }
     }, [speakIfNecessary, updateStock, getStockLevel, addTransaction, markAllAsPaid, addItem, removeItem, pathname, history, products, userName, items]);
 
