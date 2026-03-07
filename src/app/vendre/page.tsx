@@ -305,6 +305,7 @@ export default function VendrePage() {
                                         <span className="text-slate-400 uppercase tracking-widest">Mode</span>
                                         <span className="text-slate-900 dark:text-white uppercase tracking-widest">
                                             {paymentStatus === 'MOMO' ? 'Mobile Money' : paymentStatus === 'DETTE' ? 'Crédit' : 'Espèces'}
+                                            {clientName ? ` (${clientName})` : ''}
                                         </span>
                                     </div>
                                     <div className="flex justify-between items-center text-xs font-bold border-b border-dashed border-slate-200 dark:border-slate-800 pb-3">

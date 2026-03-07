@@ -304,18 +304,18 @@ export default function BilanPage() {
                                                 <div className="min-w-0">
                                                     <p className="font-bold text-slate-800 dark:text-white text-xs truncate">
                                                         {t.type === 'VENTE'
-                                                            ? (t.status === 'DETTE' ? `Vendu à crédit à ${t.clientName || 'un client'}` : `Vendu à ${t.clientName || 'un client'}`)
+                                                            ? (t.status === 'DETTE'
+                                                                ? `Vendu à crédit à ${t.clientName && t.clientName !== 'Client standard' ? t.clientName : 'un client'}`
+                                                                : `Vendu à ${t.clientName && t.clientName !== 'Client standard' ? t.clientName : 'un client'}`)
                                                             : t.productName}
                                                     </p>
                                                     <div className="flex items-center gap-2 mt-1">
                                                         <span className="text-[10px] font-medium text-slate-400">
                                                             {new Date(t.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                         </span>
-                                                        {t.clientName && (
-                                                            <span className="bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded text-[9px] font-bold border border-amber-100 uppercase">
-                                                                {t.productName}
-                                                            </span>
-                                                        )}
+                                                        <span className="bg-slate-100 dark:bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded text-[9px] font-bold border border-slate-200 dark:border-slate-700 uppercase">
+                                                            {t.productName}
+                                                        </span>
                                                     </div>
                                                 </div>
                                             </div>
