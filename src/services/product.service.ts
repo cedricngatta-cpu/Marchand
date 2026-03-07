@@ -34,17 +34,48 @@ function mapRecordToProduct(record: any): Product {
  */
 export async function getProductsForProfile(profileId: string): Promise<Product[]> {
     // 1. Lire d'abord depuis IndexedDB (store-specific + GLOBAL)
+    // C'est notre source de vérité.
     const localProducts = await db.products
         .where('store_id')
         .anyOf([profileId, 'GLOBAL'])
         .toArray();
 
-    // 2. Si on est hors ligne, on retourne directement les données locales
-    if (!navigator.onLine) {
-        return localProducts.map(mapRecordToProduct);
-    }
+    return localProducts.map(mapRecordToProduct);
+}
 
-    // 3. Si on est en ligne, on tente de rafraîchir depuis Supabase
+/**
+ * Mappe un enregistrement Supabase brut vers un enregistrement propre pour LocalProduct (IndexedDB).
+ * Gère spécifiquement le problème de Supabase renvoyant `null` pour les champs optionnels
+ * que IndexedDB déteste s'ils sont indexés (ex: barcode).
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapSupabaseToLocalProduct(p: any): LocalProduct {
+    const localP: LocalProduct = {
+        id: p.id,
+        name: p.name,
+        price: p.price,
+        audio_name: p.audio_name || '',
+        category: p.category || 'OTHER',
+        color: p.color || 'bg-blue-500',
+        icon_color: p.icon_color || 'text-white',
+        store_id: p.store_id,
+        synced: 1
+    };
+
+    // IMPORTANT: IndexedDB refuse la valeur "null" pour un champ indexé (ex: barcode).
+    if (p.barcode) localP.barcode = p.barcode;
+    if (p.image_url) localP.image_url = p.image_url;
+
+    return localP;
+}
+
+/**
+ * Synchronise les produits depuis Supabase vers IndexedDB (Catch-up Sync).
+ * À appeler à l'initialisation de l'app ou au retour en ligne.
+ */
+export async function syncProductsFromServer(profileId: string): Promise<void> {
+    if (!navigator.onLine) return;
+
     try {
         const { data, error } = await supabase
             .from('products')
@@ -52,30 +83,19 @@ export async function getProductsForProfile(profileId: string): Promise<Product[
             .or(`store_id.eq.${profileId},store_id.eq.GLOBAL`);
 
         if (error) {
-            console.warn('[ProductService] Supabase fetch error:', error.message);
-            // En cas d'erreur réseau, on se rabat sur les données locales
-            return localProducts.map(mapRecordToProduct);
+            console.warn('[ProductService] syncProductsFromServer error:', error.message);
+            return;
         }
 
         if (data && data.length > 0) {
-            // Met à jour notre cache local (IndexedDB) avec les données fraîches
-            const updatePromises = data.map(p => db.products.put({
-                ...p,
-                synced: 1
-            }));
-            await Promise.all(updatePromises);
+            const localProductsToPut: LocalProduct[] = data.map(mapSupabaseToLocalProduct);
 
-            // Retourne les données fraîches mappées
-            return data.map(mapRecordToProduct);
+            // Utiliser bulkPut pour des performances maximales et une mise à jour d'un coup
+            await db.products.bulkPut(localProductsToPut);
+            console.log(`[ProductService] Sycnhronisation réussie: ${data.length} produits mis à jour.`);
         }
-
-        // Si aucune donnée sur Supabase, on retourne quand même le local
-        return localProducts.map(mapRecordToProduct);
-
     } catch (err) {
-        console.error('[ProductService] Fetch error:', err);
-        // En cas d'erreur critique, on se rabat sur les données locales
-        return localProducts.map(mapRecordToProduct);
+        console.error('[ProductService] Critical error during syncProductsFromServer:', err);
     }
 }
 
@@ -95,13 +115,14 @@ export async function addProduct(productData: Omit<Product, 'id'>, storeId: stri
             price: productData.price,
             audio_name: productData.audioName,
             category: productData.category || 'OTHER',
-            barcode: productData.barcode,
-            image_url: productData.imageUrl,
             color: productData.color,
             icon_color: productData.iconColor,
             store_id: storeId,
             synced: 0
         };
+
+        if (productData.barcode) localRecord.barcode = productData.barcode;
+        if (productData.imageUrl) localRecord.image_url = productData.imageUrl;
 
         await db.products.add(localRecord);
         await db.syncQueue.add({
@@ -122,7 +143,19 @@ export async function addProduct(productData: Omit<Product, 'id'>, storeId: stri
 
 export async function updateProduct(id: string, updates: Partial<Product>) {
     try {
-        await db.products.update(id, { ...updates, synced: 0 });
+        // Formater les updates pour eviter undefined/null si possible ou les mapper
+        // Ceci dit l'update Dexie supporte un partial de l'objet
+        const localUpdates: Partial<LocalProduct> = { synced: 0 };
+        if (updates.name !== undefined) localUpdates.name = updates.name;
+        if (updates.price !== undefined) localUpdates.price = updates.price;
+        if (updates.audioName !== undefined) localUpdates.audio_name = updates.audioName;
+        if (updates.category !== undefined) localUpdates.category = updates.category;
+        if (updates.barcode !== undefined) localUpdates.barcode = updates.barcode || undefined;
+        if (updates.imageUrl !== undefined) localUpdates.image_url = updates.imageUrl || undefined;
+        if (updates.color !== undefined) localUpdates.color = updates.color;
+        if (updates.iconColor !== undefined) localUpdates.icon_color = updates.iconColor;
+
+        await db.products.update(id, localUpdates);
         await db.syncQueue.add({
             action: 'UPDATE_PRODUCT',
             payload: { id, ...updates },
@@ -211,10 +244,9 @@ export async function processRealtimeEvent(payload: any) {
 
     switch (eventType) {
         case 'INSERT':
-            await db.products.put({ ...newRecord, synced: 1 });
-            break;
         case 'UPDATE':
-            await db.products.update(newRecord.id, { ...newRecord, synced: 1 });
+            const localP = mapSupabaseToLocalProduct(newRecord);
+            await db.products.put(localP);
             break;
         case 'DELETE':
             // L'ID est dans `old` pour un delete

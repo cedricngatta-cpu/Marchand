@@ -44,6 +44,21 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return;
         }
 
+        // --- TRI DE LA FILE : C'est ici qu'on gère la priorité ---
+        // Les créations de produits doivent partir avant tout mouvement de stock
+        pending.sort((a, b) => {
+            const priorityActions = ['ADD_PRODUCT']; // On peut rajouter d'autres if needed
+
+            const aIsPriority = priorityActions.includes(a.action);
+            const bIsPriority = priorityActions.includes(b.action);
+
+            if (aIsPriority && !bIsPriority) return -1;
+            if (!aIsPriority && bIsPriority) return 1;
+
+            // En cas d'égalité sur la priorité, on garde l'ordre chronologique
+            return (a.created_at || 0) - (b.created_at || 0);
+        });
+
         isSyncingRef.current = true;
         setIsSyncing(true);
         console.log(`[Sync] Processing ${pending.length} pending/error actions...`);
@@ -276,6 +291,15 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 }
             } catch (err) {
                 console.error("[Sync] Fatal error processing item:", err);
+                try {
+                    const nextRetry = (item.retry_count || 0) + 1;
+                    await db.syncQueue.update(item.id!, {
+                        status: nextRetry >= 3 ? 'FAILED' : 'ERROR',
+                        retry_count: nextRetry
+                    });
+                } catch (updateErr) {
+                    console.error("[Sync] Could not update failed sync queue item", updateErr);
+                }
             }
         }
 
@@ -298,7 +322,6 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // eslint-disable-next-line react-hooks/set-state-in-effect
         updatePendingCount();
         if (typeof navigator !== 'undefined' && navigator.onLine) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
             processQueue();
         }
 

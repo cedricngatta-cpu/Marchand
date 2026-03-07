@@ -39,6 +39,7 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
     const [isLoading, setIsLoading] = useState(true);
     const { addError } = useError();
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const mapRecordToProduct = useCallback((record: any): Product => ({
         id: record.id,
         name: record.name,
@@ -56,9 +57,13 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
         if (!activeProfile) return;
         setIsLoading(true);
         try {
+            // 1. Synchronisation Catch-up avec Supabase (insère proprement dans IndexedDB)
+            await ProductService.syncProductsFromServer(activeProfile.id);
+
+            // 2. Affiche à partir de la source de vérité locale qui vient d'être mise à jour
             const productsFromService = await ProductService.getProductsForProfile(activeProfile.id);
             setProducts(productsFromService);
-        } catch (error: any) {
+        } catch {
             addError("Impossible de charger les produits.");
         } finally {
             setIsLoading(false);
@@ -73,6 +78,7 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
 
         fetchProducts();
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const handleRealtimeUpdate = async (payload: any) => {
             await ProductService.processRealtimeEvent(payload);
             const { eventType, new: newRecord, old: oldRecord } = payload;
@@ -84,7 +90,7 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
                     setProducts(prev => prev.map(p => p.id === newRecord.id ? mapRecordToProduct(newRecord) : p));
                     break;
                 case 'DELETE':
-                     if (oldRecord && oldRecord.id) {
+                    if (oldRecord && oldRecord.id) {
                         setProducts(prev => prev.filter(p => p.id !== oldRecord.id));
                     }
                     break;
@@ -93,7 +99,7 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
                     break;
             }
         };
-        
+
         const subscription = supabase
             .channel(`product_changes_${activeProfile.id}`)
             .on('postgres_changes', { event: '*', schema: 'public', table: 'products', filter: `store_id=in.(${activeProfile.id},GLOBAL)` }, handleRealtimeUpdate)
@@ -113,8 +119,8 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
         try {
             await ProductService.addProduct(product, targetStoreId);
             return true;
-        } catch (error: any) {
-            addError(error.message || "Impossible d'ajouter le produit.");
+        } catch (error) {
+            addError((error as Error).message || "Impossible d'ajouter le produit.");
             setProducts(prev => prev.filter(p => p.id !== tempId));
             return false;
         }
@@ -128,8 +134,8 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
         try {
             await ProductService.updateProduct(id, updates);
             return true;
-        } catch (error: any) {
-            addError(error.message || "Impossible de mettre à jour le produit.");
+        } catch (error) {
+            addError((error as Error).message || "Impossible de mettre à jour le produit.");
             setProducts(originalProducts);
             return false;
         }
@@ -141,8 +147,8 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
         try {
             await ProductService.deleteProduct(id);
             return true;
-        } catch (error: any) {
-            addError(error.message || "Impossible de supprimer le produit.");
+        } catch (error) {
+            addError((error as Error).message || "Impossible de supprimer le produit.");
             setProducts(originalProducts);
             return false;
         }
@@ -155,13 +161,13 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
         try {
             await ProductService.resetProductsStore(activeProfile.id);
             return true;
-        } catch (error: any) {
-            addError(error.message || "La réinitialisation a échoué.");
+        } catch (error) {
+            addError((error as Error).message || "La réinitialisation a échoué.");
             setProducts(originalProducts);
             return false;
         }
     };
-    
+
     return (
         <ProductContext.Provider value={{ products, isLoading, addProduct, updateProduct, deleteProduct, resetProducts }}>
             {children}
