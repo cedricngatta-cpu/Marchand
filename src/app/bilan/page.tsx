@@ -305,9 +305,9 @@ export default function BilanPage() {
                                                 <div className="min-w-0">
                                                     <p className="font-bold text-slate-800 dark:text-white text-xs truncate">
                                                         {t.type === 'VENTE'
-                                                            ? (t.status === 'DETTE'
-                                                                ? `Vendu à crédit à ${t.clientName && t.clientName !== 'Client standard' ? t.clientName : 'un client'}`
-                                                                : `Vendu à ${t.clientName && t.clientName !== 'Client standard' ? t.clientName : 'un client'}`)
+                                                            ? (t.status === 'DETTE' || (t.status as string) === 'CREDIT' || (t.status as string) === 'NON_PAYE'
+                                                                ? `Vendu à crédit à ${t.clientName && t.clientName !== 'Client standard' ? t.clientName : 'Client'}`
+                                                                : `Vendu à ${t.clientName && t.clientName !== 'Client standard' ? t.clientName : 'Client'}`)
                                                             : t.productName}
                                                     </p>
                                                     <div className="flex items-center gap-2 mt-1">
@@ -321,8 +321,8 @@ export default function BilanPage() {
                                                 </div>
                                             </div>
                                             <div className="text-right shrink-0">
-                                                <p className={`font-bold text-[14px] ${t.status === 'DETTE' ? 'text-orange-500' : t.type === 'VENTE' ? 'text-emerald-600' : 'text-slate-400'}`}>
-                                                    {t.type === 'VENTE' ? (t.status === 'DETTE' ? '' : '+') : ''}{t.price} F
+                                                <p className={`font-bold text-[14px] ${t.status === 'DETTE' || (t.status as string) === 'CREDIT' || (t.status as string) === 'NON_PAYE' ? 'text-orange-500' : t.type === 'VENTE' ? 'text-emerald-600' : 'text-slate-400'}`}>
+                                                    {t.type === 'VENTE' ? (t.status === 'DETTE' || (t.status as string) === 'CREDIT' || (t.status as string) === 'NON_PAYE' ? '' : '+') : ''}{t.price} F
                                                 </p>
                                             </div>
                                         </div>

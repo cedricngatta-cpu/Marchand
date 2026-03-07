@@ -187,9 +187,11 @@ export default function CommercantDashboard() {
                                         )}
                                     </div>
                                     <div>
-                                        <p className="font-bold text-xs sm:text-sm text-slate-800 dark:text-white capitalize truncate">
+                                        <p className="font-bold text-xs sm:text-sm text-slate-800 dark:text-white truncate">
                                             {t.type === 'VENTE'
-                                                ? (t.status === 'DETTE' ? `Vendu à crédit à ${t.clientName || 'Client'}` : `Vendu à ${t.clientName || 'Client'}`)
+                                                ? (t.status === 'DETTE' || (t.status as string) === 'CREDIT' || (t.status as string) === 'NON_PAYE'
+                                                    ? `Vendu à crédit à ${t.clientName && t.clientName !== 'Client standard' ? t.clientName : 'Client'}`
+                                                    : `Vendu à ${t.clientName && t.clientName !== 'Client standard' ? t.clientName : 'Client'}`)
                                                 : t.type}
                                         </p>
                                         <p className="text-[10px] text-slate-400 capitalize -mt-0.5">
@@ -197,8 +199,8 @@ export default function CommercantDashboard() {
                                         </p>
                                     </div>
                                 </div>
-                                <div className={`font-bold text-xs sm:text-sm whitespace-nowrap ${t.status === 'DETTE' ? 'text-orange-500' : 'text-slate-800 dark:text-white'}`}>
-                                    {t.type === 'VENTE' ? (t.status === 'DETTE' ? '' : '+') : '-'}{t.price}F
+                                <div className={`font-bold text-xs sm:text-sm whitespace-nowrap ${t.status === 'DETTE' || (t.status as string) === 'CREDIT' || (t.status as string) === 'NON_PAYE' ? 'text-orange-500' : 'text-slate-800 dark:text-white'}`}>
+                                    {t.type === 'VENTE' ? (t.status === 'DETTE' || (t.status as string) === 'CREDIT' || (t.status as string) === 'NON_PAYE' ? '' : '+') : '-'}{t.price}F
                                 </div>
                             </div>
                         ))}
