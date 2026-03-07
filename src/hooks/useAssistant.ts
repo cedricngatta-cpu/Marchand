@@ -49,7 +49,10 @@ export const useAssistant = () => {
         const lowerText = text.toLowerCase();
 
         // 1. Normalisation et nettoyage phonétique
-        const normalize = (str: string) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        const normalize = (str: string) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+
+        // Helper pour ignorer les pluriels (supprime le 's' en fin de mot)
+        const stripPlural = (str: string) => str.split(/\s+/).map(w => w.replace(/s$/i, '')).join(' ');
 
         // Dictionnaire de corrections pour les erreurs phonétiques et homophones
         const corrections: Record<string, string> = {
@@ -108,12 +111,39 @@ export const useAssistant = () => {
         }
 
         // D. Identification du Produit (Détection flexible)
+        // On trie par longueur décroissante pour privilégier les noms longs (ex: "Biscuits Chocolat" avant "Biscuits")
         const sortedProducts = [...products].sort((a, b) => b.name.length - a.name.length);
+
+        // Nettoyage de la voix pour la recherche
+        const voiceSingular = stripPlural(normText);
+        // Mots clés de la voix (on garde les mots de 2 lettres et plus, certains produits sont courts comme "Riz" ou "Sel")
+        const voiceKeywords = voiceSingular.split(/\s+/).filter(w => w.length >= 2);
+
         const product = sortedProducts.find(p => {
             const nName = normalize(p.name);
+            const nNameSingular = stripPlural(nName);
             const nAudio = normalize(p.audioName || p.name).replace(/^[Ll]e\s+/, '').replace(/^[Ll]a\s+/, '').replace(/^[Ll]'\s+/, '');
-            return normText.includes(nName) || normText.includes(nAudio);
+            const nAudioSingular = stripPlural(nAudio);
+
+            // 1. Match par inclusion globale (ex: "vends biscuits" contient "biscuit")
+            if (voiceSingular.includes(nNameSingular) || voiceSingular.includes(nAudioSingular)) return true;
+            if (nNameSingular.includes(voiceSingular) || nAudioSingular.includes(voiceSingular)) return true;
+
+            // 2. Match par mots-clés (si un mot clé essentiel est présent dans le nom du produit)
+            // On exclut les mots d'intention (vend, ajoute, etc.) des mots clés de recherche
+            const searchKeywords = voiceKeywords.filter(w => !['vend', 'vendre', 'donne', 'ajoute', 'recu', 'livre', 'retire', 'enleve', 'supprime', 'combien', 'reste', 'stock'].includes(w));
+
+            return searchKeywords.some(keyword =>
+                nNameSingular.includes(keyword) ||
+                nAudioSingular.includes(keyword)
+            );
         });
+
+        if (product) {
+            console.log(`✅ Produit trouvé: ${product.name} (Matché via: ${normText})`);
+        } else {
+            console.warn(`❌ Aucun produit matché dans le catalogue (${products.length} produits) pour: ${normText}`);
+        }
 
         // E. Extraction Quantité
         const numberMap: Record<string, number> = { 'un': 1, 'une': 1, 'deux': 2, 'trois': 3, 'quatre': 4, 'cinq': 5 };

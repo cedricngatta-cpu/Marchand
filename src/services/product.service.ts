@@ -108,7 +108,10 @@ export async function syncProductsFromServer(profileId: string): Promise<void> {
  */
 export async function addProduct(productData: Omit<Product, 'id'>, storeId: string): Promise<LocalProduct> {
     try {
+        // 1. Génération d'un UUID v4 robuste côté client
         const id = crypto.randomUUID();
+        if (!id || id.length < 36) throw new Error("Erreur fatale: Impossible de générer un ID unique.");
+
         const localRecord: LocalProduct = {
             id,
             name: productData.name,
@@ -132,6 +135,8 @@ export async function addProduct(productData: Omit<Product, 'id'>, storeId: stri
             retry_count: 0,
             created_at: Date.now()
         });
+
+        console.log(`[Product] Produit créé localement avec ID UUID: ${id}`);
 
         window.dispatchEvent(new Event('online'));
         return localRecord;

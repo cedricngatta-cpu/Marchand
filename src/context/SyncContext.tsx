@@ -15,7 +15,7 @@ interface SyncContextType {
 
 const SyncContext = createContext<SyncContextType | undefined>(undefined);
 
-export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export function SyncProvider({ children }: { children: React.ReactNode }) {
     const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
     const isSyncingRef = useRef(false);
     const [isSyncing, setIsSyncing] = useState(false);
@@ -70,15 +70,15 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 switch (item.action) {
                     case 'ADD_TRANSACTION': {
                         const { error: tError } = await supabase.from('transactions').insert([item.payload]);
-                        if (!tError || tError.code === '23505') success = true;
-                        else errorDetails = tError;
+                        if (tError && tError.code !== '23505') {
+                            throw new Error(`[SUPABASE_ERROR] ADD_TRANSACTION: ${tError.message} (Code: ${tError.code})`);
+                        }
+                        success = true;
                         break;
                     }
                     case 'UPDATE_STOCK': {
                         const { product_id, quantity } = item.payload;
 
-                        // 1. Récupérer la quantité actuelle pour faire un calcul relatif
-                        // Note: store_id n'existe pas dans la table stock sur Supabase
                         const { data: currentStock, error: fetchError } = await supabase
                             .from('stock')
                             .select('quantity')
@@ -86,90 +86,22 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
                             .maybeSingle();
 
                         if (fetchError) {
-                            errorDetails = fetchError;
-                            break;
+                            throw new Error(`[SUPABASE_ERROR] UPDATE_STOCK_FETCH: ${fetchError.message}`);
                         }
 
                         const newQty = Math.max(0, (currentStock?.quantity || 0) + quantity);
 
-                        // 2. Mise à jour via upsert sur product_id (clé primaire attendue)
                         const { error: sError } = await supabase
                             .from('stock')
-                            .upsert(
-                                {
-                                    product_id,
-                                    quantity: newQty
-                                }
-                            );
+                            .upsert({ product_id, quantity: newQty });
 
-                        if (!sError) {
-                            success = true;
-                        } else if (sError.code === '23503') {
-                            // Violation de clé étrangère ! Le produit manque probablement dans Supabase.
-                            console.warn(`[Sync] Product ${product_id} missing in Supabase. Attempting auto-fix...`);
-
-                            const localProd = await db.products.get(product_id);
-                            if (localProd) {
-                                // Tenter d'insérer le produit manquant proprement
-                                const payload: {
-                                    id: string;
-                                    store_id: string;
-                                    name: string;
-                                    price: number;
-                                    color: string;
-                                    icon_color: string;
-                                    audio_name: string;
-                                    image_url?: string;
-                                    barcode?: string;
-                                    category?: string;
-                                } = {
-                                    id: localProd.id,
-                                    store_id: localProd.store_id,
-                                    name: localProd.name,
-                                    price: localProd.price,
-                                    color: localProd.color,
-                                    icon_color: localProd.icon_color,
-                                    audio_name: localProd.audio_name
-                                };
-                                if (localProd.image_url) payload.image_url = localProd.image_url;
-                                if (localProd.barcode) payload.barcode = localProd.barcode;
-                                if (localProd.category) payload.category = localProd.category;
-
-                                const { error: prodError } = await supabase
-                                    .from('products')
-                                    .insert([payload]);
-
-                                if (!prodError || prodError.code === '23505') {
-                                    // Succès ou déjà présent, on retente l'upsert du stock
-                                    const { error: retryStock } = await supabase
-                                        .from('stock')
-                                        .upsert({ product_id, quantity: newQty });
-
-                                    if (!retryStock) success = true;
-                                    else errorDetails = retryStock;
-                                } else if (prodError.message.includes('barcode') || prodError.message.includes('category') || prodError.message.includes('image_url')) {
-                                    // Deuxième tentative sans les colonnes optionnelles si elles manquent dans le schéma cloud
-                                    const retryPayload = { ...payload };
-                                    delete retryPayload.barcode;
-                                    delete retryPayload.category;
-                                    delete retryPayload.image_url;
-                                    const { error: retryProd } = await supabase.from('products').insert([retryPayload]);
-                                    if (!retryProd || retryProd.code === '23505') {
-                                        const { error: retryStock } = await supabase.from('stock').upsert({ product_id, quantity: newQty });
-                                        if (!retryStock) success = true;
-                                        else errorDetails = retryStock;
-                                    } else {
-                                        errorDetails = retryProd;
-                                    }
-                                } else {
-                                    errorDetails = prodError;
-                                }
-                            } else {
-                                errorDetails = sError;
+                        if (sError) {
+                            if (sError.code === '23503') {
+                                throw new Error(`[FOREIGN_KEY_ERROR] UPDATE_STOCK: Le produit ${product_id} n'existe pas dans Supabase.`);
                             }
-                        } else {
-                            errorDetails = sError;
+                            throw new Error(`[SUPABASE_ERROR] UPDATE_STOCK_UPSERT: ${sError.message} (Code: ${sError.code})`);
                         }
+                        success = true;
                         break;
                     }
                     case 'MARK_PAID': {
@@ -178,26 +110,19 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
                             .from('transactions')
                             .update({ status: 'PAYÉ' })
                             .eq('id', tid);
-                        if (!pError) success = true;
-                        else errorDetails = pError;
+
+                        if (pError) {
+                            throw new Error(`[SUPABASE_ERROR] MARK_PAID: ${pError.message}`);
+                        }
+                        success = true;
                         break;
                     }
                     case 'ADD_PRODUCT': {
                         const { id, store_id, name, price, color, icon_color, audio_name, image_url, barcode, category } = item.payload;
 
-                        // Construire le payload de manière robuste
-                        const payload: {
-                            id: string;
-                            store_id: string;
-                            name: string;
-                            price: number;
-                            color: string;
-                            icon_color: string;
-                            audio_name: string;
-                            category?: string;
-                            image_url?: string;
-                            barcode?: string;
-                        } = {
+                        if (!id) throw new Error("[SYNC_ERROR] ADD_PRODUCT: Payload manquant l'ID UUID.");
+
+                        const payload: any = {
                             id,
                             store_id,
                             name,
@@ -207,8 +132,6 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
                             audio_name: audio_name || name
                         };
 
-                        // Ajouter les colonnes optionnelles seulement si elles existent dans le payload
-                        // et on va les protéger pour éviter les erreurs de schéma cloud
                         if (category) payload.category = category;
                         if (image_url) payload.image_url = image_url;
                         if (barcode) payload.barcode = barcode;
@@ -217,26 +140,33 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
                             .from('products')
                             .insert([payload]);
 
-                        if (!apError || apError.code === '23505') success = true;
-                        else if (apError.message.includes('barcode') || apError.message.includes('image_url') || apError.message.includes('category')) {
-                            // Si l'erreur mentionne spécifiquement une colonne manquante, on retente sans les colonnes optionnelles
-                            console.warn(`[Sync] Retrying ADD_PRODUCT without optional columns due to schema mismatch...`);
-                            const retryPayload = { ...payload };
-                            delete retryPayload.barcode;
-                            delete retryPayload.image_url;
-                            delete retryPayload.category;
-                            const { error: retryError } = await supabase.from('products').insert([retryPayload]);
-                            if (!retryError || retryError.code === '23505') success = true;
-                            else errorDetails = retryError;
+                        if (apError) {
+                            if (apError.code === '23505') {
+                                success = true;
+                            } else if (apError.message.includes('barcode') || apError.message.includes('image_url') || apError.message.includes('category')) {
+                                console.warn(`[Sync] Fallback ADD_PRODUCT sans colonnes optionnelles...`);
+                                const { error: retryError } = await supabase.from('products').insert([{
+                                    id: payload.id,
+                                    store_id: payload.store_id,
+                                    name: payload.name,
+                                    price: payload.price,
+                                    color: payload.color,
+                                    icon_color: payload.icon_color,
+                                    audio_name: payload.audio_name
+                                }]);
+                                if (!retryError || retryError.code === '23505') success = true;
+                                else throw new Error(`[SUPABASE_ERROR] ADD_PRODUCT_FALLBACK: ${retryError.message}`);
+                            } else {
+                                throw new Error(`[SUPABASE_ERROR] ADD_PRODUCT: ${apError.message} (Code: ${apError.code})`);
+                            }
                         } else {
-                            errorDetails = apError;
+                            success = true;
                         }
                         break;
                     }
                     case 'UPDATE_PRODUCT': {
                         const { id: upid, ...updates } = item.payload;
-                        // Mapper camelCase vers snake_case pour les mises à jour
-                        const mappedUpdates: Record<string, unknown> = {};
+                        const mappedUpdates: Record<string, any> = {};
                         if (updates.name) mappedUpdates.name = updates.name;
                         if (updates.price) mappedUpdates.price = updates.price;
                         if (updates.audioName) mappedUpdates.audio_name = updates.audioName;
@@ -250,8 +180,11 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
                             .from('products')
                             .update(mappedUpdates)
                             .eq('id', upid);
-                        if (!upError) success = true;
-                        else errorDetails = upError;
+
+                        if (upError) {
+                            throw new Error(`[SUPABASE_ERROR] UPDATE_PRODUCT: ${upError.message}`);
+                        }
+                        success = true;
                         break;
                     }
                     case 'DELETE_PRODUCT': {
@@ -260,8 +193,11 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
                             .from('products')
                             .delete()
                             .eq('id', dpid);
-                        if (!dpError) success = true;
-                        else errorDetails = dpError;
+
+                        if (dpError) {
+                            throw new Error(`[SUPABASE_ERROR] DELETE_PRODUCT: ${dpError.message}`);
+                        }
+                        success = true;
                         break;
                     }
                 }
@@ -270,36 +206,21 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     await db.syncQueue.delete(item.id!);
                     updatePendingCount();
                     setLastSyncError(null);
-                } else {
-                    const msg = errorDetails?.message || JSON.stringify(errorDetails) || "Erreur inconnue";
-                    console.error(`[Sync] Action ${item.action} failed:`, msg);
-                    setLastSyncError(`[${item.action}] ${msg}`);
-
-                    const nextRetry = (item.retry_count || 0) + 1;
-                    await db.syncQueue.update(item.id!, {
-                        status: nextRetry >= 3 ? 'FAILED' : 'ERROR',
-                        retry_count: nextRetry
-                    });
-
-                    // CRITICAL: If an ADD_PRODUCT fails, stop the loop.
-                    // Subsequent stock updates or transactions for this product 
-                    // will inevitably fail with FK constraints.
-                    if (item.action === 'ADD_PRODUCT') {
-                        console.warn("[Sync] ADD_PRODUCT failed. Stopping queue to prevent cascading FK errors.");
-                        break;
-                    }
                 }
-            } catch (err) {
-                console.error("[Sync] Fatal error processing item:", err);
-                try {
-                    const nextRetry = (item.retry_count || 0) + 1;
-                    await db.syncQueue.update(item.id!, {
-                        status: nextRetry >= 3 ? 'FAILED' : 'ERROR',
-                        retry_count: nextRetry
-                    });
-                } catch (updateErr) {
-                    console.error("[Sync] Could not update failed sync queue item", updateErr);
-                }
+            } catch (err: any) {
+                const errorMsg = err.message || JSON.stringify(err);
+                console.error(`[Sync] CRITICAL FAILURE on ${item.action}:`, errorMsg);
+                setLastSyncError(`[${item.action}] ${errorMsg}`);
+
+                const nextRetry = (item.retry_count || 0) + 1;
+                await db.syncQueue.update(item.id!, {
+                    status: nextRetry >= 3 ? 'FAILED' : 'ERROR',
+                    retry_count: nextRetry
+                });
+
+                // On arrête tout traitement de la file si une erreur survient (principe de précaution)
+                console.warn("[Sync] Loop stopped due to error to maintain data integrity.");
+                break;
             }
         }
 
