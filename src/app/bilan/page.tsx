@@ -303,7 +303,9 @@ export default function BilanPage() {
                                                 </div>
                                                 <div className="min-w-0">
                                                     <p className="font-bold text-slate-800 dark:text-white text-xs truncate">
-                                                        {t.productName}
+                                                        {t.type === 'VENTE'
+                                                            ? (t.status === 'DETTE' ? `Vendu à crédit à ${t.clientName || 'un client'}` : `Vendu à ${t.clientName || 'un client'}`)
+                                                            : t.productName}
                                                     </p>
                                                     <div className="flex items-center gap-2 mt-1">
                                                         <span className="text-[10px] font-medium text-slate-400">
@@ -311,15 +313,15 @@ export default function BilanPage() {
                                                         </span>
                                                         {t.clientName && (
                                                             <span className="bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded text-[9px] font-bold border border-amber-100 uppercase">
-                                                                {t.clientName}
+                                                                {t.productName}
                                                             </span>
                                                         )}
                                                     </div>
                                                 </div>
                                             </div>
                                             <div className="text-right shrink-0">
-                                                <p className={`font-bold text-[14px] ${t.status === 'DETTE' ? 'text-red-500' : t.type === 'VENTE' ? 'text-emerald-600' : 'text-slate-400'}`}>
-                                                    {t.type === 'VENTE' ? '+' : ''}{t.price} F
+                                                <p className={`font-bold text-[14px] ${t.status === 'DETTE' ? 'text-orange-500' : t.type === 'VENTE' ? 'text-emerald-600' : 'text-slate-400'}`}>
+                                                    {t.type === 'VENTE' ? (t.status === 'DETTE' ? '' : '+') : ''}{t.price} F
                                                 </p>
                                             </div>
                                         </div>
